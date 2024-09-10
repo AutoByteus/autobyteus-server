@@ -1,10 +1,10 @@
 
-from autobyteus.codeverse.core.code_entities.base_entity import CodeEntity
-from autobyteus.codeverse.core.code_entities.class_entity import ClassEntity
-from autobyteus.codeverse.core.code_entities.code_entity_type import CodeEntityType
-from autobyteus.codeverse.core.code_entities.function_entity import FunctionEntity
-from autobyteus.codeverse.core.code_entities.method_entity import MethodEntity
-from autobyteus.codeverse.core.code_entities.module_entity import ModuleEntity
+from autobyteus_server.codeverse.core.code_entities.base_entity import CodeEntity
+from autobyteus_server.codeverse.core.code_entities.class_entity import ClassEntity
+from autobyteus_server.codeverse.core.code_entities.code_entity_type import CodeEntityType
+from autobyteus_server.codeverse.core.code_entities.function_entity import FunctionEntity
+from autobyteus_server.codeverse.core.code_entities.method_entity import MethodEntity
+from autobyteus_server.codeverse.core.code_entities.module_entity import ModuleEntity
 
 
 

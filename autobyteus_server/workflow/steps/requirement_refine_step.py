@@ -5,7 +5,7 @@ This module contains the RequirementRefineStep class, which represents the requi
 """
 
 
-from autobyteus.workflow.types.base_step import BaseStep
+from autobyteus_server.workflow.types.base_step import BaseStep
 
 
 class RequirementRefineStep(BaseStep):

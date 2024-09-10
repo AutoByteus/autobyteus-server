@@ -3,9 +3,9 @@ test_generation_step.py
 
 This module contains the TestGenerationStep class, which represents the test generation step of the automated coding workflow.
 """
-from autobyteus.prompt.prompt_template import PromptTemplate
-from autobyteus.prompt.prompt_template_variable import PromptTemplateVariable
-from autobyteus.workflow.types.base_step import BaseStep
+from autobyteus_server.prompt.prompt_template import PromptTemplate
+from autobyteus_server.prompt.prompt_template_variable import PromptTemplateVariable
+from autobyteus_server.workflow.types.base_step import BaseStep
 
 
 class TestsGenerationStep(BaseStep):

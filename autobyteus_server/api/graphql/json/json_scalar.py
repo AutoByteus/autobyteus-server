@@ -1,7 +1,7 @@
 import json
 import strawberry
 from typing import Any
-from autobyteus.api.graphql.json.custom_json_encoder import CustomJSONEncoder
+from autobyteus_server.api.graphql.json.custom_json_encoder import CustomJSONEncoder
 
 
 @strawberry.scalar(name="JSON")

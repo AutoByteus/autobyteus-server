@@ -10,10 +10,10 @@ import tempfile
 import textwrap
 from typing import List
 import pytest
-from autobyteus.codeverse.search.search_service import SearchService
-from autobyteus.codeverse.core.code_entities.function_entity import FunctionEntity
-from autobyteus.codeverse.index.index_service import IndexService
-from autobyteus.codeverse.core.code_parser.code_file_parser import CodeFileParser
+from autobyteus_server.codeverse.search.search_service import SearchService
+from autobyteus_server.codeverse.core.code_entities.function_entity import FunctionEntity
+from autobyteus_server.codeverse.index.index_service import IndexService
+from autobyteus_server.codeverse.core.code_parser.code_file_parser import CodeFileParser
 
 
 @pytest.fixture

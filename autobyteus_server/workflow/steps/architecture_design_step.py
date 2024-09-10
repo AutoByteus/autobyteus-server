@@ -5,7 +5,7 @@ This module contains the DesignStep class, which represents the design stage of 
 """
 
 
-from autobyteus.workflow.types.base_step import BaseStep
+from autobyteus_server.workflow.types.base_step import BaseStep
 
 
 class ArchitectureDesignStep(BaseStep):

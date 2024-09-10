@@ -11,8 +11,8 @@ Classes:
     - FunctionEntity: Represents a function in a codebase.
 """
 import json
-from autobyteus.codeverse.core.code_entities.base_entity import CodeEntity
-from autobyteus.codeverse.core.code_entities.code_entity_type import CodeEntityType
+from autobyteus_server.codeverse.core.code_entities.base_entity import CodeEntity
+from autobyteus_server.codeverse.core.code_entities.code_entity_type import CodeEntityType
 
 
 class FunctionEntity(CodeEntity):

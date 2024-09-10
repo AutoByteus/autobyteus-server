@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import patch, Mock
-from autobyteus.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
-from autobyteus.workspaces.workspace_tools_service import WorkspaceToolsService
-from autobyteus.workspaces.setting.workspace_setting import WorkspaceSetting
+from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
+from autobyteus_server.workspaces.workspace_tools_service import WorkspaceToolsService
+from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
 
 @pytest.fixture
 def service():
@@ -38,7 +38,7 @@ def test_refactor_workspace_with_setting(service: WorkspaceToolsService, mock_re
     Test refactoring a workspace with an available workspace setting.
     """
     with patch.object(service, "setting_registry", mock_registry_with_setting):
-        with patch("autobyteus.workspaces.workspace_tools_service.WorkspaceRefactorer") as MockRefactorer:
+        with patch("autobyteus_server.workspaces.workspace_tools_service.WorkspaceRefactorer") as MockRefactorer:
             mock_instance = MockRefactorer.return_value
             service.refactor_workspace("/path/to/workspace")
             mock_instance.execute.assert_called_once()

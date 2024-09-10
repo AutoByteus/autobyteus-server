@@ -11,11 +11,11 @@ Classes:
 
 
 
-from autobyteus.codeverse.core.code_entities.base_entity import CodeEntity
-from autobyteus.embeding.embedding_creator_factory import get_embedding_creator
-from autobyteus.storage.embedding.storage.base_storage import BaseStorage
-from autobyteus.storage.embedding.storage.storage_factory import get_storage
-from autobyteus.utils.singleton import SingletonMeta
+from autobyteus_server.codeverse.core.code_entities.base_entity import CodeEntity
+from autobyteus_server.embeding.embedding_creator_factory import get_embedding_creator
+from autobyteus_server.storage.embedding.storage.base_storage import BaseStorage
+from autobyteus_server.storage.embedding.storage.storage_factory import get_storage
+from autobyteus_server.utils.singleton import SingletonMeta
 
 
 class IndexService(metaclass=SingletonMeta):

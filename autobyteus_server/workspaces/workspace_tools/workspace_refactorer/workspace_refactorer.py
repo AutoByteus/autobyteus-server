@@ -7,12 +7,12 @@ classes, tailored to the unique requirements of each project type like Python, J
 """
 
 
-from autobyteus.workspaces.setting.project_types import ProjectType
-from autobyteus.workspaces.setting.workspace_setting import WorkspaceSetting
-from autobyteus.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
-from autobyteus.workspaces.workspace_tools.workspace_refactorer.java_project_refactorer import JavaProjectRefactorer
-from autobyteus.workspaces.workspace_tools.workspace_refactorer.nodejs_project_refactorer import NodeJSProjectRefactorer
-from autobyteus.workspaces.workspace_tools.workspace_refactorer.python_project_refactorer import PythonProjectRefactorer
+from autobyteus_server.workspaces.setting.project_types import ProjectType
+from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
+from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
+from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.java_project_refactorer import JavaProjectRefactorer
+from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.nodejs_project_refactorer import NodeJSProjectRefactorer
+from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.python_project_refactorer import PythonProjectRefactorer
 
 
 class WorkspaceRefactorer(BaseWorkspaceTool):

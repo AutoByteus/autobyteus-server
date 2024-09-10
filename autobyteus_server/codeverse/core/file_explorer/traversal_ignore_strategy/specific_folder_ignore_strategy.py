@@ -4,7 +4,7 @@ import os
 from typing import List
 import pathlib
 
-from autobyteus.codeverse.core.file_explorer.traversal_ignore_strategy.traversal_ignore_strategy import TraversalIgnoreStrategy
+from autobyteus_server.codeverse.core.file_explorer.traversal_ignore_strategy.traversal_ignore_strategy import TraversalIgnoreStrategy
 
 class SpecificFolderIgnoreStrategy(TraversalIgnoreStrategy):
     """

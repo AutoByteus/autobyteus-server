@@ -11,9 +11,9 @@ Classes:
 """
 
 import ast
-from autobyteus.codeverse.core.code_entities.class_entity import ClassEntity
-from autobyteus.codeverse.core.code_entities.function_entity import FunctionEntity
-from autobyteus.codeverse.core.code_entities.method_entity import MethodEntity
+from autobyteus_server.codeverse.core.code_entities.class_entity import ClassEntity
+from autobyteus_server.codeverse.core.code_entities.function_entity import FunctionEntity
+from autobyteus_server.codeverse.core.code_entities.method_entity import MethodEntity
 
 
 class AstNodeVisitor(ast.NodeVisitor):

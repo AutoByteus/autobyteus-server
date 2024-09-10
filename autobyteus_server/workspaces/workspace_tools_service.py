@@ -9,13 +9,13 @@ receives contextually relevant tool information.
 
 import logging
 from typing import List
-from autobyteus.utils.singleton import SingletonMeta
-from autobyteus.workspaces.setting.workspace_setting_registry import WorkspaceSettingRegistry
-from autobyteus.workspaces.workspace_tools.types import WorkspaceToolData
-from autobyteus.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
-from autobyteus.workspaces.workspace_tools.workspace_refactorer.workspace_refactorer import WorkspaceRefactorer
-from autobyteus.workflow.automated_coding_workflow import AutomatedCodingWorkflow
-from autobyteus.workspaces.workspace_tools.workspace_tools_registry import WorkspaceToolsRegistry
+from autobyteus_server.utils.singleton import SingletonMeta
+from autobyteus_server.workspaces.setting.workspace_setting_registry import WorkspaceSettingRegistry
+from autobyteus_server.workspaces.workspace_tools.types import WorkspaceToolData
+from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
+from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.workspace_refactorer import WorkspaceRefactorer
+from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
+from autobyteus_server.workspaces.workspace_tools.workspace_tools_registry import WorkspaceToolsRegistry
 
 class WorkspaceToolsService(metaclass=SingletonMeta):
     """

@@ -9,11 +9,11 @@ import logging
 from typing import List
 import strawberry
 from strawberry.scalars import JSON
-from autobyteus.workflow.automated_coding_workflow import AutomatedCodingWorkflow
-from autobyteus.codeverse.search.search_result import SearchResult
-from autobyteus.codeverse.search.search_service import SearchService
-from autobyteus.workspaces.workspace_manager import WorkspaceManager
-from autobyteus.workspaces.workspace_tools_service import WorkspaceToolsService
+from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
+from autobyteus_server.codeverse.search.search_result import SearchResult
+from autobyteus_server.codeverse.search.search_service import SearchService
+from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
+from autobyteus_server.workspaces.workspace_tools_service import WorkspaceToolsService
 
 # Singleton instances
 workspace_manager = WorkspaceManager()

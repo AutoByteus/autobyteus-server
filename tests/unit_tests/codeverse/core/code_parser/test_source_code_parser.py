@@ -1,8 +1,8 @@
 import pytest
 import tempfile
 import textwrap
-from autobyteus.codeverse.core.code_entities.module_entity import ModuleEntity
-from autobyteus.codeverse.core.code_parser.code_file_parser import CodeFileParser
+from autobyteus_server.codeverse.core.code_entities.module_entity import ModuleEntity
+from autobyteus_server.codeverse.core.code_parser.code_file_parser import CodeFileParser
 
 def test_parser_handles_file_with_function_and_class():
     # Arrange

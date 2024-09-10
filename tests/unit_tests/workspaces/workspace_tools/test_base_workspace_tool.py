@@ -1,5 +1,5 @@
 import pytest
-from autobyteus.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
+from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
 
 def test_base_workspace_tool_abstract_nature():
     """

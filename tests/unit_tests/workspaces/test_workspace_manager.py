@@ -4,10 +4,10 @@ This module provides tests for the WorkspaceManager.
 
 import os
 import tempfile
-from autobyteus.codeverse.core.file_explorer.directory_traversal import DirectoryTraversal
-from autobyteus.workspaces.workspace_manager import WorkspaceManager
-from autobyteus.codeverse.core.file_explorer.tree_node import TreeNode
-from autobyteus.workspaces.setting.workspace_setting import WorkspaceSetting
+from autobyteus_server.codeverse.core.file_explorer.directory_traversal import DirectoryTraversal
+from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
+from autobyteus_server.codeverse.core.file_explorer.tree_node import TreeNode
+from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
 
 def test_should_add_workspace_successfully():
     """

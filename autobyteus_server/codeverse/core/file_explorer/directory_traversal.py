@@ -3,10 +3,10 @@
 import os
 import pathlib
 from typing import List, Optional
-from autobyteus.codeverse.core.file_explorer.traversal_ignore_strategy.traversal_ignore_strategy import TraversalIgnoreStrategy
-from autobyteus.codeverse.core.file_explorer.tree_node import TreeNode
-from autobyteus.codeverse.core.file_explorer.sort_strategy.default_sort_strategy import DefaultSortStrategy
-from autobyteus.codeverse.core.file_explorer.sort_strategy.sort_strategy import SortStrategy
+from autobyteus_server.codeverse.core.file_explorer.traversal_ignore_strategy.traversal_ignore_strategy import TraversalIgnoreStrategy
+from autobyteus_server.codeverse.core.file_explorer.tree_node import TreeNode
+from autobyteus_server.codeverse.core.file_explorer.sort_strategy.default_sort_strategy import DefaultSortStrategy
+from autobyteus_server.codeverse.core.file_explorer.sort_strategy.sort_strategy import SortStrategy
 
 
 class DirectoryTraversal:

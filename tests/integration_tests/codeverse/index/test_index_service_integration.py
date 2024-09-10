@@ -7,9 +7,9 @@ Integration tests for the IndexService class to ensure that it correctly indexes
 
 import tempfile
 import pytest
-from autobyteus.codeverse.index.index_service import IndexService
-from autobyteus.codeverse.core.code_entities.function_entity import FunctionEntity
-from autobyteus.codeverse.core.code_parser.code_file_parser import CodeFileParser
+from autobyteus_server.codeverse.index.index_service import IndexService
+from autobyteus_server.codeverse.core.code_entities.function_entity import FunctionEntity
+from autobyteus_server.codeverse.core.code_parser.code_file_parser import CodeFileParser
 
 @pytest.fixture
 def valid_function_entity():

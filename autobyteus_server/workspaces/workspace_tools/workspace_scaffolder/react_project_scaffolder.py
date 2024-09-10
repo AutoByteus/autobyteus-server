@@ -6,7 +6,7 @@ It extends the base scaffolder class to offer React-specific scaffolding capabil
 """
 
 
-from autobyteus.workspaces.workspace_tools.workspace_scaffolder.base_project_scaffolder import BaseProjectScaffolder
+from autobyteus_server.workspaces.workspace_tools.workspace_scaffolder.base_project_scaffolder import BaseProjectScaffolder
 
 
 class ReactProjectScaffolder(BaseProjectScaffolder):

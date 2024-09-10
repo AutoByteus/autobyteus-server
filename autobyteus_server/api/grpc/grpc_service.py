@@ -3,11 +3,11 @@ autobyteus/services/grpc_service.py: Provides a gRPC service implementation for 
 """
 
 
-import autobyteus.proto.grpc_service_pb2 as automated_coding_workflow_pb2
-import autobyteus.proto.grpc_service_pb2_grpc as automated_coding_workflow_pb2_grpc
-from autobyteus.workflow.automated_coding_workflow import AutomatedCodingWorkflow
-from autobyteus.workflow.config import WORKFLOW_CONFIG
-from autobyteus.workflow.types.workflow_template_config import StepsTemplateConfig
+import autobyteus_server.proto.grpc_service_pb2 as automated_coding_workflow_pb2
+import autobyteus_server.proto.grpc_service_pb2_grpc as automated_coding_workflow_pb2_grpc
+from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
+from autobyteus_server.workflow.config import WORKFLOW_CONFIG
+from autobyteus_server.workflow.types.workflow_template_config import StepsTemplateConfig
 
 class AutomatedCodingWorkflowService(automated_coding_workflow_pb2_grpc.AutomatedCodingWorkflowServiceServicer):
     """

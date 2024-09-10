@@ -6,7 +6,7 @@ The Workflow class allows adding tasks, executing the entire workflow, and retri
 """
 
 from typing import List, Any
-from autobyteus.workflow.task import Task
+from autobyteus_server.workflow.task import Task
 
 class Workflow:
     def __init__(self):

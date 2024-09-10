@@ -1,6 +1,6 @@
 import pytest
-from autobyteus.workspaces.workspace_tools.workspace_tools_registry import WorkspaceToolsRegistry
-from autobyteus.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
+from autobyteus_server.workspaces.workspace_tools.workspace_tools_registry import WorkspaceToolsRegistry
+from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
 
 # Mock classes for testing purposes
 class MockValidTool1(BaseWorkspaceTool):

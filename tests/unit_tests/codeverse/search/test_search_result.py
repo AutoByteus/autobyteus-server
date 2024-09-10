@@ -3,8 +3,8 @@
 import json
 import pytest
 
-from autobyteus.codeverse.search.search_result import ScoredEntity, SearchResult
-from autobyteus.codeverse.core.code_entities.base_entity import CodeEntity
+from autobyteus_server.codeverse.search.search_result import ScoredEntity, SearchResult
+from autobyteus_server.codeverse.core.code_entities.base_entity import CodeEntity
 
 # Corrected Mock class for CodeEntity to test against
 class MockCodeEntity(CodeEntity):

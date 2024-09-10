@@ -1,5 +1,5 @@
-from autobyteus.prompt.prompt_template import PromptTemplate
-from autobyteus.workflow.types.base_step import BaseStep
+from autobyteus_server.prompt.prompt_template import PromptTemplate
+from autobyteus_server.workflow.types.base_step import BaseStep
 
 
 class SubtaskImplementationStep(BaseStep):

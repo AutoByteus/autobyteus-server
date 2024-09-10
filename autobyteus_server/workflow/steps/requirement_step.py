@@ -7,9 +7,9 @@ This module contains the RequirementStep class, derived from the Step base class
 """
 
 from typing_extensions import override
-from autobyteus.prompt.prompt_template import PromptTemplate
-from autobyteus.prompt.prompt_template_variable import PromptTemplateVariable
-from autobyteus.workflow.types.base_step import BaseStep
+from autobyteus_server.prompt.prompt_template import PromptTemplate
+from autobyteus_server.prompt.prompt_template_variable import PromptTemplateVariable
+from autobyteus_server.workflow.types.base_step import BaseStep
 
 class RequirementStep(BaseStep):
     name = "requirement"

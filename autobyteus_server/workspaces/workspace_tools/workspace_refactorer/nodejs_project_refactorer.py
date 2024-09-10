@@ -3,7 +3,7 @@
 
 
 
-from autobyteus.workspaces.workspace_tools.workspace_refactorer.base_project_refactorer import BaseProjectRefactorer
+from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.base_project_refactorer import BaseProjectRefactorer
 
 
 class NodeJSProjectRefactorer(BaseProjectRefactorer):

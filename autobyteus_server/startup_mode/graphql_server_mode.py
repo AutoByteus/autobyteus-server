@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from autobyteus.api.graphql.schema import schema
+from autobyteus_server.api.graphql.schema import schema
 from strawberry.fastapi import GraphQLRouter
 
 

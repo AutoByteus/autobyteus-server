@@ -2,8 +2,8 @@
 
 
 
-from autobyteus.workspaces.setting.project_types import ProjectType
-from autobyteus.workspaces.workspace_directory_tree import WorkspaceDirectoryTree
+from autobyteus_server.workspaces.setting.project_types import ProjectType
+from autobyteus_server.workspaces.workspace_directory_tree import WorkspaceDirectoryTree
 
 
 class WorkspaceSetting:
