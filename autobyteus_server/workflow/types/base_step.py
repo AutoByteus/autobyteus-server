@@ -16,7 +16,7 @@ and implement the required abstract methods and the execute method.
 """
 
 from abc import ABC, abstractmethod
-from autobyteus_server.prompt.prompt_template import PromptTemplate
+from autobyteus.prompt.prompt_template import PromptTemplate
 from autobyteus_server.workflow.types.base_workflow import BaseWorkflow
 from autobyteus_server.workflow.utils.unique_id_generator import UniqueIDGenerator
 

@@ -24,8 +24,6 @@ class WorkspaceSetting:
         self.project_type = project_type
         self.directory_tree: WorkspaceDirectoryTree = directory_tree
 
-    # Rest of the class...
-
     @property
     def project_type(self) -> ProjectType:
         """
