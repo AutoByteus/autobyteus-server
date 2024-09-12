@@ -9,54 +9,43 @@ import logging
 import strawberry
 from typing import List, Optional
 from autobyteus_server.workflow.steps.subtask_implementation.subtask_implementation_step import SubtaskImplementationStep
-from autobyteus.tools.file_tool import FileTool
-from autobyteus.llm.models import LLMModel
 from autobyteus.llm.llm_factory import LLMFactory
+from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
+from autobyteus_server.api.graphql.types.llm_model_types import LLMModel, convert_to_original_llm_model
 
 # Logger setup
 logger = logging.getLogger(__name__)
 
+workspace_manager = WorkspaceManager()
+
 @strawberry.type
 class SubtaskImplementationMutation:
     @strawberry.mutation
-    async def run_subtask_implementation(
-        self, 
-        context_file_paths: List[str], 
-        implementation_requirement: str,
+    async def send_implementation_requirement(
+        self,
         workspace_root_path: str,
+        step_id: str,
+        context_file_paths: List[str],
+        implementation_requirement: str,
         llm_model: Optional[LLMModel] = None
     ) -> str:
-        """
-        Runs the subtask implementation step with the provided context file paths, implementation requirement, and LLM model.
-
-        Args:
-            context_file_paths (List[str]): List of file paths to include in the context for implementation.
-            implementation_requirement (str): The requirement for the subtask implementation.
-            workspace_root_path (str): The root path of the workspace.
-            llm_model (Optional[LLMModel]): The LLM model to use for the implementation. 
-                                            Defaults to Claude 3.5 Sonnet if not specified.
-
-        Returns:
-            str: The result of the subtask implementation.
-        """
         try:
-            # Use Claude 3.5 Sonnet as default if no model is specified
-            if llm_model is None:
-                llm_model = LLMModel.CLAUDE_3_5_SONNET
+            workflow = workspace_manager.workflows.get(workspace_root_path)
+            if not workflow:
+                return f"Error: No workflow found for workspace {workspace_root_path}"
 
-            # Initialize LLM using the factory
-            llm_factory = LLMFactory()
-            llm = llm_factory.create_llm(llm_model)
+            step = workflow.get_step(step_id)
+            if not isinstance(step, SubtaskImplementationStep):
+                return f"Error: Step {step_id} is not a SubtaskImplementationStep"
 
-            # Initialize tools
-            tools = [FileTool()]  # Add more tools as needed
+            original_llm_model = convert_to_original_llm_model(llm_model)
 
-            # Create and execute the subtask implementation step
-            step = SubtaskImplementationStep(llm, tools)
-            result = await step.execute(context_file_paths, implementation_requirement)
+            response = await step.process_requirement(
+                context_file_paths, 
+                implementation_requirement, 
+                original_llm_model
+            )
+            return response
 
-            return result
         except Exception as e:
-            error_message = f"Error while running subtask implementation: {str(e)}"
-            logger.error(error_message)
-            return json.dumps({"error": error_message})
+            return f"Error processing implementation requirement: {str(e)}"

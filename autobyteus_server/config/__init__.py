@@ -5,7 +5,7 @@ from typing import Dict
 import yaml
 
 from autobyteus_server.config.config_parser import ConfigParser, TOMLConfigParser
-from autobyteus_server.utils.singleton import SingletonMeta
+from autobyteus.utils.singleton import SingletonMeta
 from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
 
 

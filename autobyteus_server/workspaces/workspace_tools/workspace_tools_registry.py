@@ -6,7 +6,7 @@ of all available workspace tools. Tools can be registered and fetched using this
 """
 
 from typing import List, Type
-from autobyteus_server.utils.singleton import SingletonMeta
+from autobyteus.utils.singleton import SingletonMeta
 from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
 from autobyteus_server.workspaces.workspace_tools.workspace_indexer.workspace_indexer import WorkspaceIndexer
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.workspace_refactorer import WorkspaceRefactorer

@@ -68,20 +68,36 @@ class AutomatedCodingWorkflow:
 
         return json.dumps(workflow_data)
     
+    def get_step(self, step_id: str) -> Optional[BaseStep]:
+        """
+        Retrieve a step from the workflow based on its ID.
+
+        Args:
+            step_id (str): The ID of the step to retrieve.
+
+        Returns:
+            Optional[BaseStep]: The step instance if found, None otherwise.
+        """
+        return self.steps.get(step_id)
+
     def execute_step(self, step_id: str) -> Optional[str]:
         """
         Execute a specific step within the workflow using its ID.
 
-        :param step_id: The ID of the step to execute.
-        :return: The step result or None if the step_id is invalid.
-        :raises ValueError: If the provided step_id is invalid.
+        Args:
+            step_id (str): The ID of the step to execute.
+
+        Returns:
+            Optional[str]: The step result or None if the step_id is invalid.
+
+        Raises:
+            ValueError: If the provided step_id is invalid.
         """
-        step = self.steps.get(step_id)
+        step = self.get_step(step_id)
         if step:
             return step.execute()
         else:
             raise ValueError(f"Invalid step_id: {step_id}")
-
 
     def start_workflow(self):
         """

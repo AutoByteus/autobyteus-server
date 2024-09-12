@@ -1,53 +1,66 @@
-from autobyteus.prompt.prompt_builder import PromptBuilder
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus.agent.agent import StandaloneAgent
 from autobyteus.llm.base_llm import BaseLLM
+from autobyteus.llm.models import LLMModel
+from autobyteus.llm.llm_factory import LLMFactory
 from autobyteus.tools.base_tool import BaseTool
+from autobyteus.prompt.prompt_builder import PromptBuilder
 from typing import List, Optional
-import os
 
 class SubtaskImplementationStep(BaseStep):
     name = "implementation"
 
-    def __init__(self, llm: BaseLLM, tools: List[BaseTool]):
-        super().__init__()
-        self.llm = llm
-        self.tools = tools
-        self.context_file_paths: Optional[List[str]] = None
-        self.implementation_requirement: Optional[str] = None
+    def __init__(self, workflow):
+        super().__init__(workflow)
+        self.tools = [FileTool()]  # Add more tools as needed
+        self.agent: Optional[StandaloneAgent] = None
 
-    def construct_prompt(self) -> str:
-        context = self._construct_context()
-        prompt_builder = PromptBuilder.from_file("subtask_implementation.prompt")
-        prompt = (prompt_builder
-                  .set_variable_value("implementation_requirement", self.implementation_requirement)
-                  .set_variable_value("context", context)
-                  .build())
-        return prompt
-
-    def _construct_context(self) -> str:
+    def _construct_context(self, context_file_paths: List[str]) -> str:
         context = ""
-        for path in self.context_file_paths:
+        for path in context_file_paths:
             with open(path, 'r') as file:
                 content = file.read()
                 context += f"File: {path}\n{content}\n\n"
         return context
 
-    async def execute(self, context_file_paths: List[str], implementation_requirement: str) -> str:
-        self.context_file_paths = context_file_paths
-        self.implementation_requirement = implementation_requirement
+    def construct_initial_prompt(self, requirement: str, context: str) -> str:
+        prompt_builder = PromptBuilder.from_file("subtask_implementation.prompt")
+        prompt = (prompt_builder
+                  .set_variable_value("implementation_requirement", requirement)
+                  .set_variable_value("context", context)
+                  .build())
+        return prompt
 
-        agent = self._create_agent()
-        await agent.run()
-        return agent.conversation.get_last_assistant_message()
+    async def process_requirement(
+        self, 
+        requirement: str, 
+        context_file_paths: List[str], 
+        llm_model: Optional[LLMModel] = None
+    ) -> str:
+        if llm_model and not self.agent:
+            # This is the initial call
+            llm_factory = LLMFactory()
+            llm = llm_factory.create_llm(llm_model)
+            context = self._construct_context(context_file_paths)
+            initial_prompt = self.construct_initial_prompt(requirement, context)
+            self.agent = self._create_agent(llm, initial_prompt)
+            self.agent.start()
+            return self.agent.conversation.get_last_assistant_message()
 
-    def _create_agent(self) -> StandaloneAgent:
+        if not self.agent:
+            raise ValueError("Agent not initialized. Provide LLM model for the initial call.")
+
+        # For subsequent calls
+        context = self._construct_context(context_file_paths)
+        prompt = self.construct_initial_prompt(requirement, context)
+        await self.agent.receive_user_message(prompt)
+        return self.agent.conversation.get_last_assistant_message()
+
+    def _create_agent(self, llm: BaseLLM, initial_prompt: str) -> StandaloneAgent:
         agent_id = f"subtask_implementation_{id(self)}"
-        initial_prompt = self.construct_prompt()
-
         return StandaloneAgent(
             role="Subtask_Implementation",
-            llm=self.llm,
+            llm=llm,
             tools=self.tools,
             use_xml_parser=True,
             agent_id=agent_id,

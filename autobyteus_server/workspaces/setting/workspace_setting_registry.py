@@ -7,7 +7,7 @@ and the corresponding WorkspaceSetting object as the value.
 """
 
 from typing import Dict, Optional
-from autobyteus_server.utils.singleton import SingletonMeta
+from autobyteus.utils.singleton import SingletonMeta
 from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
 
 

@@ -16,9 +16,11 @@ and implement the required abstract methods and the execute method.
 """
 
 from abc import ABC, abstractmethod
+from typing import List, Optional
 from autobyteus.prompt.prompt_template import PromptTemplate
 from autobyteus_server.workflow.types.base_workflow import BaseWorkflow
 from autobyteus_server.workflow.utils.unique_id_generator import UniqueIDGenerator
+from autobyteus.llm.models import LLMModel
 
 
 class BaseStep(ABC):
@@ -27,8 +29,8 @@ class BaseStep(ABC):
     Each step should inherit from this class and implement the required methods.
     """
 
-    name = None
-    prompt_template: PromptTemplate = None  # Instance of PromptTemplate
+    name: str
+    prompt_template: str
 
     def __init__(self, workflow: BaseWorkflow):
         self.id = UniqueIDGenerator.generate_id()
@@ -48,30 +50,35 @@ class BaseStep(ABC):
         }
 
     @abstractmethod
-    def construct_prompt(self) -> str:
+    def construct_initial_prompt(self, requirement: str, context: str) -> str:
         """
-        Construct the prompt for this step.
-
-        Returns:
-            str: The constructed prompt for this step.
-        """
-        pass
-
-    @abstractmethod
-    def process_response(self, response: str) -> None:
-        """
-        Process the response from the LLM API for this step.
+        Construct the initial prompt for the step.
 
         Args:
-            response (str): The LLM API response as a string.
+            requirement (str): The requirement for the step.
+            context (str): The context string for the step.
+
+        Returns:
+            str: The constructed initial prompt for the step.
         """
         pass
 
     @abstractmethod
-    def execute(self) -> None:
+    async def process_requirement(
+        self, 
+        requirement: str, 
+        context_file_paths: List[str], 
+        llm_model: Optional[LLMModel] = None
+    ) -> str:
         """
-        Execute the step.
+        Process the requirement for the step.
 
-        This method should be implemented in derived classes to define the step's execution logic.
+        Args:
+            requirement (str): The requirement to be processed.
+            context_file_paths (List[str]): List of file paths providing context.
+            llm_model (Optional[LLMModel]): The LLM model to be used, if any.
+
+        Returns:
+            str: The processed result.
         """
-        raise NotImplementedError("Derived classes must implement the execute method.")
+        pass

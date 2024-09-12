@@ -6,7 +6,7 @@ Each tool should inherit from the `BaseWorkspaceTool` class and provide
 necessary implementations.
 """
 from abc import ABC, abstractmethod
-from autobyteus_server.prompt.prompt_template import PromptTemplate
+from autobyteus.prompt.prompt_template import PromptTemplate
 from autobyteus_server.workflow.utils.unique_id_generator import UniqueIDGenerator
 
 from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting

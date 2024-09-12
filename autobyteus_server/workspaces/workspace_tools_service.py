@@ -9,7 +9,7 @@ receives contextually relevant tool information.
 
 import logging
 from typing import List
-from autobyteus_server.utils.singleton import SingletonMeta
+from autobyteus.utils.singleton import SingletonMeta
 from autobyteus_server.workspaces.setting.workspace_setting_registry import WorkspaceSettingRegistry
 from autobyteus_server.workspaces.workspace_tools.types import WorkspaceToolData
 from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool

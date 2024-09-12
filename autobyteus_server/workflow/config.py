@@ -11,7 +11,7 @@ For example, the 'requirement_step' has a 'refine' substep with its own class.
 from autobyteus_server.workflow.steps.requirement_refine_step import RequirementRefineStep
 from autobyteus_server.workflow.steps.requirement_step import RequirementStep
 from autobyteus_server.workflow.steps.tests_generation_step import TestsGenerationStep
-from autobyteus_server.workflow.steps.subtask_implementation_step import SubtaskImplementationStep
+from autobyteus_server.workflow.steps.subtask_implementation.subtask_implementation_step import SubtaskImplementationStep
 from autobyteus_server.workflow.steps.run_tests_step import RunTestsStep
 from autobyteus_server.workflow.types.workflow_template_config import WorkflowTemplateStepsConfig
 

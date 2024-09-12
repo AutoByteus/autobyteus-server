@@ -7,11 +7,7 @@ This module combines all GraphQL queries and mutations to form the main GraphQL 
 import strawberry
 from autobyteus_server.api.graphql.mutations import workspace_mutations, subtask_implementation_mutations
 from autobyteus_server.api.graphql.queries import workspace_queries
-from autobyteus.llm.models import LLMModel
-
 # Make sure to expose the LLMModel enum to GraphQL
-LLMModelEnum = strawberry.enum(LLMModel)
-
 @strawberry.type
 class Query(workspace_queries.Query):
     pass
@@ -23,4 +19,4 @@ class Mutation(
 ):
     pass
 
-schema = strawberry.Schema(query=Query, mutation=Mutation, enums=[LLMModelEnum])
+schema = strawberry.Schema(query=Query, mutation=Mutation)

@@ -3,14 +3,16 @@ test_generation_step.py
 
 This module contains the TestGenerationStep class, which represents the test generation step of the automated coding workflow.
 """
-from autobyteus_server.prompt.prompt_template import PromptTemplate
-from autobyteus_server.prompt.prompt_template_variable import PromptTemplateVariable
+from typing import List, Optional
+from autobyteus.llm.models import LLMModel
+from autobyteus.prompt.prompt_template import PromptTemplate
+from autobyteus.prompt.prompt_template_variable import PromptTemplateVariable
 from autobyteus_server.workflow.types.base_step import BaseStep
 
 
 class TestsGenerationStep(BaseStep):
     name = "generate_tests"
-   # Define the PromptTemplateVariable
+    # Define the PromptTemplateVariable
     code_variable = PromptTemplateVariable(name="code", 
                                            source=PromptTemplateVariable.SOURCE_USER_INPUT, 
                                            allow_code_context_building=True, 
@@ -50,42 +52,62 @@ class TestsGenerationStep(BaseStep):
 
         Think and reason yourself in high detail to address the task.
 
-
         [Code]
         {code}
         """,
         variables=[code_variable]
     )
     
-    """
-    TestGenerationStep handles the processing of the response from the LLM API
-    for the test generation step of the automated coding workflow.
-    """
-
-    def construct_prompt(self) -> str:
+    def construct_initial_prompt(self, requirement: str, context: str) -> str:
         """
-        Construct the prompt for the test generation step.
+        Construct the initial prompt for the test generation step.
+
+        Args:
+            requirement (str): The requirement for the test generation step.
+            context (str): The context string for the test generation step.
 
         Returns:
             str: The constructed prompt for the test generation step.
         """
-        prompt = "Please provide the requirements for the project:"
+        prompt = f"Please provide the requirements for the project:\n\nRequirement: {requirement}\n\nContext: {context}"
         return prompt
     
-    def process_response(self, response: str) -> None:
+    async def process_requirement(
+        self, 
+        requirement: str, 
+        context_file_paths: List[str], 
+        llm_model: Optional[LLMModel] = None
+    ) -> str:
         """
-        Process the response from the LLM API for the test generation step.
+        Process the requirement for the test generation step.
 
         Args:
-            response (str): The LLM API response as a string.
-        """
-        # Process the response specific to the test generation step.
-        pass  # Add test generation step-specific processing logic here.
+            requirement (str): The requirement to be processed.
+            context_file_paths (List[str]): List of file paths providing context.
+            llm_model (Optional[LLMModel]): The LLM model to be used, if any.
 
-    def execute(self) -> None:
+        Returns:
+            str: The processed result.
         """
-        Execute the step.
+        # Process the requirement specific to the test generation step.
+        # This is a placeholder implementation. You should replace it with actual logic.
+        context = self._construct_context(context_file_paths)
+        prompt = self.construct_initial_prompt(requirement, context)
+        
+        # Here you would typically use the LLM to generate the tests
+        # For now, we'll just return a placeholder message
+        return f"Test generation process initiated with prompt: {prompt}"
 
-        This method should be implemented in derived classes to define the step's execution logic.
+    def _construct_context(self, context_file_paths: List[str]) -> str:
         """
-        print("not doing anything now")
+        Construct the context string from the given file paths.
+
+        Args:
+            context_file_paths (List[str]): List of file paths to construct context from.
+
+        Returns:
+            str: The constructed context string.
+        """
+        # This is a placeholder implementation. You should replace it with actual logic
+        # to read the files and construct the context string.
+        return f"Context constructed from {len(context_file_paths)} files."
