@@ -21,9 +21,10 @@ from autobyteus.prompt.prompt_template import PromptTemplate
 from autobyteus_server.workflow.types.base_workflow import BaseWorkflow
 from autobyteus_server.workflow.utils.unique_id_generator import UniqueIDGenerator
 from autobyteus.llm.models import LLMModel
+from autobyteus.events.event_emitter import EventEmitter
 
 
-class BaseStep(ABC):
+class BaseStep(ABC, EventEmitter):
     """
     BaseStep is the abstract base class for all steps in the automated coding workflow.
     Each step should inherit from this class and implement the required methods.
@@ -33,6 +34,7 @@ class BaseStep(ABC):
     prompt_template: str
 
     def __init__(self, workflow: BaseWorkflow):
+        super().__init__()  # Initialize EventEmitter
         self.id = UniqueIDGenerator.generate_id()
         self.workflow = workflow
 

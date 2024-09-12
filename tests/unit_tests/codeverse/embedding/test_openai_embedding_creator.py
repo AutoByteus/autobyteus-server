@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from unittest.mock import patch, Mock
 
-from autobyteus_server.embeding.openai_embedding_creator import OpenAIEmbeddingCreator
+from autobyteus.embeding.openai_embedding_creator import OpenAIEmbeddingCreator
 
 
 @pytest.fixture
