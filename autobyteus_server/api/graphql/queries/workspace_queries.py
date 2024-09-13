@@ -47,27 +47,6 @@ class Query:
         return workflow.to_json()
 
     @strawberry.field
-    def search_code_entities(self, query: str) -> JSON:
-        """
-        Searches for relevant code entities based on the provided query.
-
-        Args:
-            query (str): The search query.
-
-        Returns:
-            JSON: The search results.
-        """
-        try:
-            search_result: SearchResult = search_service.search(query)
-            return search_result.to_json()
-        except Exception as e:
-            error_message = f"Error while searching code entities: {str(e)}"
-            logger.error(error_message)
-            return json.dumps({"error": error_message})
-
-
-
-    @strawberry.field
     def get_available_workspace_tools(self, workspace_root_path: str) -> List[WorkspaceTool]:
         try:
             tools_data = workspace_tools_service.get_available_tools(workspace_root_path)
