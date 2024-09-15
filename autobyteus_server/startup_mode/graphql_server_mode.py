@@ -18,7 +18,7 @@ def graphql_server_mode(config, host, port):
     app = FastAPI()
 
     origins = [
-        "http://localhost:5173",
+        "http://localhost:3000",
         # Add other origins if required
     ]
 

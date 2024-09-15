@@ -13,6 +13,7 @@ from autobyteus.events.event_emitter import EventEmitter
 
 class SubtaskImplementationStep(BaseStep, EventEmitter):
     name = "implementation"
+    prompt_template = ""
 
     def __init__(self, workflow):
         super().__init__(workflow)
