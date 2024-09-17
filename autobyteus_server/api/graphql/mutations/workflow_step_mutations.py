@@ -1,15 +1,13 @@
 """
-Module: subtask_implementation_mutations
+Module: workflow_step_mutations
 
-This module provides GraphQL mutations related to subtask implementation operations.
+This module provides GraphQL mutations related to workflow step operations.
 """
 
-import asyncio
-import json
 import logging
+from typing import List
 import strawberry
-from typing import List, Optional, AsyncGenerator
-from autobyteus_server.workflow.steps.subtask_implementation.subtask_implementation_step import SubtaskImplementationStep
+from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus.llm.models import LLMModel
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.api.graphql.types.llm_model_types import LLMModel as GraphQLLLMModel, convert_to_original_llm_model
@@ -20,7 +18,7 @@ logger = logging.getLogger(__name__)
 workspace_manager = WorkspaceManager()
 
 @strawberry.type
-class SubtaskImplementationMutation:
+class WorkflowStepMutation:
     @strawberry.mutation
     async def configure_step_llm(
         self,
@@ -46,12 +44,12 @@ class SubtaskImplementationMutation:
             return f"Error configuring LLM model: {str(e)}"
 
     @strawberry.mutation
-    async def send_implementation_requirement(
+    async def send_step_requirement(
         self,
         workspace_root_path: str,
         step_id: str,
         context_file_paths: List[str],
-        implementation_requirement: str
+        requirement: str
     ) -> str:
         try:
             workflow = workspace_manager.workflows.get(workspace_root_path)
@@ -59,15 +57,15 @@ class SubtaskImplementationMutation:
                 return f"Error: No workflow found for workspace {workspace_root_path}"
 
             step = workflow.get_step(step_id)
-            if not isinstance(step, SubtaskImplementationStep):
-                return f"Error: Step {step_id} is not a SubtaskImplementationStep"
+            if not isinstance(step, BaseStep):
+                return f"Error: Step {step_id} is not a valid workflow step"
 
             # Process the requirement
             await step.process_requirement(
-                implementation_requirement,
+                requirement,
                 context_file_paths
             )
-            return f"Requirement sent for processing. Subscribe to 'implementationResponse' for updates."
+            return f"Requirement sent for processing. Subscribe to 'stepResponse' for updates."
 
         except Exception as e:
-            return f"Error processing implementation requirement: {str(e)}"
+            return f"Error processing step requirement: {str(e)}"
