@@ -49,7 +49,7 @@ class AutomatedCodingWorkflow:
         for step_id, step_config in steps_config.items():
             step_class = step_config['step_class']
             step_instance: BaseStep = step_class(self)
-            self.steps[step_id] = step_instance
+            self.steps[step_instance.id] = step_instance
 
             if 'steps' in step_config:
                 self._initialize_steps(step_config['steps'])
