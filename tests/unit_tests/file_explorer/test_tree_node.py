@@ -2,7 +2,7 @@
 
 import json
 import pytest
-from autobyteus_server.codeverse.core.file_explorer.tree_node import TreeNode
+from autobyteus_server.file_explorer.tree_node import TreeNode
 
 
 def test_tree_node_init():

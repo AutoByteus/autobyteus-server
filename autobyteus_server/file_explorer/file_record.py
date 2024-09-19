@@ -1,4 +1,7 @@
+# autobyteus_server/file_explorer/file_record.py
+
 from typing import Optional
+
 
 class FileRecord:
     """

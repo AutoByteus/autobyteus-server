@@ -1,4 +1,4 @@
-# autobyteus/source_code_tree/file_explorer/traversal_ignore_strategy/traversal_ignore_strategy.py
+# autobyteus_server/file_explorer/traversal_ignore_strategy/traversal_ignore_strategy.py
 
 from abc import ABC, abstractmethod
 

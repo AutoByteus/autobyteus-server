@@ -1,4 +1,4 @@
-# autobyteus/workspaces/workspace_tools/workspace_refactorer/nodejs_project_refactorer.py
+# autobyteus_server/workspaces/workspace_tools/workspace_refactorer/nodejs_project_refactorer.py
 
 
 

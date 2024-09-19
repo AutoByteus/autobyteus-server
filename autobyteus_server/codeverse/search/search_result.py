@@ -1,4 +1,4 @@
-# autobyteus/semantic_code/search/search_result.py
+# autobyteus_server/semantic_code/search/search_result.py
 
 import json
 from typing import List

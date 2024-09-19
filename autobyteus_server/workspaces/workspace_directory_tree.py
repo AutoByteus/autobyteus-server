@@ -1,4 +1,4 @@
-from autobyteus_server.codeverse.core.file_explorer.tree_node import TreeNode
+from autobyteus_server.file_explorer.tree_node import TreeNode
 
 
 class WorkspaceDirectoryTree:

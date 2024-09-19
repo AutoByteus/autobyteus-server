@@ -8,8 +8,8 @@ best practices and standards specific to Python development.
 import logging
 from autobyteus.prompt.prompt_template import PromptTemplate
 from autobyteus.prompt.prompt_template_variable import PromptTemplateVariable
-from autobyteus_server.codeverse.core.file_explorer.file_reader import FileReader
-from autobyteus_server.codeverse.core.file_explorer.tree_node import TreeNode
+from autobyteus_server.file_explorer.file_reader import FileReader
+from autobyteus_server.file_explorer.tree_node import TreeNode
 from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
 from autobyteus_server.workspaces.workspace_directory_tree import WorkspaceDirectoryTree
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.base_project_refactorer import BaseProjectRefactorer

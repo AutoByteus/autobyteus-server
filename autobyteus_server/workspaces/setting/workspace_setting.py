@@ -1,4 +1,4 @@
-# autobyteus/workspaces/setting/workspace_setting.py
+# autobyteus_server/workspaces/setting/workspace_setting.py
 
 
 

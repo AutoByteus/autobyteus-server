@@ -1,4 +1,4 @@
-# autobyteus/workspaces/workspace_manager.py
+# autobyteus_server/workspaces/workspace_manager.py
 """
 This module provides a manager for handling operations related to workspaces.
 
@@ -12,17 +12,17 @@ by TreeNode objects is returned.
 import logging
 from typing import Dict, Optional
 
-from autobyteus_server.codeverse.core.file_explorer.directory_traversal import DirectoryTraversal
-from autobyteus_server.codeverse.core.file_explorer.sort_strategy.default_sort_strategy import DefaultSortStrategy
-from autobyteus_server.codeverse.core.file_explorer.traversal_ignore_strategy.git_ignore_strategy import GitIgnoreStrategy
-from autobyteus_server.codeverse.core.file_explorer.traversal_ignore_strategy.specific_folder_ignore_strategy import SpecificFolderIgnoreStrategy
+from autobyteus_server.file_explorer.directory_traversal import DirectoryTraversal
+from autobyteus_server.file_explorer.sort_strategy.default_sort_strategy import DefaultSortStrategy
+from autobyteus_server.file_explorer.traversal_ignore_strategy.git_ignore_strategy import GitIgnoreStrategy
+from autobyteus_server.file_explorer.traversal_ignore_strategy.specific_folder_ignore_strategy import SpecificFolderIgnoreStrategy
 from autobyteus.utils.singleton import SingletonMeta
 from autobyteus_server.workspaces.errors.workspace_already_exists_error import WorkspaceAlreadyExistsError
 from autobyteus_server.workspaces.workspace_tools.project_type_determiner import ProjectTypeDeterminer
 from autobyteus_server.workspaces.setting.workspace_setting_registry import WorkspaceSettingRegistry
 from autobyteus_server.workspaces.workspace_directory_tree import WorkspaceDirectoryTree
 from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
-from autobyteus_server.codeverse.core.file_explorer.tree_node import TreeNode
+from autobyteus_server.file_explorer.tree_node import TreeNode
 from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow  # Updated import
 
 

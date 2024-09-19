@@ -1,4 +1,4 @@
-# autobyteus/workspaces/setting/workspace_setting_registry.py
+# autobyteus_server/workspaces/setting/workspace_setting_registry.py
 """
 This module provides a registry for storing workspace settings.
 
