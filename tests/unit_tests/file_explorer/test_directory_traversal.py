@@ -12,6 +12,7 @@ from autobyteus_server.file_explorer.traversal_ignore_strategy.dot_ignore_strate
 from autobyteus_server.file_explorer.traversal_ignore_strategy.specific_folder_ignore_strategy import SpecificFolderIgnoreStrategy
 from autobyteus_server.file_explorer.sort_strategy.default_sort_strategy import DefaultSortStrategy
 
+
 @pytest.fixture
 def setup_basic_directory(tmp_path):
     """
@@ -33,6 +34,7 @@ def setup_basic_directory(tmp_path):
     for file in ["f", "g", "h"]:
         (A / f"{file}.txt").touch()
     return A
+
 
 @pytest.fixture
 def setup_nested_gitignore(tmp_path):
@@ -74,6 +76,7 @@ def setup_nested_gitignore(tmp_path):
     (A / "g.txt").touch()
     return A
 
+
 @pytest.fixture
 def setup_multiple_git_repos(tmp_path):
     """
@@ -109,6 +112,7 @@ def setup_multiple_git_repos(tmp_path):
     (A / "c2.txt").touch()
     return A
 
+
 @pytest.fixture
 def setup_specific_ignore_folders(tmp_path):
     """
@@ -128,20 +132,21 @@ def setup_specific_ignore_folders(tmp_path):
     venv = A / "venv"
     venv.mkdir()
     (venv / "v1.txt").touch()
-    
+
     pycache = A / "__pycache__"
     pycache.mkdir()
     (pycache / "p1.txt").touch()
-    
+
     # Folder not to ignore
     src = A / "src"
     src.mkdir()
     (src / "s1.txt").touch()
-    
+
     # File
     (A / "main.py").touch()
-    
+
     return A
+
 
 def traverse_to_dict(node: TreeNode) -> dict:
     """
@@ -157,18 +162,19 @@ def traverse_to_dict(node: TreeNode) -> dict:
         result["children"].append(traverse_to_dict(child))
     return result
 
+
 def test_basic_directory_structure(setup_basic_directory, capsys):
     """
     Test that directories are listed before files and both are sorted alphabetically.
     """
     A = setup_basic_directory
     traversal = DirectoryTraversal(
-        strategies=[],  # No global ignore strategies
+        strategies=[],  # No ignore strategies
         sort_strategy=DefaultSortStrategy()
     )
     tree = traversal.build_tree(str(A))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected_children = [
         {"name": "B", "path": str(A / "B"), "is_file": False, "children": []},
         {"name": "C", "path": str(A / "C"), "is_file": False, "children": []},
@@ -177,33 +183,37 @@ def test_basic_directory_structure(setup_basic_directory, capsys):
         {"name": "g.txt", "path": str(A / "g.txt"), "is_file": True, "children": []},
         {"name": "h.txt", "path": str(A / "h.txt"), "is_file": True, "children": []},
     ]
-    
+
     expected = {
         "name": "A",
         "path": str(A),
         "is_file": False,
         "children": expected_children
     }
-    
+
     # Debugging: Print the actual and expected tree_dict for inspection
     captured = capsys.readouterr()
     print("Actual Tree Structure:", tree_dict)
     print("Expected Tree Structure:", expected)
-    
+
     assert tree_dict == expected
+
 
 def test_nested_gitignore(setup_nested_gitignore):
     """
     Test that .gitignore files in nested directories are respected.
     """
     A = setup_nested_gitignore
+    # Initialize ignore strategies: Ignore .gitignore files and handle folder ignores
+    specific_ignore = SpecificFolderIgnoreStrategy(folders_to_ignore=[])  # No specific folders to ignore in this test
+    dot_ignore = DotIgnoreStrategy()
     traversal = DirectoryTraversal(
-        strategies=[DotIgnoreStrategy()],  # Use DotIgnoreStrategy to ignore .gitignore files
+        strategies=[dot_ignore],  # Use DotIgnoreStrategy to ignore .gitignore files
         sort_strategy=DefaultSortStrategy()
     )
     tree = traversal.build_tree(str(A))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected_children = [
         {"name": "B", "path": str(A / "B"), "is_file": False, "children": [
             {"name": "B1", "path": str(A / "B" / "B1"), "is_file": False, "children": [
@@ -218,28 +228,30 @@ def test_nested_gitignore(setup_nested_gitignore):
         {"name": "f.txt", "path": str(A / "f.txt"), "is_file": True, "children": []},
         # g.txt is ignored by root .gitignore
     ]
-    
+
     expected = {
         "name": "A",
         "path": str(A),
         "is_file": False,
         "children": expected_children
     }
-    
+
     assert tree_dict == expected
+
 
 def test_multiple_git_repositories(setup_multiple_git_repos):
     """
     Test handling of multiple .gitignore files in different repositories.
     """
     A = setup_multiple_git_repos
+    # Initialize ignore strategies: Ignore .gitignore files
     traversal = DirectoryTraversal(
         strategies=[DotIgnoreStrategy()],  # Use DotIgnoreStrategy to ignore .gitignore files
         sort_strategy=DefaultSortStrategy()
     )
     tree = traversal.build_tree(str(A))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected_children = [
         {"name": "Repo1", "path": str(A / "Repo1"), "is_file": False, "children": [
             {"name": "a2.txt", "path": str(A / "Repo1" / "a2.txt"), "is_file": True, "children": []},
@@ -252,15 +264,16 @@ def test_multiple_git_repositories(setup_multiple_git_repos):
         {"name": "c1.txt", "path": str(A / "c1.txt"), "is_file": True, "children": []},
         {"name": "c2.txt", "path": str(A / "c2.txt"), "is_file": True, "children": []},
     ]
-    
+
     expected = {
         "name": "A",
         "path": str(A),
         "is_file": False,
         "children": expected_children
     }
-    
+
     assert tree_dict == expected
+
 
 def test_specific_folder_ignore(setup_specific_ignore_folders):
     """
@@ -268,18 +281,15 @@ def test_specific_folder_ignore(setup_specific_ignore_folders):
     """
     A = setup_specific_ignore_folders
     # Initialize ignore strategies
-    dot_ignore = DotIgnoreStrategy()  # Ignoring hidden files/folders
-    specific_ignore = SpecificFolderIgnoreStrategy(
-        root_path=str(A),
-        folders_to_ignore=["venv", "__pycache__"]
-    )
+    specific_ignore = SpecificFolderIgnoreStrategy(folders_to_ignore=["venv", "__pycache__"])
+    dot_ignore = DotIgnoreStrategy()
     traversal = DirectoryTraversal(
-        strategies=[dot_ignore, specific_ignore],
+        strategies=[specific_ignore, dot_ignore],
         sort_strategy=DefaultSortStrategy()
     )
     tree = traversal.build_tree(str(A))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected_children = [
         {"name": "src", "path": str(A / "src"), "is_file": False, "children": [
             {"name": "s1.txt", "path": str(A / "src" / "s1.txt"), "is_file": True, "children": []},
@@ -287,7 +297,7 @@ def test_specific_folder_ignore(setup_specific_ignore_folders):
         {"name": "main.py", "path": str(A / "main.py"), "is_file": True, "children": []},
         # venv and __pycache__ are ignored
     ]
-    
+
     assert tree_dict == {
         "name": "A",
         "path": str(A),
@@ -295,28 +305,30 @@ def test_specific_folder_ignore(setup_specific_ignore_folders):
         "children": expected_children
     }
 
+
 def test_empty_directory(tmp_path):
     """
     Test traversal of an empty directory.
     """
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
-    
+
     traversal = DirectoryTraversal(
         strategies=[DotIgnoreStrategy()],  # Use DotIgnoreStrategy to ignore .gitignore files
         sort_strategy=DefaultSortStrategy()
     )
     tree = traversal.build_tree(str(empty_dir))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected = {
         "name": "empty",
         "path": str(empty_dir),
         "is_file": False,
         "children": []
     }
-    
+
     assert tree_dict == expected
+
 
 def test_directory_with_only_files(tmp_path):
     """
@@ -326,28 +338,29 @@ def test_directory_with_only_files(tmp_path):
     dir_path.mkdir()
     for filename in ["a.txt", "b.txt", "c.txt"]:
         (dir_path / filename).touch()
-    
+
     traversal = DirectoryTraversal(
         strategies=[DotIgnoreStrategy()],  # Use DotIgnoreStrategy to ignore .gitignore files
         sort_strategy=DefaultSortStrategy()
     )
     tree = traversal.build_tree(str(dir_path))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected_children = [
         {"name": "a.txt", "path": str(dir_path / "a.txt"), "is_file": True, "children": []},
         {"name": "b.txt", "path": str(dir_path / "b.txt"), "is_file": True, "children": []},
         {"name": "c.txt", "path": str(dir_path / "c.txt"), "is_file": True, "children": []},
     ]
-    
+
     expected = {
         "name": "files_only",
         "path": str(dir_path),
         "is_file": False,
         "children": expected_children
     }
-    
+
     assert tree_dict == expected
+
 
 def test_directory_with_only_folders(tmp_path):
     """
@@ -357,28 +370,29 @@ def test_directory_with_only_folders(tmp_path):
     dir_path.mkdir()
     for folder in ["A", "B", "C"]:
         (dir_path / folder).mkdir()
-    
+
     traversal = DirectoryTraversal(
         strategies=[DotIgnoreStrategy()],  # Use DotIgnoreStrategy to ignore .gitignore files
         sort_strategy=DefaultSortStrategy()
     )
     tree = traversal.build_tree(str(dir_path))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected_children = [
         {"name": "A", "path": str(dir_path / "A"), "is_file": False, "children": []},
         {"name": "B", "path": str(dir_path / "B"), "is_file": False, "children": []},
         {"name": "C", "path": str(dir_path / "C"), "is_file": False, "children": []},
     ]
-    
+
     expected = {
         "name": "folders_only",
         "path": str(dir_path),
         "is_file": False,
         "children": expected_children
     }
-    
+
     assert tree_dict == expected
+
 
 def test_case_sensitivity(tmp_path):
     """
@@ -393,14 +407,14 @@ def test_case_sensitivity(tmp_path):
             (dir_path / entry).mkdir()
         else:
             (dir_path / entry).touch()
-    
+
     traversal = DirectoryTraversal(
         strategies=[DotIgnoreStrategy()],  # Use DotIgnoreStrategy to ignore .gitignore files
         sort_strategy=DefaultSortStrategy()
     )
     tree = traversal.build_tree(str(dir_path))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected_children = [
         {"name": "a_folder", "path": str(dir_path / "a_folder"), "is_file": False, "children": []},
         {"name": "B_folder", "path": str(dir_path / "B_folder"), "is_file": False, "children": []},
@@ -409,15 +423,16 @@ def test_case_sensitivity(tmp_path):
         {"name": "b_file.txt", "path": str(dir_path / "b_file.txt"), "is_file": True, "children": []},
         {"name": "C_file.txt", "path": str(dir_path / "C_file.txt"), "is_file": True, "children": []},
     ]
-    
+
     expected = {
         "name": "case_test",
         "path": str(dir_path),
         "is_file": False,
         "children": expected_children
     }
-    
+
     assert tree_dict == expected
+
 
 def test_permission_error(tmp_path, monkeypatch):
     """
@@ -429,35 +444,36 @@ def test_permission_error(tmp_path, monkeypatch):
     B.mkdir()
     (A / "file1.txt").touch()
     (B / "file2.txt").touch()
-    
+
     # Mock os.listdir to raise PermissionError for directory B
     def mock_listdir(path):
         if path == str(B):
             raise PermissionError("Permission denied")
         return os.listdir_original(path)
-    
+
     # Backup the original os.listdir
     os.listdir_original = os.listdir
     monkeypatch.setattr(os, "listdir", mock_listdir)
-    
+
     traversal = DirectoryTraversal(
         strategies=[DotIgnoreStrategy()],  # Use DotIgnoreStrategy to ignore .gitignore files
         sort_strategy=DefaultSortStrategy()
     )
     tree = traversal.build_tree(str(A))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected_children = [
         {"name": "B", "path": str(B), "is_file": False, "children": []},  # B's children are not listed due to PermissionError
         {"name": "file1.txt", "path": str(A / "file1.txt"), "is_file": True, "children": []},
     ]
-    
+
     assert tree_dict == {
         "name": "A",
         "path": str(A),
         "is_file": False,
         "children": expected_children
     }
+
 
 def test_dot_ignore_strategy(tmp_path):
     """
@@ -475,17 +491,17 @@ def test_dot_ignore_strategy(tmp_path):
     visible_folder.mkdir()
     (visible_folder / "visible_file.txt").touch()
     (A / "visible_file.txt").touch()
-    
+
     # Initialize ignore strategies
     dot_ignore = DotIgnoreStrategy()
     traversal = DirectoryTraversal(
         strategies=[dot_ignore],
         sort_strategy=DefaultSortStrategy()
     )
-    
+
     tree = traversal.build_tree(str(A))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected_children = [
         {"name": "visible_folder", "path": str(visible_folder), "is_file": False, "children": [
             {"name": "visible_file.txt", "path": str(visible_folder / "visible_file.txt"), "is_file": True, "children": []},
@@ -493,13 +509,14 @@ def test_dot_ignore_strategy(tmp_path):
         {"name": "visible_file.txt", "path": str(A / "visible_file.txt"), "is_file": True, "children": []},
         # Hidden files and folders are ignored
     ]
-    
+
     assert tree_dict == {
         "name": "A",
         "path": str(A),
         "is_file": False,
         "children": expected_children
     }
+
 
 def test_specific_and_gitignore_combined(tmp_path):
     """
@@ -511,30 +528,27 @@ def test_specific_and_gitignore_combined(tmp_path):
     ignored_folder = A / "ignored_folder"
     ignored_folder.mkdir()
     (ignored_folder / "file1.txt").touch()
-    
+
     repo_folder = A / "repo"
     repo_folder.mkdir()
     (repo_folder / ".gitignore").write_text("repo_file2.txt\n")
     (repo_folder / "repo_file1.txt").touch()
     (repo_folder / "repo_file2.txt").touch()
-    
+
     # Create non-ignored files
     (A / "file3.txt").touch()
-    
+
     # Initialize ignore strategies
-    specific_ignore = SpecificFolderIgnoreStrategy(
-        root_path=str(A),
-        folders_to_ignore=["ignored_folder"]
-    )
+    specific_ignore = SpecificFolderIgnoreStrategy(folders_to_ignore=["ignored_folder"])
     dot_ignore = DotIgnoreStrategy()  # To ignore .gitignore files
     traversal = DirectoryTraversal(
         strategies=[specific_ignore, dot_ignore],
         sort_strategy=DefaultSortStrategy()
     )
-    
+
     tree = traversal.build_tree(str(A))
     tree_dict = traverse_to_dict(tree)
-    
+
     expected_children = [
         {"name": "repo", "path": str(repo_folder), "is_file": False, "children": [
             {"name": "repo_file1.txt", "path": str(repo_folder / "repo_file1.txt"), "is_file": True, "children": []},
@@ -543,10 +557,6 @@ def test_specific_and_gitignore_combined(tmp_path):
         {"name": "file3.txt", "path": str(A / "file3.txt"), "is_file": True, "children": []},
         # ignored_folder is ignored
     ]
-    
-    assert tree_dict == {
-        "name": "A",
-        "path": str(A),
-        "is_file": False,
-        "children": expected_children
-    }
+
+    assert tree_dict == expected_children
+

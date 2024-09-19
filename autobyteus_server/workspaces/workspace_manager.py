@@ -90,7 +90,7 @@ class WorkspaceManager(metaclass=SingletonMeta):
         """
 
         files_ignore_strategies = [
-            SpecificFolderIgnoreStrategy(root_path=workspace_root_path, folders_to_ignore=['.git']),
+            SpecificFolderIgnoreStrategy(folders_to_ignore=['.git']),
             GitIgnoreStrategy(root_path=workspace_root_path),
             DotIgnoreStrategy()
         ]
