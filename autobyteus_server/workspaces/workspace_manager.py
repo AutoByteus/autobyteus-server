@@ -14,6 +14,7 @@ from typing import Dict, Optional
 
 from autobyteus_server.file_explorer.directory_traversal import DirectoryTraversal
 from autobyteus_server.file_explorer.sort_strategy.default_sort_strategy import DefaultSortStrategy
+from autobyteus_server.file_explorer.traversal_ignore_strategy.dot_ignore_strategy import DotIgnoreStrategy
 from autobyteus_server.file_explorer.traversal_ignore_strategy.git_ignore_strategy import GitIgnoreStrategy
 from autobyteus_server.file_explorer.traversal_ignore_strategy.specific_folder_ignore_strategy import SpecificFolderIgnoreStrategy
 from autobyteus.utils.singleton import SingletonMeta
@@ -90,7 +91,8 @@ class WorkspaceManager(metaclass=SingletonMeta):
 
         files_ignore_strategies = [
             SpecificFolderIgnoreStrategy(root_path=workspace_root_path, folders_to_ignore=['.git']),
-            GitIgnoreStrategy(root_path=workspace_root_path)
+            GitIgnoreStrategy(root_path=workspace_root_path),
+            DotIgnoreStrategy()
         ]
         self.directory_traversal = DirectoryTraversal(strategies=files_ignore_strategies)
 

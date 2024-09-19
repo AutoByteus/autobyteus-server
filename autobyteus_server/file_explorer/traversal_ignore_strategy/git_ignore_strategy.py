@@ -1,4 +1,4 @@
-# autobyteus/source_code_tree/file_explorer/traversal_ignore_strategy/git_ignore_strategy.py
+# autobyteus_server/file_explorer/traversal_ignore_strategy/git_ignore_strategy.py
 
 import pathlib
 from typing import List, Optional
