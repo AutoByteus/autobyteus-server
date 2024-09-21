@@ -2,6 +2,8 @@ import os
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus.agent.agent import StandaloneAgent
 from autobyteus.llm.models import LLMModel
+from autobyteus.llm.base_llm import BaseLLM
+from autobyteus.llm.llm_factory import LLMFactory
 from typing import List, Optional
 from autobyteus.events.event_types import EventType
 import asyncio
@@ -35,9 +37,12 @@ class SubtaskImplementationStep(BaseStep):
             raise ValueError("LLM model not configured for this step.")
         
         if not self.agent:
+            # This is the initial call
+            llm_factory = LLMFactory()
+            llm = llm_factory.create_llm(self.llm_model)
             context = self._construct_context(context_file_paths)
             initial_prompt = self.construct_initial_prompt(requirement, context)
-            self.agent = self._create_agent(self.llm_model, initial_prompt)
+            self.agent = self._create_agent(llm, initial_prompt)
             self.subscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
             self.response_queue = asyncio.Queue()
             self.agent.start()
@@ -60,18 +65,13 @@ class SubtaskImplementationStep(BaseStep):
             asyncio.create_task(self.response_queue.put(response))
 
     async def get_latest_response(self) -> Optional[str]:
-        if self.response_queue is None:
-            return None
-        try:
-            return await asyncio.wait_for(self.response_queue.get(), timeout=60)
-        except asyncio.TimeoutError:
-            return None
+        return await self.response_queue.get()
 
-    def _create_agent(self, llm_model: LLMModel, initial_prompt: str) -> StandaloneAgent:
+    def _create_agent(self, llm: BaseLLM, initial_prompt: str) -> StandaloneAgent:
         agent_id = f"subtask_implementation_{id(self)}"
         return StandaloneAgent(
             role="Subtask_Implementation",
-            llm=llm_model,
+            llm=llm,
             tools=self.tools,
             use_xml_parser=True,
             agent_id=agent_id,

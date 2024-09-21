@@ -3,6 +3,7 @@ import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from autobyteus_server.api.graphql.schema import schema
 from strawberry.fastapi import GraphQLRouter
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 
 def graphql_server_mode(config, host, port):
@@ -30,7 +31,10 @@ def graphql_server_mode(config, host, port):
         allow_headers=["*"],
     )
 
-    graphql_router = GraphQLRouter(schema)
+    graphql_router = GraphQLRouter(schema, subscription_protocols=[
+        GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    ],)
     app.include_router(graphql_router, prefix="/graphql")
 
     uvicorn.run(app, host=host, port=port)
