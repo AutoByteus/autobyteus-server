@@ -28,6 +28,13 @@ class SubtaskImplementationStep(BaseStep):
             "context": context
         })
 
+    def construct_subsequent_prompt(self, requirement: str, context: str) -> str:
+        prompt = ""
+        if context:
+            prompt += f"[Context]\n{context}\n\n"
+        prompt += f"[UserFeedback]\n{requirement}"
+        return prompt
+
     async def process_requirement(
         self, 
         requirement: str, 
@@ -36,19 +43,20 @@ class SubtaskImplementationStep(BaseStep):
         if not self.llm_model:
             raise ValueError("LLM model not configured for this step.")
         
+        context = self._construct_context(context_file_paths)
+
         if not self.agent:
             # This is the initial call
             llm_factory = LLMFactory()
             llm = llm_factory.create_llm(self.llm_model)
-            context = self._construct_context(context_file_paths)
             initial_prompt = self.construct_initial_prompt(requirement, context)
             self.agent = self._create_agent(llm, initial_prompt)
             self.subscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
             self.response_queue = asyncio.Queue()
             self.agent.start()
         else:
-            context = self._construct_context(context_file_paths)
-            prompt = self.construct_initial_prompt(requirement, context)
+            # This is a subsequent call
+            prompt = self.construct_subsequent_prompt(requirement, context)
             await self.agent.receive_user_message(prompt)
 
     def _construct_context(self, context_file_paths: List[str]) -> str:
