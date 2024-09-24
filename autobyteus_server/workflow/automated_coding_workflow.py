@@ -1,6 +1,6 @@
-# autobyteus_server/automated_coding_workflow/automated_coding_workflow.py
+# autobyteus_server/workflow/automated_coding_workflow.py
 """
-automated_coding_workflow.py: Contains the AutomatedCodingStep class, which represents the main entry point for running the automated coding workflow.
+automated_coding_workflow.py: Contains the AutomatedCodingWorkflow class, which represents the main entry point for running the automated coding workflow.
 """
 
 import json
@@ -9,7 +9,6 @@ from autobyteus_server.workflow.config import WORKFLOW_CONFIG
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus_server.workflow.types.base_workflow import WorkflowStatus
 from autobyteus_server.workflow.types.workflow_template_config import StepsTemplateConfig
-from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
 
 class AutomatedCodingWorkflow:
     """
@@ -18,7 +17,6 @@ class AutomatedCodingWorkflow:
     The workflow is composed of multiple steps, each step represented as an instance of a class derived from BaseStep. Steps can have sub-steps, forming a potentially multi-level workflow.
 
     Attributes:
-        workspace_setting (WorkspaceSetting): The settings associated with the workspace.
         steps (Dict[str, BaseStep]): A dictionary of step instances keyed by their step IDs.
         name (str): The name of the workflow. Default is "automated_coding_workflow".
         config (dict): The configuration details for the workflow. Loaded from `WORKFLOW_CONFIG`.
@@ -27,17 +25,34 @@ class AutomatedCodingWorkflow:
     name = "automated_coding_workflow"
     config = WORKFLOW_CONFIG
 
-    def __init__(self, workspace_setting: WorkspaceSetting): 
+    def __init__(self):
         """
-        Initialize the AutomatedCodingWorkflow with the given workspace setting.
-
-        Args:
-            workspace_setting (WorkspaceSetting): The settings associated with the workspace.
+        Initialize the AutomatedCodingWorkflow.
         """
-        self.workspace_setting = workspace_setting
+        self._workspace = None
         self.steps: Dict[str, BaseStep] = {}
         self._initialize_steps(AutomatedCodingWorkflow.config['steps'])
     
+    @property
+    def workspace(self):
+        """
+        Get the workspace associated with this workflow.
+
+        Returns:
+            Workspace: The workspace associated with this workflow.
+        """
+        return self._workspace
+
+    @workspace.setter
+    def workspace(self, value: 'Workspace'):
+        """
+        Set the workspace associated with this workflow.
+
+        Args:
+            value (Workspace): The workspace to associate with this workflow.
+        """
+        self._workspace = value
+
     def _initialize_steps(self, steps_config: Dict[str, StepsTemplateConfig]):
         """
         Initializes the steps of the workflow from a given configuration.

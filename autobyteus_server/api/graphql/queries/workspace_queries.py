@@ -9,8 +9,6 @@ import logging
 from typing import List
 import strawberry
 from strawberry.scalars import JSON
-from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
-from autobyteus_server.codeverse.search.search_result import SearchResult
 from autobyteus_server.codeverse.search.search_service import SearchService
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.workspaces.workspace_tools_service import WorkspaceToolsService
@@ -40,9 +38,13 @@ class Query:
         Returns:
             JSON: The configuration of the workflow.
         """
-        workflow: AutomatedCodingWorkflow = workspace_manager.workflows.get(workspace_root_path)
+        workspace = workspace_manager.get_workspace(workspace_root_path)
+        if not workspace:
+            return json.dumps({"error": "Workspace not found"})
+
+        workflow = workspace.workflow
         if not workflow:
-            return json.dumps({"error": "Workspace not found or workflow not initialized"})
+            return json.dumps({"error": "Workflow not initialized for this workspace"})
 
         return workflow.to_json()
 

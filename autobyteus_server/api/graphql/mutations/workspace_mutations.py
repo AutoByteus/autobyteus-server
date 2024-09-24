@@ -8,7 +8,6 @@ import json
 import logging
 import strawberry
 from strawberry.scalars import JSON
-from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.workspaces.errors.workspace_already_exists_error import WorkspaceAlreadyExistsError
 
@@ -45,7 +44,7 @@ class Mutation:
             JSON: The JSON representation of the workspace directory tree.
         """
         try:
-            file_explorer = workspace_manager.get_file_explorer(workspace_root_path)
+            file_explorer = workspace_manager.get_workspace_file_explorer(workspace_root_path)
             if file_explorer is None:
                 file_explorer = workspace_manager.add_workspace(workspace_root_path)
             return file_explorer.to_json()

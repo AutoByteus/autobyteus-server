@@ -27,7 +27,11 @@ class WorkflowStepMutation:
         llm_model: GraphQLLLMModel
     ) -> str:
         try:
-            workflow = workspace_manager.workflows.get(workspace_root_path)
+            workspace = workspace_manager.get_workspace(workspace_root_path)
+            if not workspace:
+                return f"Error: No workspace found for path {workspace_root_path}"
+
+            workflow = workspace.workflow
             if not workflow:
                 return f"Error: No workflow found for workspace {workspace_root_path}"
 
@@ -52,7 +56,11 @@ class WorkflowStepMutation:
         requirement: str
     ) -> str:
         try:
-            workflow = workspace_manager.workflows.get(workspace_root_path)
+            workspace = workspace_manager.get_workspace(workspace_root_path)
+            if not workspace:
+                return f"Error: No workspace found for path {workspace_root_path}"
+
+            workflow = workspace.workflow
             if not workflow:
                 return f"Error: No workflow found for workspace {workspace_root_path}"
 

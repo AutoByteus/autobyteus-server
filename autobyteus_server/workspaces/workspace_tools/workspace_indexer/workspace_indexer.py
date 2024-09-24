@@ -4,13 +4,13 @@ Module: workspace_indexer
 This module provides the `WorkspaceIndexer` class, which is responsible for indexing 
 all source code entities within a workspace. This is achieved by parsing each source 
 code file and indexing its parsed entities. The indexer operates within the context 
-of a specific workspace, as provided by the `WorkspaceSetting`.
+of a specific workspace, as provided by the `Workspace`.
 """
 
 import os
 from autobyteus_server.codeverse.index.index_service import IndexService
 from autobyteus_server.codeverse.core.code_parser.code_file_parser import CodeFileParser
-from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
+from autobyteus_server.workspaces.workspace import Workspace
 from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
 
 
@@ -19,22 +19,22 @@ class WorkspaceIndexer(BaseWorkspaceTool):
     Handles parsing and indexing of source code entities within a workspace.
     """
 
-    def __init__(self, workspace_setting: WorkspaceSetting):
+    def __init__(self, workspace: Workspace):
         """
         Initialize a WorkspaceIndexer.
 
         Args:
-            workspace_setting (WorkspaceSetting): The settings of the workspace.
+            workspace (Workspace): The workspace to be indexed.
         """
-        self.workspace_setting = workspace_setting
+        super().__init__(workspace)
         self.index_service = IndexService()
         self.parser = CodeFileParser()
 
-    def index_workspace(self) -> None:
+    def execute(self) -> None:
         """
         Index all source code entities within the workspace.
         """
-        for root, dirs, files in os.walk(self.workspace_setting.root_path):
+        for root, dirs, files in os.walk(self.workspace.root_path):
             for file in files:
                 # Optionally, add a filter here based on file extensions
                 # For example: if file.endswith('.py'):
@@ -54,4 +54,3 @@ class WorkspaceIndexer(BaseWorkspaceTool):
         except Exception as e:
             # Logging can be added here to provide insights into any indexing failures
             print(f"Failed to index entities from {file_path}. Error: {str(e)}")
-
