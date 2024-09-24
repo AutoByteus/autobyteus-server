@@ -2,8 +2,8 @@
 
 
 
+from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus_server.workspaces.setting.project_types import ProjectType
-from autobyteus_server.workspaces.workspace_directory_tree import WorkspaceDirectoryTree
 
 
 class WorkspaceSetting:
@@ -11,7 +11,7 @@ class WorkspaceSetting:
     Class to store the parsed workspace structure and other related objects.
     """
 
-    def __init__(self, root_path: str, project_type: ProjectType, directory_tree: WorkspaceDirectoryTree = None):
+    def __init__(self, root_path: str, project_type: ProjectType, file_explorer: FileExplorer = None):
         """
         Initialize a WorkspaceSetting.
 
@@ -22,7 +22,7 @@ class WorkspaceSetting:
         """
         self.root_path = root_path
         self.project_type = project_type
-        self.directory_tree: WorkspaceDirectoryTree = directory_tree
+        self.directory_tree: FileExplorer = file_explorer
 
     @property
     def project_type(self) -> ProjectType:
@@ -46,7 +46,7 @@ class WorkspaceSetting:
             raise ValueError("project_type must be an instance of the ProjectType enum.")
         self._project_type = value
 
-    def set_directory_tree(self, directory_tree: WorkspaceDirectoryTree):
+    def set_directory_tree(self, directory_tree: FileExplorer):
         """
         Set the directory tree of the workspace.
 

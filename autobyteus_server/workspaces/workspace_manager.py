@@ -13,19 +13,17 @@ import logging
 from typing import Dict, Optional
 
 from autobyteus_server.file_explorer.directory_traversal import DirectoryTraversal
-from autobyteus_server.file_explorer.sort_strategy.default_sort_strategy import DefaultSortStrategy
+from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus_server.file_explorer.traversal_ignore_strategy.dot_ignore_strategy import DotIgnoreStrategy
 from autobyteus_server.file_explorer.traversal_ignore_strategy.git_ignore_strategy import GitIgnoreStrategy
 from autobyteus_server.file_explorer.traversal_ignore_strategy.specific_folder_ignore_strategy import SpecificFolderIgnoreStrategy
 from autobyteus.utils.singleton import SingletonMeta
-from autobyteus_server.workspaces.errors.workspace_already_exists_error import WorkspaceAlreadyExistsError
 from autobyteus_server.workspaces.workspace_tools.project_type_determiner import ProjectTypeDeterminer
 from autobyteus_server.workspaces.setting.workspace_setting_registry import WorkspaceSettingRegistry
-from autobyteus_server.workspaces.workspace_directory_tree import WorkspaceDirectoryTree
 from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
+from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
 from autobyteus_server.file_explorer.tree_node import TreeNode
-from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow  # Updated import
-
+from autobyteus_server.workspaces.errors.workspace_already_exists_error import WorkspaceAlreadyExistsError
 
 logger = logging.getLogger(__name__)
 
@@ -47,36 +45,53 @@ class WorkspaceManager(metaclass=SingletonMeta):
         self.project_type_determiner = ProjectTypeDeterminer()
         self.workflows: Dict[str, AutomatedCodingWorkflow] = {}
 
-    def add_workspace(self, workspace_root_path: str) -> TreeNode:
+    def get_file_explorer(self, workspace_root_path: str) -> Optional[FileExplorer]:
         """
-        Adds a workspace setting to the workspace settings, builds the directory tree of the workspace, 
+        Retrieves the FileExplorer for a given workspace path if it exists.
+
+        Args:
+            workspace_root_path (str): The root path of the workspace.
+
+        Returns:
+            Optional[FileExplorer]: The FileExplorer object if the workspace exists, None otherwise.
+        """
+        workspace_setting = self.workspace_settings_registry.get_setting(workspace_root_path)
+        return workspace_setting.directory_tree if workspace_setting else None
+
+    def add_workspace(self, workspace_root_path: str) -> FileExplorer:
+        """
+        Adds a workspace setting to the workspace settings.
+        If the workspace already exists, it raises a WorkspaceAlreadyExistsError.
+        If the workspace doesn't exist, it builds the directory tree of the workspace
         and initializes an AutomatedCodingWorkflow for the workspace.
 
         Args:
             workspace_root_path (str): The root path of the workspace.
 
         Returns:
-            TreeNode: The root TreeNode of the directory tree.
+            FileExplorer: The FileExplorer object representing the workspace directory tree.
 
         Raises:
             WorkspaceAlreadyExistsError: If the workspace already exists.
         """
-        if self.workspace_settings_registry.workspace_exists(workspace_root_path):
+        if self.workspace_settings_registry.get_setting(workspace_root_path):
             raise WorkspaceAlreadyExistsError(f"Workspace at {workspace_root_path} already exists")
 
         # Determine the project type
         project_type = self.project_type_determiner.determine(workspace_root_path)
-        workspace_setting = WorkspaceSetting(root_path=workspace_root_path, project_type=project_type)
-        directory_tree = self.build_workspace_directory_tree(workspace_root_path)
-        workspace_setting.set_directory_tree(WorkspaceDirectoryTree(directory_tree))
         
-        # Register the WorkspaceSetting
+        # Build the directory tree
+        directory_tree = self.build_workspace_directory_tree(workspace_root_path)
+        file_explorer = FileExplorer(directory_tree)
+        
+        # Create and register the WorkspaceSetting
+        workspace_setting = WorkspaceSetting(root_path=workspace_root_path, project_type=project_type, file_explorer=file_explorer)
         self.workspace_settings_registry.add_setting(workspace_root_path, workspace_setting)
         
         # Initialize AutomatedCodingWorkflow with the workspace setting
         self.workflows[workspace_root_path] = AutomatedCodingWorkflow(workspace_setting)
 
-        return directory_tree
+        return file_explorer
 
     def build_workspace_directory_tree(self, workspace_root_path: str) -> TreeNode:
         """

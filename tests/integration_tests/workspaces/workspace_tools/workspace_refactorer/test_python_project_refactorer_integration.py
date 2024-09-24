@@ -1,9 +1,9 @@
 import pytest
 import os
 import tempfile
-from autobyteus_server.codeverse.core.file_explorer.directory_traversal import DirectoryTraversal
+from autobyteus_server.file_explorer.directory_traversal import DirectoryTraversal
+from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus_server.workspaces.setting.project_types import ProjectType
-from autobyteus_server.workspaces.workspace_directory_tree import WorkspaceDirectoryTree
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.python_project_refactorer import PythonProjectRefactorer
 from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
 
@@ -28,8 +28,8 @@ def test_should_print_refactored_code_for_valid_files(capsys):
             f.write("# init file")
         
         dir_traversal = DirectoryTraversal()
-        directory_tree = WorkspaceDirectoryTree(dir_traversal.build_tree(tmpdirname))
-        workspace_setting = WorkspaceSetting(root_path=tmpdirname, project_type=ProjectType.PYTHON, directory_tree=directory_tree)
+        directory_tree = FileExplorer(dir_traversal.build_tree(tmpdirname))
+        workspace_setting = WorkspaceSetting(root_path=tmpdirname, project_type=ProjectType.PYTHON, file_explorer=directory_tree)
         
         refactorer = PythonProjectRefactorer(workspace_setting)
         refactorer.refactor()
@@ -57,7 +57,7 @@ def test_should_construct_prompt_with_file_content():
         
         dir_traversal = DirectoryTraversal()
         directory_tree = dir_traversal.build_tree(tmpdirname)
-        workspace_setting = WorkspaceSetting(directory_tree=directory_tree)
+        workspace_setting = WorkspaceSetting(file_explorer=directory_tree)
         
         refactorer = PythonProjectRefactorer(workspace_setting)
         prompt = refactorer.construct_prompt(file_path)

@@ -1,11 +1,9 @@
 from autobyteus_server.file_explorer.tree_node import TreeNode
 
-
-class WorkspaceDirectoryTree:
+class FileExplorer:
     """
     Class to manage workspace directory tree.
     """
-
     def __init__(self, root_node: TreeNode):
         """
         Initialize WorkspaceDirectoryTree.
@@ -15,7 +13,6 @@ class WorkspaceDirectoryTree:
     def add_file_or_folder(self, file_or_folder_path: str):
         """
         Adds a file or folder to the workspace directory tree.
-
         Args:
             file_or_folder_path (str): The path of the file or folder to be added.
         """
@@ -24,7 +21,6 @@ class WorkspaceDirectoryTree:
     def remove_file_or_folder(self, file_or_folder_path: str):
         """
         Removes a file or folder from the workspace directory tree.
-
         Args:
             file_or_folder_path (str): The path of the file or folder to be removed.
         """
@@ -33,8 +29,15 @@ class WorkspaceDirectoryTree:
     def get_tree(self) -> TreeNode:
         """
         Gets the workspace directory tree.
-
         Returns:
             TreeNode: The root node of the workspace directory tree.
         """
         return self.root_node
+
+    def to_json(self):
+        """
+        Returns a JSON representation of the workspace directory tree.
+        Returns:
+            JSON: The JSON representation of the workspace directory tree.
+        """
+        return self.root_node.to_json()

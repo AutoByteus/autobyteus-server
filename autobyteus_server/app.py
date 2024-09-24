@@ -12,6 +12,7 @@ Usage:
 - For command line mode: python app.py --mode commandline
 - For gRPC server mode: python app.py --mode grpcserver --host 127.0.0.1 --port 50051
 - For GraphQL server mode: python app.py --mode graphqlserver --host 127.0.0.1 --port 8000
+- For GraphQL server mode in development: python app.py --mode graphqlserver --host 127.0.0.1 --port 8000 --dev
 """
 
 import argparse
@@ -35,8 +36,10 @@ def parse_command_line_arguments():
     parser.add_argument('--mode', choices=['commandline', 'grpcserver', 'graphqlserver'], help='Select the mode to run the app', required=True)
     parser.add_argument('--host', help='Server hostname', default='127.0.0.1')
     parser.add_argument('--port', type=int, help='Server port', default=8000)
+    parser.add_argument('--dev', action='store_true', help='Enable development mode (auto-reload)')
 
     return parser.parse_args()
+
 def main():
     configure_logger()
 
@@ -47,7 +50,7 @@ def main():
     elif args.mode == 'grpcserver':
         grpc_server_mode()
     elif args.mode == 'graphqlserver':
-        graphql_server_mode(config, args.host, args.port)
+        graphql_server_mode(config, args.host, args.port, args.dev)
     else:
         print("Invalid mode selected.")
         sys.exit(1)
