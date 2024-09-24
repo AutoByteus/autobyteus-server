@@ -1,4 +1,4 @@
-# autobyteus/workspaces/workspace_tools/workspace_refactorer/java_project_refactorer.py
+# autobyteus_server/workspaces/workspace_tools/workspace_refactorer/java_project_refactorer.py
 
 
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.base_project_refactorer import BaseProjectRefactorer

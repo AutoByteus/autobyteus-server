@@ -1,4 +1,4 @@
-# autobyteus/workspaces/project_type_determiner/project_type_determiner.py
+# autobyteus_server/workspaces/project_type_determiner/project_type_determiner.py
 
 import os
 

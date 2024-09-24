@@ -4,10 +4,8 @@ This module provides tests for the WorkspaceManager.
 
 import os
 import tempfile
-from autobyteus_server.codeverse.core.file_explorer.directory_traversal import DirectoryTraversal
+from autobyteus_server.workspaces.workspace import Workspace
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
-from autobyteus_server.codeverse.core.file_explorer.tree_node import TreeNode
-from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
 
 def test_should_add_workspace_successfully():
     """
@@ -25,13 +23,13 @@ def test_should_add_workspace_successfully():
     assert tree.name == os.path.basename(temp_dir)
     assert tree.path == temp_dir
     assert tree.is_file == False
-    assert manager.get_workspace_setting(temp_dir) is not None
+    assert isinstance(manager.get_workspace(temp_dir), Workspace)
     assert len(tree.children) == 1  # As we have created one subdirectory
     assert tree.children[0].name == 'test_directory'
 
-def test_should_retrieve_workspace_setting():
+def test_should_retrieve_workspace():
     """
-    Test the get_workspace_setting method of WorkspaceManager should retrieve workspace setting correctly.
+    Test the get_workspace method of WorkspaceManager should retrieve workspace correctly.
     """
     # Arrange
     temp_dir = tempfile.mkdtemp()
@@ -39,7 +37,8 @@ def test_should_retrieve_workspace_setting():
     manager.add_workspace(temp_dir)
 
     # Act
-    setting = manager.get_workspace_setting(temp_dir)
+    workspace = manager.get_workspace(temp_dir)
 
     # Assert
-    assert isinstance(setting, WorkspaceSetting)
+    assert isinstance(workspace, Workspace)
+    assert workspace.root_path == temp_dir

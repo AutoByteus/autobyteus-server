@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from autobyteus.prompt.prompt_template import PromptTemplate
 from autobyteus_server.workflow.utils.unique_id_generator import UniqueIDGenerator
 
-from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
+from autobyteus_server.workspaces.workspace import Workspace
 
 class BaseWorkspaceTool(ABC):
     """
@@ -20,29 +20,28 @@ class BaseWorkspaceTool(ABC):
     name: str = None
     prompt_template: PromptTemplate = None
 
-    def __init__(self, workspace_setting: WorkspaceSetting):
+    def __init__(self, workspace: Workspace):
         """
         Constructor for BaseWorkspaceTool.
 
         Args:
-            workspace_setting (WorkspaceSetting): The setting of the workspace.
+            workspace (Workspace): The workspace associated with this tool.
         """
         self.id = UniqueIDGenerator.generate_id()
-        self.workspace_setting = workspace_setting
-
+        self.workspace = workspace
 
     def to_dict(self) -> dict:
-            """
-            Converts the BaseWorkspaceTool instance to a dictionary representation.
+        """
+        Converts the BaseWorkspaceTool instance to a dictionary representation.
 
-            Returns:
-                dict: Dictionary representation of the BaseWorkspaceTool instance.
-            """
-            return {
-                "id": self.id,
-                "name": self.name,
-                "prompt_template": self.prompt_template.to_dict() if self.prompt_template else None
-            }
+        Returns:
+            dict: Dictionary representation of the BaseWorkspaceTool instance.
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "prompt_template": self.prompt_template.to_dict() if self.prompt_template else None
+        }
 
     @abstractmethod
     def execute(self):

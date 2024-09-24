@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import patch, Mock
+from autobyteus_server.workspaces.workspace import Workspace
 from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
 from autobyteus_server.workspaces.workspace_tools_service import WorkspaceToolsService
-from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
 
 @pytest.fixture
 def service():
@@ -10,7 +10,7 @@ def service():
 
 @pytest.fixture
 def mock_registry_with_setting():
-    mock_setting = Mock(spec=WorkspaceSetting)
+    mock_setting = Mock(spec=Workspace)
     mock_registry = Mock()
     mock_registry.get_setting.return_value = mock_setting
     return mock_registry

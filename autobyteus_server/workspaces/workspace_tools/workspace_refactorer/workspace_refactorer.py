@@ -6,9 +6,8 @@ based on the project type. It delegates the actual refactoring logic to specific
 classes, tailored to the unique requirements of each project type like Python, Java, or NodeJS.
 """
 
-
 from autobyteus_server.workspaces.setting.project_types import ProjectType
-from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
+from autobyteus_server.workspaces.workspace import Workspace
 from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.java_project_refactorer import JavaProjectRefactorer
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.nodejs_project_refactorer import NodeJSProjectRefactorer
@@ -18,7 +17,7 @@ from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.python_pr
 class WorkspaceRefactorer(BaseWorkspaceTool):
     """
     WorkspaceRefactorer is responsible for determining the appropriate project refactorer
-    based on the workspace setting's project type.
+    based on the workspace's project type.
     """
     
     # Mapping of project types to their respective refactorer classes
@@ -28,22 +27,22 @@ class WorkspaceRefactorer(BaseWorkspaceTool):
         ProjectType.NODEJS: NodeJSProjectRefactorer
     }
 
-    def __init__(self, workspace_setting: WorkspaceSetting):
+    def __init__(self, workspace: Workspace):
         """
         Constructor for WorkspaceRefactorer.
 
         Args:
-            workspace_setting (WorkspaceSetting): The setting of the workspace to be refactored.
+            workspace (Workspace): The workspace to be refactored.
         """
-        super().__init__(workspace_setting)
+        super().__init__(workspace)
 
         # Find the appropriate refactorer class for the project type
-        refactorer_class = self.REFACTORER_MAP.get(workspace_setting.project_type)
+        refactorer_class = self.REFACTORER_MAP.get(workspace.project_type)
 
         if not refactorer_class:
-            raise ValueError(f"Invalid project type: {workspace_setting.project_type}")
+            raise ValueError(f"Invalid project type: {workspace.project_type}")
 
-        self.project_refactorer = refactorer_class(workspace_setting)
+        self.project_refactorer = refactorer_class(workspace)
         
     @property
     def prompt_template(self) -> str:

@@ -5,6 +5,7 @@ This module provides the scaffolding logic for workspaces based on the type of p
 It determines the type of project and then applies the respective project scaffolder.
 """
 
+from autobyteus_server.workspaces.workspace import Workspace
 from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
 from autobyteus_server.workspaces.workspace_tools.workspace_scaffolder.python_project_scaffolder import PythonProjectScaffolder
 from autobyteus_server.workspaces.workspace_tools.workspace_scaffolder.react_project_scaffolder import ReactProjectScaffolder
@@ -16,23 +17,23 @@ class WorkspaceScaffolder(BaseWorkspaceTool):
     depending on the project type.
     """
 
-    def __init__(self, workspace_setting):
+    def __init__(self, workspace: Workspace):
         """
         Constructor for WorkspaceScaffolder.
 
         Args:
-            workspace_setting (WorkspaceSetting): The setting of the workspace to be scaffolded.
+            workspace (Workspace): The workspace to be scaffolded.
         """
-        super().__init__(workspace_setting)
+        super().__init__(workspace)
 
-        if self.workspace_setting.project_type == "python":
-            self.project_scaffolder = PythonProjectScaffolder(workspace_setting)
-        elif self.workspace_setting.project_type == "react":
-            self.project_scaffolder = ReactProjectScaffolder(workspace_setting)
-        elif self.workspace_setting.project_type == "java":
-            self.project_scaffolder = JavaProjectScaffolder(workspace_setting)
+        if self.workspace.project_type == "python":
+            self.project_scaffolder = PythonProjectScaffolder(workspace)
+        elif self.workspace.project_type == "react":
+            self.project_scaffolder = ReactProjectScaffolder(workspace)
+        elif self.workspace.project_type == "java":
+            self.project_scaffolder = JavaProjectScaffolder(workspace)
         else:
-            raise ValueError(f"Unsupported project type: {self.workspace_setting.project_type}")
+            raise ValueError(f"Unsupported project type: {self.workspace.project_type}")
 
     def execute(self):
         """

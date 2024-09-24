@@ -8,11 +8,12 @@ Each step is defined as a key-value pair, where the key is the step name and the
 For example, the 'requirement_step' has a 'refine' substep with its own class.
 """
 
-from autobyteus_server.workflow.steps.requirement_refine_step import RequirementRefineStep
-from autobyteus_server.workflow.steps.requirement_step import RequirementStep
-from autobyteus_server.workflow.steps.tests_generation_step import TestsGenerationStep
+
+from autobyteus_server.workflow.steps.requirement.requirement_step import RequirementStep
+from autobyteus_server.workflow.steps.requirement_refine.requirement_refine_step import RequirementRefineStep
+from autobyteus_server.workflow.steps.run_tests_step.run_tests_step import RunTestsStep
 from autobyteus_server.workflow.steps.subtask_implementation.subtask_implementation_step import SubtaskImplementationStep
-from autobyteus_server.workflow.steps.run_tests_step import RunTestsStep
+from autobyteus_server.workflow.steps.test_generation.tests_generation_step import TestsGenerationStep
 from autobyteus_server.workflow.types.workflow_template_config import WorkflowTemplateStepsConfig
 
 WORKFLOW_CONFIG: WorkflowTemplateStepsConfig = {

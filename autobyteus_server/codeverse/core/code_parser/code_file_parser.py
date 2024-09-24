@@ -12,7 +12,7 @@ and ClassEntity objects for each class, which in turn contain MethodEntity objec
 import ast
 from autobyteus_server.codeverse.core.code_entities.module_entity import ModuleEntity
 from autobyteus_server.codeverse.core.code_parser.ast_node_visitor import AstNodeVisitor
-from autobyteus_server.codeverse.core.file_explorer.file_reader import FileReader
+from autobyteus_server.file_explorer.file_reader import FileReader
 
 class CodeFileParser:
     """

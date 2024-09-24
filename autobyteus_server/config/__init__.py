@@ -6,8 +6,7 @@ import yaml
 
 from autobyteus_server.config.config_parser import ConfigParser, TOMLConfigParser
 from autobyteus.utils.singleton import SingletonMeta
-from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
-
+from autobyteus_server.workspaces.workspace import Workspace
 
 from autobyteus_server.config.config_parser import ConfigParser, ENVConfigParser
 
@@ -21,7 +20,7 @@ class Config(metaclass=SingletonMeta):
         if not config_file:
             config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..', '.env')
         self.config_data = self._read_config_file(config_file, parser)
-        self.workspaces: Dict[str, WorkspaceSetting] = {}  # Add this line
+        self.workspaces: Dict[str, Workspace] = {}  # Updated this line
 
     def _read_config_file(self, config_file: str, parser: ConfigParser) -> dict:
         if not os.path.exists(config_file):
@@ -38,14 +37,14 @@ class Config(metaclass=SingletonMeta):
         self.config_data[key] = value
 
     
-    def add_workspace_root_path(self, workspace_name: str, workspace_setting: WorkspaceSetting):
+    def add_workspace(self, workspace_name: str, workspace: Workspace):
         """
-        Adds a new workspace setting to the global config.
+        Adds a new workspace to the global config.
 
         Args:
             workspace_name (str): The name or identifier of the workspace.
-            workspace_setting (WorkspaceSetting): The workspace setting to add.
+            workspace (Workspace): The workspace to add.
         """
-        self.workspaces[workspace_name] = workspace_setting
+        self.workspaces[workspace_name] = workspace
     
 config = Config()
