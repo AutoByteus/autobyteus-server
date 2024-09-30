@@ -14,7 +14,7 @@ class BaseStep(ABC, EventEmitter):
         super().__init__()
         self.id = UniqueIDGenerator.generate_id()
         self.workflow = workflow
-        self.llm_model: Optional[LLMModel] = LLMModel.MISTRAL_LARGE
+        self.llm_model: Optional[LLMModel] = LLMModel.CLAUDE_3_5_SONNET
 
     @classmethod
     def read_prompt_template(cls, template_path: str):
