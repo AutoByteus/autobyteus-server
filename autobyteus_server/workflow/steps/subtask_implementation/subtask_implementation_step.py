@@ -38,26 +38,36 @@ class SubtaskImplementationStep(BaseStep):
     async def process_requirement(
         self, 
         requirement: str, 
-        context_file_paths: List[str]
+        context_file_paths: List[str],
+        llm_model: Optional[LLMModel] = None
     ) -> None:
-        if not self.llm_model:
-            raise ValueError("LLM model not configured for this step.")
-        
         context = self._construct_context(context_file_paths)
 
-        if not self.agent:
-            # This is the initial call
+        if llm_model:
+            # This is the beginning of a new conversation
+            if self.agent:
+                await self.stop_agent()
+            
             llm_factory = LLMFactory()
-            llm = llm_factory.create_llm(self.llm_model)
+            llm = llm_factory.create_llm(llm_model)
             initial_prompt = self.construct_initial_prompt(requirement, context)
             self.agent = self._create_agent(llm, initial_prompt)
             self.subscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
             self.response_queue = asyncio.Queue()
             self.agent.start()
         else:
-            # This is a subsequent call
+            # This is a continuation of an existing conversation
+            if not self.agent:
+                raise ValueError("No existing agent found for continuation. Please provide an LLM model to start a new conversation.")
+            
             prompt = self.construct_subsequent_prompt(requirement, context)
             await self.agent.receive_user_message(prompt)
+
+    async def stop_agent(self):
+        if self.agent:
+            self.unsubscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
+            await self.agent.stop()
+            self.agent = None
 
     def _construct_context(self, context_file_paths: List[str]) -> str:
         context = ""
