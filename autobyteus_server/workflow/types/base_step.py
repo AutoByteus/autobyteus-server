@@ -14,7 +14,7 @@ class BaseStep(ABC, EventEmitter):
         super().__init__()
         self.id = UniqueIDGenerator.generate_id()
         self.workflow = workflow
-        self.llm_model: Optional[LLMModel] = LLMModel.MISTRAL_LARGE
+        self.llm_model: Optional[LLMModel] = LLMModel.CLAUDE_3_5_SONNET
 
     @classmethod
     def read_prompt_template(cls, template_path: str):
@@ -39,11 +39,10 @@ class BaseStep(ABC, EventEmitter):
     async def process_requirement(
         self, 
         requirement: str, 
-        context_file_paths: List[str]
-    ) -> str:
-        if not self.llm_model:
-            raise ValueError("LLM model not configured for this step.")
-        # Use self.llm_model for processing
+        context_file_paths: List[str],
+        llm_model: Optional[LLMModel] = None
+    ) -> None:
+        pass
 
     def to_dict(self) -> dict:
         return {
@@ -52,5 +51,5 @@ class BaseStep(ABC, EventEmitter):
             "prompt_template": self.prompt_template.to_dict() if self.prompt_template else None
         }
     
-    def get_latest_response(self) -> Optional[str]:
+    async def get_latest_response(self) -> Optional[str]:
         pass

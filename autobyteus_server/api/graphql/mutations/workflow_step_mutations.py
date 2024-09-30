@@ -5,7 +5,7 @@ This module provides GraphQL mutations related to workflow step operations.
 """
 
 import logging
-from typing import List
+from typing import List, Optional
 import strawberry
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus.llm.models import LLMModel
@@ -53,7 +53,8 @@ class WorkflowStepMutation:
         workspace_root_path: str,
         step_id: str,
         context_file_paths: List[str],
-        requirement: str
+        requirement: str,
+        llm_model: Optional[GraphQLLLMModel] = None
     ) -> str:
         try:
             workspace = workspace_manager.get_workspace(workspace_root_path)
@@ -68,10 +69,13 @@ class WorkflowStepMutation:
             if not isinstance(step, BaseStep):
                 return f"Error: Step {step_id} is not a valid workflow step"
 
+            original_llm_model = convert_to_original_llm_model(llm_model) if llm_model else None
+
             # Process the requirement
             await step.process_requirement(
                 requirement,
-                context_file_paths
+                context_file_paths,
+                original_llm_model
             )
             return f"Requirement sent for processing. Subscribe to 'stepResponse' for updates."
 

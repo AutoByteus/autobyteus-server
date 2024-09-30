@@ -1,6 +1,7 @@
 import os
-from typing import List
+from typing import List, Optional
 from autobyteus_server.workflow.types.base_step import BaseStep
+from autobyteus.llm.models import LLMModel
 
 class RunTestsStep(BaseStep):
     name = "run_tests"
@@ -21,17 +22,19 @@ class RunTestsStep(BaseStep):
     async def process_requirement(
         self, 
         requirement: str, 
-        context_file_paths: List[str]
+        context_file_paths: List[str],
+        llm_model: Optional[LLMModel] = None
     ) -> str:
-        if not self.llm_model:
+        model_to_use = llm_model or self.llm_model
+        if not model_to_use:
             raise ValueError("LLM model not configured for this step.")
         
         context = self._construct_context(context_file_paths)
         prompt = self.construct_initial_prompt(requirement, context)
         
-        # Use self.llm_model to process the test execution
+        # Use model_to_use to process the test execution
         # This is a placeholder. Replace with actual test execution logic.
-        test_results = await self.llm_model.generate(prompt)
+        test_results = await model_to_use.generate(prompt)
         
         return f"Test execution results:\n{test_results}"
 

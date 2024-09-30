@@ -1,5 +1,6 @@
 # autobyteus_server/file_explorer/file_explorer.py
 
+import os
 from autobyteus_server.file_explorer.tree_node import TreeNode
 from autobyteus_server.file_explorer.directory_traversal import DirectoryTraversal
 from autobyteus_server.file_explorer.traversal_ignore_strategy.dot_ignore_strategy import DotIgnoreStrategy
@@ -52,6 +53,39 @@ class FileExplorer:
             file_or_folder_path (str): The path of the file or folder to be removed.
         """
         # Code to remove the file or folder from the tree
+
+    def read_file_content(self, file_path: str, max_size: int = 1024 * 1024) -> str:
+            """
+            Reads and returns the content of a file within the workspace.
+
+            Args:
+                file_path (str): The absolute path of the file to read.
+                max_size (int): Maximum file size to read, in bytes. Defaults to 1MB.
+
+            Returns:
+                str: The content of the file.
+
+            Raises:
+                ValueError: If the file is not within the workspace or exceeds the size limit.
+                FileNotFoundError: If the file does not exist.
+                PermissionError: If there's no permission to read the file.
+            """
+            # Security check: ensure the file is within the workspace
+            if not os.path.commonpath([self.workspace_root_path, file_path]) == self.workspace_root_path:
+                raise ValueError("Access denied: File is outside the workspace.")
+
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"File not found: {file_path}")
+
+            if not os.access(file_path, os.R_OK):
+                raise PermissionError(f"Permission denied: Cannot read {file_path}")
+
+            file_size = os.path.getsize(file_path)
+            if file_size > max_size:
+                raise ValueError(f"File size ({file_size} bytes) exceeds the maximum allowed size ({max_size} bytes).")
+
+            with open(file_path, 'r', encoding='utf-8') as file:
+                return file.read()
 
     def get_tree(self) -> TreeNode:
         """

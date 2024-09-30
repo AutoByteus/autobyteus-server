@@ -66,7 +66,7 @@ class PythonProjectRefactorer(BaseProjectRefactorer):
         This method iterates over each Python file in the src directory and replaces its content 
         with the refactored code from LLM.
         """
-        directory_tree: FileExplorer = self.workspace.directory_tree
+        directory_tree: FileExplorer = self.workspace.file_explorer
         root_node = directory_tree.get_tree()
 
         for file_node in self._traverse_tree_and_collect_files(root_node):

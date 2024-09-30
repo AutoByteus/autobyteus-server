@@ -49,7 +49,7 @@ class WorkspaceManager(metaclass=SingletonMeta):
             Optional[FileExplorer]: The FileExplorer object if the workspace exists, None otherwise.
         """
         workspace = self.workspace_registry.get_workspace(workspace_root_path)
-        return workspace.directory_tree if workspace else None
+        return workspace.file_explorer if workspace else None
 
     def add_workspace(self, workspace_root_path: str) -> FileExplorer:
         """
