@@ -17,14 +17,15 @@ class SubtaskImplementationStep(BaseStep):
         self.agent: Optional[StandaloneAgent] = None
         self.response_queue = None
 
-        # Read the prompt template
+        # Read the prompt templates
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        prompt_path = os.path.join(current_dir, "prompt", "subtask_implementation.prompt")
-        self.read_prompt_template(prompt_path)
+        prompt_dir = os.path.join(current_dir, "prompt")
+        self.load_prompt_templates(prompt_dir)
 
     def construct_initial_prompt(self, requirement: str, context: str) -> str:
-        return self.prompt_template.fill({
-            "implementation_requirement": requirement,
+        prompt_template = self.get_prompt_template(self.llm_model)
+        return prompt_template.fill({
+            "requirement": requirement,
             "context": context
         })
 
@@ -46,7 +47,7 @@ class SubtaskImplementationStep(BaseStep):
         if llm_model:
             # This is the beginning of a new conversation
             if self.agent:
-                await self.stop_agent()
+                self.stop_agent()
             
             llm_factory = LLMFactory()
             llm = llm_factory.create_llm(llm_model)
@@ -63,10 +64,10 @@ class SubtaskImplementationStep(BaseStep):
             prompt = self.construct_subsequent_prompt(requirement, context)
             await self.agent.receive_user_message(prompt)
 
-    async def stop_agent(self):
+    def stop_agent(self):
         if self.agent:
             self.unsubscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
-            await self.agent.stop()
+            self.agent.stop()
             self.agent = None
 
     def _construct_context(self, context_file_paths: List[str]) -> str:

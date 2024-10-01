@@ -80,4 +80,5 @@ class WorkflowStepMutation:
             return f"Requirement sent for processing. Subscribe to 'stepResponse' for updates."
 
         except Exception as e:
+            logger.exception(e)
             return f"Error processing step requirement: {str(e)}"

@@ -8,10 +8,11 @@ class ArchitectureDesignStep(BaseStep):
 
     def __init__(self, workflow):
         super().__init__(workflow)
-        # Read the prompt template
+
+        # Read the prompt templates
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        prompt_path = os.path.join(current_dir, "prompt", "architecture_design_step.prompt")
-        self.read_prompt_template(prompt_path)
+        prompt_dir = os.path.join(current_dir, "prompt")
+        self.load_prompt_templates(prompt_dir)
 
     def construct_initial_prompt(self, requirement: str, context: str) -> str:
         return self.prompt_template.fill({
