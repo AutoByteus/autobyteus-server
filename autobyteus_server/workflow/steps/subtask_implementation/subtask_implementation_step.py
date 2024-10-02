@@ -1,10 +1,15 @@
+# File: autobyteus_server/workflow/steps/subtask_implementation/subtask_implementation_step.py
+
 import os
+import base64
+from PIL import Image
+import pytesseract
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus.agent.agent import StandaloneAgent
 from autobyteus.llm.models import LLMModel
 from autobyteus.llm.base_llm import BaseLLM
 from autobyteus.llm.llm_factory import LLMFactory
-from typing import List, Optional
+from typing import List, Optional, Dict
 from autobyteus.events.event_types import EventType
 import asyncio
 
@@ -17,14 +22,15 @@ class SubtaskImplementationStep(BaseStep):
         self.agent: Optional[StandaloneAgent] = None
         self.response_queue = None
 
-        # Read the prompt template
+        # Read the prompt templates
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        prompt_path = os.path.join(current_dir, "prompt", "subtask_implementation.prompt")
-        self.read_prompt_template(prompt_path)
+        prompt_dir = os.path.join(current_dir, "prompt")
+        self.load_prompt_templates(prompt_dir)
 
-    def construct_initial_prompt(self, requirement: str, context: str) -> str:
-        return self.prompt_template.fill({
-            "implementation_requirement": requirement,
+    def construct_initial_prompt(self, requirement: str, context: str, llm_model: LLMModel) -> str:
+        prompt_template = self.get_prompt_template(llm_model)
+        return prompt_template.fill({
+            "requirement": requirement,
             "context": context
         })
 
@@ -38,43 +44,64 @@ class SubtaskImplementationStep(BaseStep):
     async def process_requirement(
         self, 
         requirement: str, 
-        context_file_paths: List[str],
-        llm_model: Optional[LLMModel] = None
+        context_file_paths: List[Dict[str, str]],  # List of dicts with 'path' and 'type'
+        llm_model: LLMModel
     ) -> None:
+        super().process_requirement(requirement, context_file_paths, llm_model)
         context = self._construct_context(context_file_paths)
 
-        if llm_model:
+        if not self.agent:
             # This is the beginning of a new conversation
-            if self.agent:
-                await self.stop_agent()
-            
             llm_factory = LLMFactory()
             llm = llm_factory.create_llm(llm_model)
-            initial_prompt = self.construct_initial_prompt(requirement, context)
+            initial_prompt = self.construct_initial_prompt(requirement, context, llm_model)
             self.agent = self._create_agent(llm, initial_prompt)
             self.subscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
             self.response_queue = asyncio.Queue()
             self.agent.start()
         else:
             # This is a continuation of an existing conversation
-            if not self.agent:
-                raise ValueError("No existing agent found for continuation. Please provide an LLM model to start a new conversation.")
-            
             prompt = self.construct_subsequent_prompt(requirement, context)
             await self.agent.receive_user_message(prompt)
 
-    async def stop_agent(self):
+    def stop_agent(self):
         if self.agent:
             self.unsubscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
-            await self.agent.stop()
+            self.agent.stop()
             self.agent = None
 
-    def _construct_context(self, context_file_paths: List[str]) -> str:
+    def _construct_context(self, context_file_paths: List[Dict[str, str]]) -> str:
         context = ""
-        for path in context_file_paths:
-            with open(path, 'r') as file:
-                content = file.read()
-                context += f"File: {path}\n{content}\n\n"
+        for file in context_file_paths:
+            path = file['path']
+            file_type = file['type']
+            if file_type.startswith('image/'):
+                try:
+                    # Open the image file
+                    with Image.open(path) as img:
+                        # Convert image to Base64
+                        buffered = io.BytesIO()
+                        img.save(buffered, format=img.format)
+                        img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                    
+                    # Append to context
+                    context += f"Image: {path}\n"
+                    context += f"data:{file_type};base64,{img_str}\n\n"
+                except Exception as e:
+                    context += f"Error processing image {path}: {str(e)}\n\n"
+            elif file_type.startswith('video/'):
+                context += f"Video: {path}\n"
+                # Optionally, extract metadata or descriptions
+            elif file_type in ['application/pdf', 'text/plain', 'application/json', 'text/markdown']:
+                try:
+                    with open(path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        context += f"File: {path}\n{content}\n\n"
+                except Exception as e:
+                    context += f"Error reading file {path}: {str(e)}\n\n"
+            else:
+                # Handle other file types or skip
+                context += f"File: {path} (Type: {file_type})\n"
         return context
 
     def on_assistant_response(self, *args, **kwargs):
