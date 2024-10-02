@@ -17,6 +17,12 @@ logger = logging.getLogger(__name__)
 
 workspace_manager = WorkspaceManager()
 
+@strawberry.input
+class ContextFilePathInput:
+    path: str
+    type: str
+
+
 @strawberry.type
 class WorkflowStepMutation:
     @strawberry.mutation
@@ -52,7 +58,7 @@ class WorkflowStepMutation:
         self,
         workspace_root_path: str,
         step_id: str,
-        context_file_paths: List[str],
+        context_file_paths: List[ContextFilePathInput],
         requirement: str,
         llm_model: Optional[GraphQLLLMModel] = None
     ) -> str:
@@ -72,9 +78,13 @@ class WorkflowStepMutation:
             original_llm_model = convert_to_original_llm_model(llm_model) if llm_model else None
 
             # Process the requirement
+            # Convert ContextFileInput to the expected format
+            processed_context_files = [{"path": cf.path, "type": cf.type} for cf in context_file_paths]
+
+            # Process the requirement
             await step.process_requirement(
                 requirement,
-                context_file_paths,
+                processed_context_files,
                 original_llm_model
             )
             return f"Requirement sent for processing. Subscribe to 'stepResponse' for updates."

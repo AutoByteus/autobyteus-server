@@ -14,7 +14,7 @@ class BaseStep(ABC, EventEmitter):
         super().__init__()
         self.id = UniqueIDGenerator.generate_id()
         self.workflow = workflow
-        self.llm_model: Optional[LLMModel] = LLMModel.CLAUDE_3_5_SONNET
+        self.llm_model: Optional[LLMModel] = None
         self.prompt_template_manager = PromptTemplateManager()
 
     def load_prompt_templates(self, template_dir: str):
@@ -53,17 +53,19 @@ class BaseStep(ABC, EventEmitter):
         }
 
     @abstractmethod
-    def construct_initial_prompt(self, requirement: str, context: str) -> str:
+    def construct_initial_prompt(self, requirement: str, context: str, llm_model: LLMModel) -> str:
         pass
 
     @abstractmethod
     async def process_requirement(
         self, 
         requirement: str, 
-        context_file_paths: List[str],
-        llm_model: Optional[LLMModel] = None
+        context_file_paths: List[Dict[str, str]], 
+        llm_model: LLMModel
     ) -> None:
-        pass
+        if not llm_model:
+            raise ValueError("LLM model must be provided")
+        self.llm_model = llm_model
 
     def to_dict(self) -> dict:
         return {

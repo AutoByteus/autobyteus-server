@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from autobyteus_server.api.graphql.schema import schema
 from strawberry.fastapi import GraphQLRouter
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from autobyteus_server.api.rest.upload_file import router as upload_file_router
+from fastapi.staticfiles import StaticFiles
+
 
 app = FastAPI()
 
@@ -25,6 +28,7 @@ graphql_router = GraphQLRouter(schema, subscription_protocols=[
     GRAPHQL_TRANSPORT_WS_PROTOCOL,
 ],)
 app.include_router(graphql_router, prefix="/graphql")
+app.include_router(upload_file_router, prefix="/rest")
 
 def graphql_server_mode(config, host, port, dev_mode=False):
     """
