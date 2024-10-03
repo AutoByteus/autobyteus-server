@@ -63,10 +63,8 @@ class BaseStep(ABC, EventEmitter):
         context_file_paths: List[Dict[str, str]], 
         llm_model: LLMModel
     ) -> None:
-        if not llm_model:
-            raise ValueError("LLM model must be provided")
-        self.llm_model = llm_model
-
+        pass
+    
     def to_dict(self) -> dict:
         return {
             "id": self.id,

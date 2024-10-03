@@ -2,6 +2,7 @@
 
 import os
 import base64
+import io
 from PIL import Image
 import pytesseract
 from autobyteus_server.workflow.types.base_step import BaseStep
@@ -47,7 +48,6 @@ class SubtaskImplementationStep(BaseStep):
         context_file_paths: List[Dict[str, str]],  # List of dicts with 'path' and 'type'
         llm_model: LLMModel
     ) -> None:
-        super().process_requirement(requirement, context_file_paths, llm_model)
         context = self._construct_context(context_file_paths)
 
         if not self.agent:
@@ -75,33 +75,25 @@ class SubtaskImplementationStep(BaseStep):
         for file in context_file_paths:
             path = file['path']
             file_type = file['type']
-            if file_type.startswith('image/'):
-                try:
-                    # Open the image file
-                    with Image.open(path) as img:
-                        # Convert image to Base64
-                        buffered = io.BytesIO()
-                        img.save(buffered, format=img.format)
-                        img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
+            
+            if file_type == 'image':
+                with Image.open(path) as img:
+                    # Convert image to Base64
+                    buffered = io.BytesIO()
+                    img.save(buffered, format=img.format)
+                    img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
                     
                     # Append to context
                     context += f"Image: {path}\n"
-                    context += f"data:{file_type};base64,{img_str}\n\n"
-                except Exception as e:
-                    context += f"Error processing image {path}: {str(e)}\n\n"
-            elif file_type.startswith('video/'):
-                context += f"Video: {path}\n"
-                # Optionally, extract metadata or descriptions
-            elif file_type in ['application/pdf', 'text/plain', 'application/json', 'text/markdown']:
-                try:
-                    with open(path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        context += f"File: {path}\n{content}\n\n"
-                except Exception as e:
-                    context += f"Error reading file {path}: {str(e)}\n\n"
+                    context += f"data:image/{img.format.lower()};base64,{img_str}\n\n"
+            elif file_type == 'text':
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    context += f"File: {path}\n{content}\n\n"
             else:
-                # Handle other file types or skip
-                context += f"File: {path} (Type: {file_type})\n"
+                # Throw exception for unsupported file types
+                raise ValueError(f"Unsupported file type: {file_type} for file: {path}")
+        
         return context
 
     def on_assistant_response(self, *args, **kwargs):
@@ -122,3 +114,5 @@ class SubtaskImplementationStep(BaseStep):
             agent_id=agent_id,
             initial_prompt=initial_prompt
         )
+
+
