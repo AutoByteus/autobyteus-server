@@ -1,14 +1,14 @@
 # File: autobyteus_server/workflow/steps/subtask_implementation/subtask_implementation_step.py
 
 import os
+import asyncio
+from typing import List, Optional, Dict, Tuple
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus.agent.agent import StandaloneAgent
 from autobyteus.llm.models import LLMModel
 from autobyteus.llm.base_llm import BaseLLM
 from autobyteus.llm.llm_factory import LLMFactory
-from typing import List, Optional, Dict, Tuple
 from autobyteus.events.event_types import EventType
-import asyncio
 from autobyteus.conversation.user_message import UserMessage
 
 class SubtaskImplementationStep(BaseStep):
@@ -18,12 +18,16 @@ class SubtaskImplementationStep(BaseStep):
         super().__init__(workflow)
         self.tools = []  # Add more tools as needed
         self.agent: Optional[StandaloneAgent] = None
-        self.response_queue = None
+        self.response_queue: Optional[asyncio.Queue] = None
 
         # Read the prompt templates
         current_dir = os.path.dirname(os.path.abspath(__file__))
         prompt_dir = os.path.join(current_dir, "prompt")
         self.load_prompt_templates(prompt_dir)
+
+    def init_response_queue(self):
+        if self.response_queue is None:
+            self.response_queue = asyncio.Queue()
 
     def construct_initial_prompt(self, requirement: str, context: str, llm_model: LLMModel) -> str:
         prompt_template = self.get_prompt_template(llm_model)
@@ -36,26 +40,27 @@ class SubtaskImplementationStep(BaseStep):
         prompt = ""
         if context:
             prompt += f"[Context]\n{context}\n\n"
-        prompt += f"[UserFeedback]\n{requirement}"
+        prompt += f"{requirement}"
         return prompt
 
     async def process_requirement(
         self, 
         requirement: str, 
         context_file_paths: List[Dict[str, str]],  # List of dicts with 'path' and 'type'
-        llm_model: LLMModel
+        llm_model: Optional[LLMModel]
     ) -> None:
         context, image_file_paths = self._construct_context(context_file_paths)
 
-        if not self.agent:
+        if llm_model:
             # This is the beginning of a new conversation
+            self.init_response_queue()
+            await self.clear_response_queue()
             llm_factory = LLMFactory()
             llm = llm_factory.create_llm(llm_model)
             initial_prompt = self.construct_initial_prompt(requirement, context, llm_model)
             initial_user_message = UserMessage(content=initial_prompt, file_paths=image_file_paths)
             self.agent = self._create_agent(llm, initial_user_message)
             self.subscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
-            self.response_queue = asyncio.Queue()
             self.agent.start()
             user_message = initial_user_message
         else:
@@ -63,6 +68,14 @@ class SubtaskImplementationStep(BaseStep):
             prompt = self.construct_subsequent_prompt(requirement, context)
             user_message = UserMessage(content=prompt, file_paths=image_file_paths)
             await self.agent.receive_user_message(user_message)
+
+    async def clear_response_queue(self):
+        self.init_response_queue()
+        while not self.response_queue.empty():
+            try:
+                self.response_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
 
     def _construct_context(self, context_file_paths: List[Dict[str, str]]) -> Tuple[str, List[str]]:
         context = ""
@@ -96,10 +109,15 @@ class SubtaskImplementationStep(BaseStep):
     def on_assistant_response(self, *args, **kwargs):
         response = kwargs.get('response')
         if response:
+            self.init_response_queue()
             asyncio.create_task(self.response_queue.put(response))
 
-    async def get_latest_response(self) -> Optional[str]:
-        return await self.response_queue.get()
+    async def get_latest_response(self, timeout: float = 30.0) -> Optional[str]:
+        self.init_response_queue()
+        try:
+            return await asyncio.wait_for(self.response_queue.get(), timeout=timeout)
+        except asyncio.TimeoutError:
+            return None
 
     def stop_agent(self):
         if self.agent:

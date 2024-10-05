@@ -22,7 +22,6 @@ class ContextFilePathInput:
     path: str
     type: str
 
-
 @strawberry.type
 class WorkflowStepMutation:
     @strawberry.mutation
@@ -77,17 +76,20 @@ class WorkflowStepMutation:
 
             original_llm_model = convert_to_original_llm_model(llm_model) if llm_model else None
 
-            # Process the requirement
             # Convert ContextFileInput to the expected format
             processed_context_files = [{"path": cf.path, "type": cf.type} for cf in context_file_paths]
 
             # Process the requirement
-            await step.process_requirement(
+            agent_id = await step.process_requirement(
                 requirement,
                 processed_context_files,
                 original_llm_model
             )
-            return f"Requirement sent for processing. Subscribe to 'stepResponse' for updates."
+
+            if agent_id:
+                return f"New agent created (ID: {agent_id}) and requirement sent for processing. Subscribe to 'stepResponse' for updates."
+            else:
+                return "Requirement sent for processing using existing agent. Subscribe to 'stepResponse' for updates."
 
         except Exception as e:
             logger.exception(e)
