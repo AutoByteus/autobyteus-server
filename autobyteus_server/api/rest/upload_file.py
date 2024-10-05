@@ -6,7 +6,6 @@ import os
 import uuid
 from typing import List
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
-import clamd
 
 router = APIRouter()
 
@@ -26,11 +25,6 @@ ALLOWED_MIME_TYPES = [
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 MAX_WORKSPACE_STORAGE = 500 * 1024 * 1024  # 500 MB per workspace
-
-try:
-    cd = clamd.ClamdUnixSocket()
-except Exception:
-    cd = None
 
 def get_category(mime_type: str) -> str:
     if mime_type.startswith('image/'):
@@ -111,18 +105,6 @@ async def upload_file(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
 
-    # Virus/Malware Scanning
-    if cd:
-        try:
-            scan_result = cd.scan(file_path)
-            if scan_result and scan_result.get(file_path, [None])[0] == 'FOUND':
-                # Delete the infected file
-                os.remove(file_path)
-                raise HTTPException(status_code=400, detail="Uploaded file is infected with malware.")
-        except Exception as e:
-            # Log the error but do not interrupt the upload process
-            print(f"Virus scan failed: {str(e)}")
-
-    # Construct the URL to access the file
-    file_url = f"/static/uploads/{category}/{unique_filename}"
-    return JSONResponse(content={"fileUrl": file_url})
+    # Return the absolute file path
+    absolute_file_path = os.path.abspath(file_path)
+    return JSONResponse(content={"filePath": absolute_file_path})
