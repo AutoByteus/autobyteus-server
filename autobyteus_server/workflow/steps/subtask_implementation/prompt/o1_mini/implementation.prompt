@@ -1,8 +1,7 @@
-please analyse the given context from the [Context] section and address the requirement given in the [UserRequirement] section.
-
+Given the contxt from the [Context] section, analyse and finish the task given in the [Task] section.
 
 [Context]
 {context}
 
-[UserRequirement]
+[Task]
 {requirement}
