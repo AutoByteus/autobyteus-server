@@ -29,3 +29,6 @@ code search works, the way it works is not good, too complicated, created functi
 created tools for workspace, add python documentation, loops through the codebase, create a documentation, create a documentation for the codebase, follow best practice for python javascript java projects
 set up templates to set up the project, connect github, setup projects, create a template folder for the whole project. non developers can use the tool to start the project, full stack is already created, add some requirements, what requirements are needed, create a project, currently chatgpt is able to do, frontend, backend, database architecture are fixed.
 automate coding workflow, whatever product we want to build, we can build it very fast, package into a single desktop app, much more powerful tool than copilot, it has a big market, swe benchmark
+app like discord in 2 months
+layout needs to be improved, include agents, tools, run the code, integrate with excel, word
+good architecture is important, add new functionality, add new features
