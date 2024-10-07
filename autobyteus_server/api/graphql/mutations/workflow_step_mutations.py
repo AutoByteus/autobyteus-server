@@ -8,7 +8,6 @@ import logging
 from typing import List, Optional
 import strawberry
 from autobyteus_server.workflow.types.base_step import BaseStep
-from autobyteus.llm.models import LLMModel
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.api.graphql.types.llm_model_types import LLMModel as GraphQLLLMModel, convert_to_original_llm_model
 

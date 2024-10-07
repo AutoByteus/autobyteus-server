@@ -1,7 +1,6 @@
 # autobyteus_server/file_explorer/traversal_ignore_strategy/git_ignore_strategy.py
 
 import pathlib
-from typing import List, Optional
 import pathspec
 import os
 

@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+   "configurations": [
+    {
+   "name": "Python: GraphQL Server",
+   "type": "python",
+   "request": "launch",
+   "program": "${workspaceFolder}/autobyteus_server/app.py",
+   "args": [
+   "--mode", "graphqlserver",
+   "--host", "127.0.0.1",
+   "--port", "8000"
+    ],
+   "console": "integratedTerminal",
+   "justMyCode": false
+    }
+    ]
+   }

@@ -1,7 +1,7 @@
 # autobyteus_server/file_explorer/tree_node.py
 
 import json
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any
 from collections import deque
 
 

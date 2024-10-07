@@ -12,9 +12,7 @@ from typing import List
 from autobyteus.utils.singleton import SingletonMeta
 from autobyteus_server.workspaces.workspace_registry import WorkspaceRegistry
 from autobyteus_server.workspaces.workspace_tools.types import WorkspaceToolData
-from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.workspace_refactorer import WorkspaceRefactorer
-from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
 from autobyteus_server.workspaces.workspace_tools.workspace_tools_registry import WorkspaceToolsRegistry
 
 class WorkspaceToolsService(metaclass=SingletonMeta):
