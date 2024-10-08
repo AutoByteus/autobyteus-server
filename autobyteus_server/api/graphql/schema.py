@@ -12,6 +12,7 @@ from autobyteus_server.api.graphql.queries import workspace_queries
 from autobyteus_server.api.graphql.queries import file_explorer_queries
 from autobyteus_server.api.graphql.queries import code_search_queries
 from autobyteus_server.api.graphql.types.llm_model_types import LLMModel
+from autobyteus_server.api.graphql.mutations.openai_mutations import OpenAIMutation
 
 @strawberry.type
 class Query(workspace_queries.Query, code_search_queries.Query, file_explorer_queries.Query):
