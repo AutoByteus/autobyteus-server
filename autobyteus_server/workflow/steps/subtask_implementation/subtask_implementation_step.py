@@ -3,6 +3,7 @@
 import os
 import asyncio
 from typing import List, Optional, Dict, Tuple
+import uuid
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus.agent.agent import StandaloneAgent
 from autobyteus.llm.models import LLMModel
@@ -96,7 +97,7 @@ class SubtaskImplementationStep(BaseStep):
         return context, image_file_paths
 
     def _create_agent(self, llm: BaseLLM, initial_user_message: UserMessage) -> StandaloneAgent:
-        agent_id = f"subtask_implementation_{id(self)}"
+        agent_id = f"subtask_implementation_{uuid.uuid4()}"
         return StandaloneAgent(
             role="Subtask_Implementation",
             llm=llm,
