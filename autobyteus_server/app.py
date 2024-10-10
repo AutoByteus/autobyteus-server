@@ -1,57 +1,58 @@
 """
-app.py: The main entry point for a Python application with three modes of operation: command line, gRPC server mode, and GraphQL server mode.
+app.py: The main entry point for the AutoByteus server application.
 
-The script allows users to:
-- Interact with a chat system through PuppeteerLLMIntegration in command line mode.
-- Run a gRPC server for AutomatedCodingWorkflowService in gRPC server mode.
-- Run a FastAPI server with GraphQL endpoints using the Strawberry GraphQL library in GraphQL server mode.
+This script initializes the FastAPI server with GraphQL endpoints
+using the Strawberry GraphQL library.
 
-The mode, configuration file, server hostname, and port are specified through command line arguments. The script parses these arguments and executes the appropriate mode function with the necessary parameters.
+To start the server, run the following command from the project root:
+    uvicorn autobyteus_server.app:app --host 0.0.0.0 --port 8000
 
-Usage:
-- For command line mode: python app.py --mode commandline
-- For gRPC server mode: python app.py --mode grpcserver --host 127.0.0.1 --port 50051
-- For GraphQL server mode: python app.py --mode graphqlserver --host 127.0.0.1 --port 8000
-- For GraphQL server mode in development: python app.py --mode graphqlserver --host 127.0.0.1 --port 8000 --dev
+For development with auto-reload:
+    uvicorn autobyteus_server.app:app --host 0.0.0.0 --port 8000 --reload
+
+Note: Adjust the host and port as needed for your environment.
 """
 
-import argparse
 import sys
-
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from autobyteus_server.startup_mode.cli_mode import command_line_mode
-from autobyteus_server.startup_mode.grpc_server_mode import grpc_server_mode
-from autobyteus_server.startup_mode.graphql_server_mode import graphql_server_mode
-from autobyteus_server.config import config
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from autobyteus_server.api.graphql.schema import schema
+from strawberry.fastapi import GraphQLRouter
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from autobyteus_server.api.rest.upload_file import router as upload_file_router
 from autobyteus_server.config.logging_config import configure_logger
 
-def parse_command_line_arguments():
-    parser = argparse.ArgumentParser(description='Python app with three modes: command line, gRPC server mode, and GraphQL server mode.')
-    parser.add_argument('--mode', choices=['commandline', 'grpcserver', 'graphqlserver'], help='Select the mode to run the app', required=True)
-    parser.add_argument('--host', help='Server hostname', default='127.0.0.1')
-    parser.add_argument('--port', type=int, help='Server port', default=8000)
-    parser.add_argument('--dev', action='store_true', help='Enable development mode (auto-reload)')
+# Configure logging
+configure_logger()
 
-    return parser.parse_args()
+# Create FastAPI app
+app = FastAPI()
 
-def main():
-    configure_logger()
+# Allow all origins for CORS
+# Note: This can pose security risks if not managed properly.
+# Ensure that your application has appropriate security measures in place.
+origins = "*"
 
-    args = parse_command_line_arguments()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=False,  # Must be False when using "*" for allow_origins
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    if args.mode == 'commandline':
-        command_line_mode(config)
-    elif args.mode == 'grpcserver':
-        grpc_server_mode()
-    elif args.mode == 'graphqlserver':
-        graphql_server_mode(config, args.host, args.port, args.dev)
-    else:
-        print("Invalid mode selected.")
-        sys.exit(1)
+# Set up GraphQL router
+graphql_router = GraphQLRouter(schema, subscription_protocols=[
+    GRAPHQL_WS_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+])
+app.include_router(graphql_router, prefix="/graphql")
 
+# Include REST router for file uploads
+app.include_router(upload_file_router, prefix="/rest")
 
-if __name__ == "__main__":
-    main()
+# The 'app' variable is now available for uvicorn to use when starting the server
