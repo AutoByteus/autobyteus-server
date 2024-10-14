@@ -1,16 +1,18 @@
+from typing import TYPE_CHECKING, List, Optional, Dict
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict
 from autobyteus.prompt.prompt_template import PromptTemplate
-from autobyteus_server.workflow.types.base_workflow import BaseWorkflow
 from autobyteus_server.workflow.utils.unique_id_generator import UniqueIDGenerator
 from autobyteus.llm.models import LLMModel
 from autobyteus.events.event_emitter import EventEmitter
 from autobyteus_server.workflow.utils.prompt_template_manager import PromptTemplateManager
 
+if TYPE_CHECKING:
+    from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
+
 class BaseStep(ABC, EventEmitter):
     name: str
 
-    def __init__(self, workflow: BaseWorkflow):
+    def __init__(self, workflow: 'AutomatedCodingWorkflow'):
         super().__init__()
         self.id = UniqueIDGenerator.generate_id()
         self.workflow = workflow

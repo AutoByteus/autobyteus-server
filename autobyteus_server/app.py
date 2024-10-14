@@ -5,7 +5,7 @@ This script initializes the FastAPI server with GraphQL endpoints
 using the Strawberry GraphQL library.
 
 To start the server, run the following command from the project root:
-    uvicorn autobyteus_server.app:app --host 0.0.0.0 --port 8000
+    uvicorn autobyteus_server.app:app --host 0.0.0.0 --port 8001
 
 For development with auto-reload:
     uvicorn autobyteus_server.app:app --host 0.0.0.0 --port 8000 --reload

@@ -9,15 +9,15 @@ workspace_manager = WorkspaceManager()
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def step_response(self, workspace_root_path: str, step_id: str) -> AsyncGenerator[str, None]:
-        workspace = workspace_manager.get_workspace(workspace_root_path)
+    async def step_response(self, workspace_id: str, step_id: str) -> AsyncGenerator[str, None]:
+        workspace = workspace_manager.get_workspace_by_id(workspace_id)
         if not workspace:
-            yield f"Error: No workspace found for path {workspace_root_path}"
+            yield f"Error: No workspace found for ID {workspace_id}"
             return
 
         workflow = workspace.workflow
         if not workflow:
-            yield f"Error: No workflow found for workspace {workspace_root_path}"
+            yield f"Error: No workflow found for workspace {workspace_id}"
             return
 
         step = workflow.get_step(step_id)

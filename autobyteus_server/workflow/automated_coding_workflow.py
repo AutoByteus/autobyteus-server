@@ -4,11 +4,14 @@ automated_coding_workflow.py: Contains the AutomatedCodingWorkflow class, which 
 """
 
 import json
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 from autobyteus_server.workflow.config import WORKFLOW_CONFIG
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus_server.workflow.types.base_workflow import WorkflowStatus
 from autobyteus_server.workflow.types.workflow_template_config import StepsTemplateConfig
+
+if TYPE_CHECKING:
+    from autobyteus_server.workspaces.workspace import Workspace
 
 class AutomatedCodingWorkflow:
     """
