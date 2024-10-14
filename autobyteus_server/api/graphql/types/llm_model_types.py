@@ -13,6 +13,7 @@ class LLMModel(Enum):
     GPT_4o_API = "gpt-4o"
     o1_PREVIEW_API = "o1-preview"
     o1_MINI_API = "o1-mini"
+    CHATGPT_4O_LATEST_API = "chatgpt-4o-latest"
 
     # Mistral models
     MISTRAL_SMALL = "mistral-small"
@@ -87,28 +88,4 @@ class LLMModel(Enum):
 def convert_to_original_llm_model(model: Optional[LLMModel]) -> Optional[OriginalLLMModel]:
     if model is None:
         return None
-    if isinstance(model, LLMModel.OpenAIRpaModels):
-        return OriginalLLMModel.OpenAIRpaModels(model.value)
-    if isinstance(model, LLMModel.OpenaiApiModels):
-        return OriginalLLMModel.OpenaiApiModels(model.value)
-    if isinstance(model, LLMModel.MistralRpaModels):
-        return OriginalLLMModel.MistralRpaModels(model.value)
-    if isinstance(model, LLMModel.MistralApiModels):
-        return OriginalLLMModel.MistralApiModels(model.value)
-    if isinstance(model, LLMModel.GroqRpaModels):
-        return OriginalLLMModel.GroqRpaModels(model.value)
-    if isinstance(model, LLMModel.GroqApiModels):
-        return OriginalLLMModel.GroqApiModels(model.value)
-    if isinstance(model, LLMModel.GeminiRpaModels):
-        return OriginalLLMModel.GeminiRpaModels(model.value)
-    if isinstance(model, LLMModel.GeminiApiModels):
-        return OriginalLLMModel.GeminiApiModels(model.value)
-    if isinstance(model, LLMModel.ClaudeRpaModels):
-        return OriginalLLMModel.ClaudeRpaModels(model.value)
-    if isinstance(model, LLMModel.ClaudeApiModels):
-        return OriginalLLMModel.ClaudeApiModels(model.value)
-    if isinstance(model, LLMModel.PerplexityRpaModels):
-        return OriginalLLMModel.PerplexityRpaModels(model.value)
-    if isinstance(model, LLMModel.PerplexityApiModels):
-        return OriginalLLMModel.PerplexityApiModels(model.value)
-    raise ValueError(f"Invalid LLMModel: {model}")
+    return OriginalLLMModel(model.value)
