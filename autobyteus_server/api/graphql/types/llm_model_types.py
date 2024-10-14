@@ -64,6 +64,7 @@ class LLMModel(Enum):
     CLAUDE_3_HAIKU_API = "Claude3Haiku-api"
     CLAUDE_3_OPUS_API = "Claude3Opus-api"
     CLAUDE_3_5_SONNET_API = "Claude35Sonnet-api"
+    CLAUDE_3_5_SONNET_LATEST_API = "claude-3-5-sonnet-20240620"
 
     # Perplexity models
     LLAMA_3_1_SONAR_LARGE_128K_ONLINE = "llama-3-1-sonar-large-128k-online"
