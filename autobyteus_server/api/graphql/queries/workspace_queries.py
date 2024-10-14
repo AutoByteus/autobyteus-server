@@ -34,18 +34,18 @@ class WorkspaceTool:
 @strawberry.type
 class Query:
     @strawberry.field
-    def workflow_config(self, workspace_root_path: str) -> JSON:
+    def workflow_config(self, workspace_id: str) -> JSON:
         """
         Fetches the configuration for the workflow associated with the
         provided workspace.
 
         Args:
-            workspace_root_path (str): The root path of the workspace.
+            workspace_id (str): The ID of the workspace.
 
         Returns:
             JSON: The configuration of the workflow.
         """
-        workspace = workspace_manager.get_workspace(workspace_root_path)
+        workspace = workspace_manager.get_workspace_by_id(workspace_id)
         if not workspace:
             return json.dumps({"error": "Workspace not found"})
 
@@ -59,13 +59,13 @@ class Query:
 
     @strawberry.field
     def get_available_workspace_tools(
-        self, workspace_root_path: str
+        self, workspace_id: str
     ) -> List[WorkspaceTool]:
         """
         Fetches available workspace tools for the given workspace.
 
         Args:
-            workspace_root_path (str): The root path of the workspace.
+            workspace_id (str): The ID of the workspace.
 
         Returns:
             List[WorkspaceTool]: A list of available workspace tools.
@@ -74,8 +74,12 @@ class Query:
             Exception: If fetching available workspace tools fails.
         """
         try:
+            workspace = workspace_manager.get_workspace_by_id(workspace_id)
+            if not workspace:
+                raise Exception(f"Workspace not found for ID: {workspace_id}")
+            
             tools_data = workspace_tools_service.get_available_tools(
-                workspace_root_path
+                workspace.root_path
             )
             return [
                 WorkspaceTool(

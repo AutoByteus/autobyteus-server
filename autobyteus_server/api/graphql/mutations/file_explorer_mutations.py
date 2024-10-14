@@ -22,17 +22,17 @@ class Mutation:
     """
 
     @strawberry.mutation
-    def apply_file_change(self, workspace_root_path: str, file_path: str, content: str) -> str:
+    def apply_file_change(self, workspace_id: str, file_path: str, content: str) -> str:
         """
         Applies changes to a file by overwriting its content.
 
-        This mutation takes the workspace root path, the absolute path of the file
+        This mutation takes the workspace ID, the relative path of the file
         to be modified, and the new content to be written to the file. It then
         attempts to write the new content to the specified file.
 
         Args:
-            workspace_root_path (str): The root path of the workspace.
-            file_path (str): The absolute path of the file to be modified.
+            workspace_id (str): The ID of the workspace.
+            file_path (str): The relative path of the file to be modified from the workspace root.
             content (str): The new content to be written to the file.
 
         Returns:
@@ -48,14 +48,14 @@ class Mutation:
         Example:
             mutation {
                 applyFileChange(
-                    workspaceRootPath: "/path/to/workspace",
-                    filePath: "/path/to/workspace/file.txt",
+                    workspaceId: "123e4567-e89b-12d3-a456-426614174000",
+                    filePath: "src/utils/helpers.py",
                     content: "New file content"
                 )
             }
         """
         try:
-            workspace = workspace_manager.get_workspace(workspace_root_path)
+            workspace = workspace_manager.get_workspace_by_id(workspace_id)
             if not workspace:
                 return json.dumps({"error": "Workspace not found"})
 

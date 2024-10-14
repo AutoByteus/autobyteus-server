@@ -2,8 +2,9 @@
 """
 This module provides a registry for storing workspaces.
 
-Workspaces are stored in a dictionary, with the root path of a workspace as the key, 
-and the corresponding Workspace object as the value.
+Workspaces are stored in two dictionaries: one with the workspace ID as the key, 
+and another with the root path of a workspace as the key. Both dictionaries store 
+the corresponding Workspace object as the value.
 """
 
 from typing import Dict, Optional
@@ -17,7 +18,9 @@ class WorkspaceRegistry(metaclass=SingletonMeta):
     A registry to store workspaces.
 
     Attributes:
-        workspaces (Dict[str, Workspace]): A dictionary mapping workspace root paths to 
+        id_to_workspace (Dict[str, Workspace]): A dictionary mapping workspace IDs to
+            their corresponding Workspace.
+        root_path_to_workspace (Dict[str, Workspace]): A dictionary mapping workspace root paths to 
             their corresponding Workspace.
     """
 
@@ -25,38 +28,63 @@ class WorkspaceRegistry(metaclass=SingletonMeta):
         """
         Initialize WorkspaceRegistry.
         """
-        self.workspaces: Dict[str, Workspace] = {}
+        self.id_to_workspace: Dict[str, Workspace] = {}
+        self.root_path_to_workspace: Dict[str, Workspace] = {}
 
-    def add_workspace(self, workspace_root_path: str, workspace: Workspace) -> None:
+    def add_workspace(self, workspace: Workspace) -> None:
         """
         Adds a workspace to the registry.
 
         Args:
-            workspace_root_path (str): The root path of the workspace.
             workspace (Workspace): The workspace to be added.
         """
-        self.workspaces[workspace_root_path] = workspace
+        self.id_to_workspace[workspace.workspace_id] = workspace
+        self.root_path_to_workspace[workspace.root_path] = workspace
 
-    def get_workspace(self, workspace_root_path: str) -> Optional[Workspace]:
+    def get_workspace_by_id(self, workspace_id: str) -> Optional[Workspace]:
         """
-        Retrieves a workspace from the registry.
+        Retrieves a workspace from the registry using its ID.
 
         Args:
-            workspace_root_path (str): The root path of the workspace.
+            workspace_id (str): The ID of the workspace.
 
         Returns:
             Optional[Workspace]: The workspace if it exists, None otherwise.
         """
-        return self.workspaces.get(workspace_root_path)
+        return self.id_to_workspace.get(workspace_id)
 
-    def workspace_exists(self, workspace_root_path: str) -> bool:
+    def get_workspace_by_root_path(self, root_path: str) -> Optional[Workspace]:
         """
-        Checks if a workspace already exists in the registry.
+        Retrieves a workspace from the registry using its root path.
 
         Args:
-            workspace_root_path (str): The root path of the workspace.
+            root_path (str): The root path of the workspace.
+
+        Returns:
+            Optional[Workspace]: The workspace if it exists, None otherwise.
+        """
+        return self.root_path_to_workspace.get(root_path)
+
+    def workspace_exists_by_id(self, workspace_id: str) -> bool:
+        """
+        Checks if a workspace already exists in the registry using its ID.
+
+        Args:
+            workspace_id (str): The ID of the workspace.
 
         Returns:
             bool: True if the workspace exists, False otherwise.
         """
-        return workspace_root_path in self.workspaces
+        return workspace_id in self.id_to_workspace
+
+    def workspace_exists_by_root_path(self, root_path: str) -> bool:
+        """
+        Checks if a workspace already exists in the registry using its root path.
+
+        Args:
+            root_path (str): The root path of the workspace.
+
+        Returns:
+            bool: True if the workspace exists, False otherwise.
+        """
+        return root_path in self.root_path_to_workspace

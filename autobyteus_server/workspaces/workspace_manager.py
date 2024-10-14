@@ -3,10 +3,9 @@
 This module provides a manager for handling operations related to workspaces.
 
 This manager is responsible for adding workspaces, building their directory structures, 
-and maintaining their settings. A workspace is represented by its root path, 
-and its setting is stored in a dictionary, with the root path as the key. 
-Upon successful addition of a workspace, a directory tree structure represented 
-by TreeNode objects is returned.
+and maintaining their settings. A workspace is represented by its root path and a unique ID, 
+and is stored in the WorkspaceRegistry. Upon successful addition of a workspace, 
+a directory tree structure represented by TreeNode objects is returned.
 """
 
 import logging
@@ -19,7 +18,6 @@ from autobyteus_server.workspaces.workspace_registry import WorkspaceRegistry
 from autobyteus_server.workspaces.workspace_tools.project_type_determiner import ProjectTypeDeterminer
 
 from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
-from autobyteus_server.workspaces.errors.workspace_already_exists_error import WorkspaceAlreadyExistsError
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +27,7 @@ class WorkspaceManager(metaclass=SingletonMeta):
 
     Attributes:
         workspace_registry (WorkspaceRegistry): A registry to store workspaces.
+        project_type_determiner (ProjectTypeDeterminer): A tool to determine the project type.
     """
 
     def __init__(self):
@@ -38,23 +37,22 @@ class WorkspaceManager(metaclass=SingletonMeta):
         self.workspace_registry = WorkspaceRegistry()
         self.project_type_determiner = ProjectTypeDeterminer()
 
-    def get_workspace_file_explorer(self, workspace_root_path: str) -> Optional[FileExplorer]:
+    def get_workspace_file_explorer(self, workspace_id: str) -> Optional[FileExplorer]:
         """
-        Retrieves the FileExplorer for a given workspace path if it exists.
+        Retrieves the FileExplorer for a given workspace ID if it exists.
 
         Args:
-            workspace_root_path (str): The root path of the workspace.
+            workspace_id (str): The ID of the workspace.
 
         Returns:
             Optional[FileExplorer]: The FileExplorer object if the workspace exists, None otherwise.
         """
-        workspace = self.workspace_registry.get_workspace(workspace_root_path)
+        workspace = self.workspace_registry.get_workspace_by_id(workspace_id)
         return workspace.file_explorer if workspace else None
 
-    def add_workspace(self, workspace_root_path: str) -> FileExplorer:
+    def add_workspace(self, workspace_root_path: str) -> Workspace:
         """
-        Adds a workspace to the workspace registry.
-        If the workspace already exists, it raises a WorkspaceAlreadyExistsError.
+        Adds a workspace to the workspace registry or returns the existing one.
         If the workspace doesn't exist, it builds the directory tree of the workspace
         and initializes an AutomatedCodingWorkflow for the workspace.
 
@@ -62,13 +60,11 @@ class WorkspaceManager(metaclass=SingletonMeta):
             workspace_root_path (str): The root path of the workspace.
 
         Returns:
-            FileExplorer: The FileExplorer object representing the workspace directory tree.
-
-        Raises:
-            WorkspaceAlreadyExistsError: If the workspace already exists.
+            Workspace: The created or existing Workspace object.
         """
-        if self.workspace_registry.get_workspace(workspace_root_path):
-            raise WorkspaceAlreadyExistsError(f"Workspace at {workspace_root_path} already exists")
+        existing_workspace = self.workspace_registry.get_workspace_by_root_path(workspace_root_path)
+        if existing_workspace:
+            return existing_workspace
 
         # Determine the project type
         project_type = self.project_type_determiner.determine(workspace_root_path)
@@ -81,15 +77,18 @@ class WorkspaceManager(metaclass=SingletonMeta):
         workflow = AutomatedCodingWorkflow()
         
         # Create and register the Workspace
-        workspace = Workspace(root_path=workspace_root_path, project_type=project_type, 
-                              file_explorer=file_explorer, workflow=workflow)
-        self.workspace_registry.add_workspace(workspace_root_path, workspace)
+        workspace = Workspace(root_path=workspace_root_path, 
+                              project_type=project_type, file_explorer=file_explorer, workflow=workflow)
+        
+        workflow.workspace = workspace
+        
+        self.workspace_registry.add_workspace(workspace)
 
-        return file_explorer
+        return workspace
 
-    def get_workspace(self, workspace_root_path: str) -> Optional[Workspace]:
+    def get_workspace_by_root_path(self, workspace_root_path: str) -> Optional[Workspace]:
         """
-        Retrieves a workspace from the workspace registry.
+        Retrieves a workspace from the workspace registry using the root path.
 
         Args:
             workspace_root_path (str): The root path of the workspace.
@@ -97,4 +96,16 @@ class WorkspaceManager(metaclass=SingletonMeta):
         Returns:
             Optional[Workspace]: The workspace if it exists, None otherwise.
         """
-        return self.workspace_registry.get_workspace(workspace_root_path)
+        return self.workspace_registry.get_workspace_by_root_path(workspace_root_path)
+
+    def get_workspace_by_id(self, workspace_id: str) -> Optional[Workspace]:
+        """
+        Retrieves a workspace using its ID.
+
+        Args:
+            workspace_id (str): The ID of the workspace.
+
+        Returns:
+            Optional[Workspace]: The workspace if it exists, None otherwise.
+        """
+        return self.workspace_registry.get_workspace_by_id(workspace_id)

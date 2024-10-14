@@ -1,5 +1,3 @@
-# File: autobyteus_server/workflow/steps/subtask_implementation/subtask_implementation_step.py
-
 import os
 import asyncio
 from typing import List, Optional, Dict, Tuple
@@ -81,19 +79,21 @@ class SubtaskImplementationStep(BaseStep):
     def _construct_context(self, context_file_paths: List[Dict[str, str]]) -> Tuple[str, List[str]]:
         context = ""
         image_file_paths = []
+        root_path = self.workflow.workspace.root_path  # Construct full path using root_path
         for file in context_file_paths:
             path = file['path']
             file_type = file['type']
-            
+            full_path = os.path.join(root_path, path)  # Construct the full path
+
             if file_type == 'image':
-                image_file_paths.append(path)
+                image_file_paths.append(full_path)
             elif file_type == 'text':
-                with open(path, 'r', encoding='utf-8') as f:
+                with open(full_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                     context += f"File: {path}\n{content}\n\n"
             else:
                 raise ValueError(f"Unsupported file type: {file_type} for file: {path}")
-        
+
         return context, image_file_paths
 
     def _create_agent(self, llm: BaseLLM, initial_user_message: UserMessage) -> StandaloneAgent:

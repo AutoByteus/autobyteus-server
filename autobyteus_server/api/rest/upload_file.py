@@ -41,15 +41,16 @@ def get_category(mime_type: str) -> str:
 @router.post("/upload-file")
 async def upload_file(
     file: UploadFile = File(...),
-    workspaceRootPath: str = Form(...)
+    workspace_id: str = Form(...)
 ):
     # Validate workspace
-    workspace = workspace_manager.get_workspace(workspaceRootPath)
+    workspace = workspace_manager.get_workspace_by_id(workspace_id)
     if not workspace:
-        raise HTTPException(status_code=400, detail="Invalid workspace root path.")
+        raise HTTPException(status_code=400, detail=f"Invalid workspace ID: {workspace_id}")
 
     # Define base upload directory based on workspace root path
-    BASE_UPLOAD_DIRECTORY = os.path.join(workspaceRootPath, "uploads")
+    workspace_root_path = workspace.root_path
+    BASE_UPLOAD_DIRECTORY = os.path.join(workspace_root_path, "uploads")
 
     if not os.path.exists(BASE_UPLOAD_DIRECTORY):
         try:

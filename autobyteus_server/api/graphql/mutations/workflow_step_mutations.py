@@ -26,18 +26,18 @@ class WorkflowStepMutation:
     @strawberry.mutation
     async def configure_step_llm(
         self,
-        workspace_root_path: str,
+        workspace_id: str,
         step_id: str,
         llm_model: GraphQLLLMModel
     ) -> str:
         try:
-            workspace = workspace_manager.get_workspace(workspace_root_path)
+            workspace = workspace_manager.get_workspace_by_id(workspace_id)
             if not workspace:
-                return f"Error: No workspace found for path {workspace_root_path}"
+                return f"Error: No workspace found for ID {workspace_id}"
 
             workflow = workspace.workflow
             if not workflow:
-                return f"Error: No workflow found for workspace {workspace_root_path}"
+                return f"Error: No workflow found for workspace {workspace_id}"
 
             step = workflow.get_step(step_id)
             if not step:
@@ -54,20 +54,20 @@ class WorkflowStepMutation:
     @strawberry.mutation
     async def send_step_requirement(
         self,
-        workspace_root_path: str,
+        workspace_id: str,
         step_id: str,
         context_file_paths: List[ContextFilePathInput],
         requirement: str,
         llm_model: Optional[GraphQLLLMModel] = None
     ) -> str:
         try:
-            workspace = workspace_manager.get_workspace(workspace_root_path)
+            workspace = workspace_manager.get_workspace_by_id(workspace_id)
             if not workspace:
-                return f"Error: No workspace found for path {workspace_root_path}"
+                return f"Error: No workspace found for ID {workspace_id}"
 
             workflow = workspace.workflow
             if not workflow:
-                return f"Error: No workflow found for workspace {workspace_root_path}"
+                return f"Error: No workflow found for workspace {workspace_id}"
 
             step = workflow.get_step(step_id)
             if not isinstance(step, BaseStep):
