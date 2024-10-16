@@ -5,6 +5,7 @@ from enum import Enum
 
 @strawberry.enum
 class LLMModel(Enum):
+    NVIDIA_LLAMA_3_1_NEMOTRON_70B_INSTRUCT = "nvidia/llama-3.1-nemotron-70b-instruct"
     # ChatGPT models
     GPT_4o = "GPT-4o"
     o1_PREVIEW = "o1-preview"
