@@ -21,7 +21,7 @@ class LLMModel(Enum):
     MISTRAL_LARGE = "mistral-large"
     MISTRAL_SMALL_API = "mistral-small-api"
     MISTRAL_MEDIUM_API = "mistral-medium-api"
-    MISTRAL_LARGE_API = "mistral-large-api"
+    MISTRAL_LARGE_API = "mistral-large-latest"
 
     # Groq models
     GEMMA_2_9B_IT = "gemma2-9b-it"
@@ -52,7 +52,7 @@ class LLMModel(Enum):
     GEMINI_1_0_PRO_API = "gemini-1-0-pro-api"
     GEMINI_1_5_PRO_API = "gemini-1-5-pro-api"
     GEMINI_1_5_PRO_EXPERIMENTAL_API = "gemini-1-5-pro-experimental-api"
-    GEMINI_1_5_FLASH_API = "gemini-1-5-flash-api"
+    GEMINI_1_5_FLASH_API = "gemini-1.5-flash"
     GEMMA_2_2B_API = "gemma-2-2b-api"
     GEMMA_2_9B_API = "gemma-2-9b-api"
     GEMMA_2_27B_API = "gemma-2-27b-api"
@@ -65,6 +65,7 @@ class LLMModel(Enum):
     CLAUDE_3_OPUS_API = "Claude3Opus-api"
     CLAUDE_3_5_SONNET_API = "Claude35Sonnet-api"
     CLAUDE_3_5_SONNET_LATEST_API = "claude-3-5-sonnet-20240620"
+    BEDROCK_CLAUDE_3_5_SONNET_API = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
     # Perplexity models
     LLAMA_3_1_SONAR_LARGE_128K_ONLINE = "llama-3-1-sonar-large-128k-online"
