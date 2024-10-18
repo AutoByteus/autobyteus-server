@@ -14,7 +14,6 @@ import json
 import logging
 import os
 import strawberry
-from strawberry.types import Info
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.api.graphql.types.workspace_info import WorkspaceInfo
 

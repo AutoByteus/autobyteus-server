@@ -1,71 +1,66 @@
 import pytest
 import os
 import tempfile
-from autobyteus_server.file_explorer.directory_traversal import DirectoryTraversal
+from unittest.mock import Mock, patch
 from autobyteus_server.file_explorer.file_explorer import FileExplorer
-from autobyteus_server.workspaces.setting.project_types import ProjectType
+from autobyteus_server.workspaces.workspace import Workspace
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.python_project_refactorer import PythonProjectRefactorer
-from autobyteus_server.workspaces.setting.workspace_setting import WorkspaceSetting
 
 
-def test_should_print_refactored_code_for_valid_files(capsys):
-    """Ensure that refactored code is printed for valid Python files and not for __init__.py files."""
+@pytest.fixture
+def mock_workspace():
     with tempfile.TemporaryDirectory() as tmpdirname:
-        os.makedirs(os.path.join(tmpdirname, 'src', 'project'))
+        src_dir = os.path.join(tmpdirname, 'src')
+        os.makedirs(src_dir)
         
-        # Python file with a function without a docstring
-        code1 = """
-                def add(a, b):
-                    return a + b
-                """
-        file_path_1 = os.path.join(tmpdirname, 'src', 'project', 'math_utils.py')
-        with open(file_path_1, 'w') as f:
-            f.write(code1)
-        
-        # __init__.py file
-        file_path_2 = os.path.join(tmpdirname, 'src', 'project', '__init__.py')
-        with open(file_path_2, 'w') as f:
-            f.write("# init file")
-        
-        dir_traversal = DirectoryTraversal()
-        directory_tree = FileExplorer(dir_traversal.build_tree(tmpdirname))
-        workspace_setting = WorkspaceSetting(root_path=tmpdirname, project_type=ProjectType.PYTHON, file_explorer=directory_tree)
-        
-        refactorer = PythonProjectRefactorer(workspace_setting)
-        refactorer.refactor()
-        
-        captured = capsys.readouterr()
-        
-        # Checking if the refactored code is printed for the correct file path
-        assert f"Refactored code for {file_path_1}" in captured.out
-
-        # Making sure it skips the __init__.py file
-        assert "__init__.py" not in captured.out
-
-
-def test_should_construct_prompt_with_file_content():
-    """Ensure that the construct_prompt method correctly formats the prompt with file content."""
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        # Python file with a function without a docstring
+        # Create a Python file with a function without a docstring
         code = """
-                def subtract(a, b):
-                    return a - b
-                """
-        file_path = os.path.join(tmpdirname, 'utils.py')
+def add(a, b):
+    return a + b
+"""
+        file_path = os.path.join(src_dir, 'math_utils.py')
         with open(file_path, 'w') as f:
             f.write(code)
         
-        dir_traversal = DirectoryTraversal()
-        directory_tree = dir_traversal.build_tree(tmpdirname)
-        workspace_setting = WorkspaceSetting(file_explorer=directory_tree)
+        # Create __init__.py file
+        init_path = os.path.join(src_dir, '__init__.py')
+        with open(init_path, 'w') as f:
+            f.write("# init file")
         
-        refactorer = PythonProjectRefactorer(workspace_setting)
-        prompt = refactorer.construct_prompt(file_path)
+        file_explorer = FileExplorer(tmpdirname)
+        workspace = Workspace(root_path=tmpdirname, file_explorer=file_explorer)
         
-        # Verifying the correct format and content of the constructed prompt
-        expected_content = """
-                            def subtract(a, b):
-                            return a - b
-                            """
-        assert f"Please examine the source code in file {file_path}" in prompt
-        assert expected_content in prompt
+        yield workspace
+
+
+@patch('autobyteus_server.workspaces.workspace_tools.workspace_refactorer.python_project_refactorer.PythonProjectRefactorer.llm_integration')
+def test_refactor_process(mock_llm, mock_workspace, capsys):
+    # Mock LLM response
+    mock_llm.process_input_messages.return_value = '''
+def add(a: int, b: int) -> int:
+    """Add two integers and return the sum."""
+    return a + b
+'''
+    
+    refactorer = PythonProjectRefactorer(mock_workspace)
+    refactorer.refactor()
+    
+    captured = capsys.readouterr()
+    
+    # Check if the refactored code is logged
+    assert "def add(a: int, b: int) -> int:" in captured.out
+    assert '"""Add two integers and return the sum."""' in captured.out
+    
+    # Ensure __init__.py was not processed
+    assert "__init__.py" not in captured.out
+
+
+def test_construct_prompt(mock_workspace):
+    refactorer = PythonProjectRefactorer(mock_workspace)
+    file_path = os.path.join(mock_workspace.root_path, 'src', 'math_utils.py')
+    
+    prompt = refactorer.construct_prompt(file_path)
+    
+    assert f"Please examine the source code in file {file_path}" in prompt
+    assert "def add(a, b):" in prompt
+    assert "return a + b" in prompt

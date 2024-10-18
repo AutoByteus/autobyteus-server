@@ -2,8 +2,8 @@
 
 
 # Mock class for testing purposes
-from autobyteus_server.prompt.prompt_template import PromptTemplate
-from autobyteus_server.prompt.prompt_template_variable import PromptTemplateVariable
+from autobyteus.prompt.prompt_template import PromptTemplate
+from autobyteus.prompt.prompt_template_variable import PromptTemplateVariable
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus_server.workflow.types.base_workflow import BaseWorkflow
 
