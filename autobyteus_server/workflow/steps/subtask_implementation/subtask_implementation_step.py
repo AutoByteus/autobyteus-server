@@ -14,16 +14,13 @@ class SubtaskImplementationStep(BaseStep):
     name = "implementation"
 
     def __init__(self, workflow):
-        super().__init__(workflow)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        prompt_dir = os.path.join(current_dir, "prompt")
+        super().__init__(workflow, prompt_dir)
         self.tools = []  # Add more tools as needed
         self.agent: Optional[StandaloneAgent] = None
         self.response_queue: Optional[asyncio.Queue] = None
-
-        # Read the prompt templates
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        prompt_dir = os.path.join(current_dir, "prompt")
-        self.load_prompt_templates(prompt_dir)
-
+        
     def init_response_queue(self):
         if self.response_queue is None:
             self.response_queue = asyncio.Queue()

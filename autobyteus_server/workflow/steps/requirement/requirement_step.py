@@ -7,15 +7,12 @@ class RequirementStep(BaseStep):
     name = "requirement"
     
     def __init__(self, workflow):
-        super().__init__(workflow)
-
-        # Read the prompt templates
         current_dir = os.path.dirname(os.path.abspath(__file__))
         prompt_dir = os.path.join(current_dir, "prompt")
-        self.load_prompt_templates(prompt_dir)
+        super().__init__(workflow, prompt_dir)
 
-    def construct_initial_prompt(self, requirement: str, context: str) -> str:
-        return self.prompt_template.fill({
+    def construct_initial_prompt(self, requirement: str, context: str, llm_model: LLMModel) -> str:
+        return self.get_prompt_template(llm_model).fill({
             "requirement": requirement,
             "context": context
         })
@@ -31,7 +28,7 @@ class RequirementStep(BaseStep):
             raise ValueError("LLM model not configured for this step.")
         
         context = self._construct_context(context_file_paths)
-        prompt = self.construct_initial_prompt(requirement, context)
+        prompt = self.construct_initial_prompt(requirement, context, model_to_use)
         
         # Use model_to_use to process the requirement
         # This is a placeholder. Replace with actual LLM processing logic.

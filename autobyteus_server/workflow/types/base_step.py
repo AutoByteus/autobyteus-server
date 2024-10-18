@@ -12,33 +12,25 @@ if TYPE_CHECKING:
 class BaseStep(ABC, EventEmitter):
     name: str
 
-    def __init__(self, workflow: 'AutomatedCodingWorkflow'):
+    def __init__(self, workflow: 'AutomatedCodingWorkflow', prompt_dir: str):
         super().__init__()
         self.id = UniqueIDGenerator.generate_id()
         self.workflow = workflow
         self.llm_model: Optional[LLMModel] = None
         self.prompt_template_manager = PromptTemplateManager()
-
-    def load_prompt_templates(self, template_dir: str):
-        """
-        Load prompt templates from the specified directory.
-
-        Args:
-            template_dir (str): The directory containing the prompt template files.
-        """
-        self.prompt_template_manager.load_templates(template_dir, self.name)
+        self.prompt_dir = prompt_dir
 
     def configure_llm_model(self, llm_model: LLMModel):
         """
         Configure the LLM model for this step.
-        
+
         Args:
             llm_model (LLMModel): The LLM model to be used for this step.
         """
         self.llm_model = llm_model
 
     def get_prompt_template(self, llm_model: LLMModel) -> Optional[PromptTemplate]:
-        return self.prompt_template_manager.get_template(self.name, llm_model)
+        return self.prompt_template_manager.get_template(self.name, llm_model, self.prompt_dir)
 
     def get_prompt_templates_dict(self) -> Dict[str, Optional[Dict]]:
         """
