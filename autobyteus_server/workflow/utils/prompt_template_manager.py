@@ -4,7 +4,7 @@ from autobyteus.prompt.prompt_template import PromptTemplate
 from autobyteus.llm.models import LLMModel
 
 class PromptTemplateManager:
-    DEFAULT_FALLBACK_PROMPT_TEMPLATE = LLMModel.CLAUDE_3_5_SONNET.name
+    DEFAULT_FALLBACK_PROMPT_TEMPLATE = LLMModel.CLAUDE_3_SONNET_API.name
 
     def __init__(self):
         self.templates: Dict[str, Dict[str, PromptTemplate]] = {}
