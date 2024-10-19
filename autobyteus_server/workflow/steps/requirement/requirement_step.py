@@ -1,7 +1,7 @@
 from typing import List, Optional
 from autobyteus_server.workflow.types.base_step import BaseStep
-from autobyteus.llm.models import LLMModel
 import os
+from autobyteus.llm.llm_factory import LLMFactory
 
 class RequirementStep(BaseStep):
     name = "requirement"
@@ -11,7 +11,7 @@ class RequirementStep(BaseStep):
         prompt_dir = os.path.join(current_dir, "prompt")
         super().__init__(workflow, prompt_dir)
 
-    def construct_initial_prompt(self, requirement: str, context: str, llm_model: LLMModel) -> str:
+    def construct_initial_prompt(self, requirement: str, context: str, llm_model: str) -> str:
         return self.get_prompt_template(llm_model).fill({
             "requirement": requirement,
             "context": context
@@ -21,7 +21,7 @@ class RequirementStep(BaseStep):
         self, 
         requirement: str, 
         context_file_paths: List[str],
-        llm_model: Optional[LLMModel] = None
+        llm_model: Optional[str] = None
     ) -> str:
         model_to_use = llm_model or self.llm_model
         if not model_to_use:
@@ -32,7 +32,8 @@ class RequirementStep(BaseStep):
         
         # Use model_to_use to process the requirement
         # This is a placeholder. Replace with actual LLM processing logic.
-        result = await model_to_use.generate(prompt)
+        llm_instance = LLMFactory.create_llm(model_to_use)
+        result = await llm_instance.generate(prompt)
         
         return f"Processed requirement: {result}"
 
