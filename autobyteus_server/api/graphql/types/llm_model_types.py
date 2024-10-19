@@ -18,6 +18,7 @@ class LLMModel(str, Enum):
     O1_MINI_API = "o1-mini"
     CHATGPT_4O_LATEST_API = "chatgpt-4o-latest"
     GPT_3_5_TURBO_API = "gpt-3.5-turbo"
+    OPENROUTER_O1_MINI_API = "openai/o1-mini-2024-09-12"
 
     # Mistral models
     MISTRAL_SMALL = "mistral-small-rpa"
