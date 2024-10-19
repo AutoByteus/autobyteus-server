@@ -8,7 +8,7 @@ def create_llm_model_enum():
     enum_members = {}
     for model in models:
         # Replace invalid characters and convert to uppercase
-        member_name = model.upper().replace('-', '_').replace('.', '_').replace(':', '_')
+        member_name = model.replace('-', '_').replace('.', '_').replace(':', '_')
         # Handle duplicates by appending a unique identifier if necessary
         original_member_name = member_name
         counter = 1
