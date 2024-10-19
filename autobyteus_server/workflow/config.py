@@ -9,6 +9,7 @@ For example, the 'requirement_step' has a 'refine' substep with its own class.
 """
 
 
+from autobyteus_server.workflow.steps.architecture_design.architecture_design_step import ArchitectureDesignStep
 from autobyteus_server.workflow.steps.requirement.requirement_step import RequirementStep
 from autobyteus_server.workflow.steps.requirement_refine.requirement_refine_step import RequirementRefineStep
 from autobyteus_server.workflow.steps.run_tests_step.run_tests_step import RunTestsStep
@@ -25,6 +26,9 @@ WORKFLOW_CONFIG: WorkflowTemplateStepsConfig = {
                     'step_class': RequirementRefineStep
                 }
             },
+        },
+        'architecture_design': {
+            'step_class': ArchitectureDesignStep
         },
         'test_generation_step': {
             'step_class': TestsGenerationStep,

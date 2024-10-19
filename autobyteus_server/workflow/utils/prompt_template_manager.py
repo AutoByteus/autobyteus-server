@@ -1,15 +1,14 @@
 import os
 from typing import Dict, Optional
 from autobyteus.prompt.prompt_template import PromptTemplate
-from autobyteus.llm.models import LLMModel
 
 class PromptTemplateManager:
-    DEFAULT_FALLBACK_PROMPT_TEMPLATE = LLMModel.CLAUDE_3_5_SONNET.name
+    DEFAULT_FALLBACK_PROMPT_TEMPLATE = "claude_3_5_sonnet"
 
     def __init__(self):
         self.templates: Dict[str, Dict[str, PromptTemplate]] = {}
 
-    def get_template(self, step_name: str, llm_model: LLMModel, prompt_dir: str) -> Optional[PromptTemplate]:
+    def get_template(self, step_name: str, llm_model: str, prompt_dir: str) -> Optional[PromptTemplate]:
         """
         Get the prompt template for the given step and LLM model.
 
@@ -21,24 +20,20 @@ class PromptTemplateManager:
 
         Args:
             step_name (str): The name of the step.
-            llm_model (LLMModel): The LLM model.
+            llm_model (str): The LLM model name (enum name).
             prompt_dir (str): The directory where prompt templates are stored.
 
         Returns:
             Optional[PromptTemplate]: The prompt template if found, None otherwise.
         """
-        model_name = llm_model.name.lower()
-
-        # Remove '-api' suffix if present
-        if model_name.endswith('-api'):
-            model_name = model_name[:-4]
+        model_name = self._process_model_name(llm_model)
 
         # Try to get or load the template for the specified model
         template = self._get_or_load_template(step_name, model_name, prompt_dir)
 
         # If not found, try to get or load the default fallback prompt template
         if template is None:
-            fallback_model_name = self.DEFAULT_FALLBACK_PROMPT_TEMPLATE.lower()
+            fallback_model_name = self.DEFAULT_FALLBACK_PROMPT_TEMPLATE
             template = self._get_or_load_template(step_name, fallback_model_name, prompt_dir)
 
         # If still not found, fall back to the 'default' template
@@ -92,3 +87,17 @@ class PromptTemplateManager:
             return PromptTemplate(template=template_content)
 
         return None
+
+    def _process_model_name(self, model_name: str) -> str:
+        """
+        Process the input model name by removing the '_API' or '_RPA' suffix and converting to lowercase.
+
+        Args:
+            model_name (str): The input model name (enum name).
+
+        Returns:
+            str: The processed model name.
+        """
+        if model_name.endswith('_API') or model_name.endswith('_RPA'):
+            model_name = model_name[:-4]
+        return model_name.lower()

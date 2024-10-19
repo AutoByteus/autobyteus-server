@@ -4,7 +4,6 @@ from typing import List, Optional, Dict, Tuple
 import uuid
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus.agent.agent import StandaloneAgent
-from autobyteus.llm.models import LLMModel
 from autobyteus.llm.base_llm import BaseLLM
 from autobyteus.llm.llm_factory import LLMFactory
 from autobyteus.events.event_types import EventType
@@ -25,7 +24,7 @@ class SubtaskImplementationStep(BaseStep):
         if self.response_queue is None:
             self.response_queue = asyncio.Queue()
 
-    def construct_initial_prompt(self, requirement: str, context: str, llm_model: LLMModel) -> str:
+    def construct_initial_prompt(self, requirement: str, context: str, llm_model: str) -> str:
         prompt_template = self.get_prompt_template(llm_model)
         return prompt_template.fill({
             "requirement": requirement,
@@ -43,7 +42,7 @@ class SubtaskImplementationStep(BaseStep):
         self, 
         requirement: str, 
         context_file_paths: List[Dict[str, str]],  # List of dicts with 'path' and 'type'
-        llm_model: Optional[LLMModel]
+        llm_model: Optional[str]
     ) -> None:
         context, image_file_paths = self._construct_context(context_file_paths)
 
@@ -51,11 +50,10 @@ class SubtaskImplementationStep(BaseStep):
             # This is the beginning of a new conversation
             self.init_response_queue()
             await self.clear_response_queue()
-            llm_factory = LLMFactory()
-            llm = llm_factory.create_llm(llm_model)
+            llm_instance = LLMFactory.create_llm(llm_model)
             initial_prompt = self.construct_initial_prompt(requirement, context, llm_model)
             initial_user_message = UserMessage(content=initial_prompt, file_paths=image_file_paths)
-            self.agent = self._create_agent(llm, initial_user_message)
+            self.agent = self._create_agent(llm_instance, initial_user_message)
             self.subscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
             self.agent.start()
             user_message = initial_user_message

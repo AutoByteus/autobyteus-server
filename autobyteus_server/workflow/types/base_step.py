@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, List, Optional, Dict
 from abc import ABC, abstractmethod
 from autobyteus.prompt.prompt_template import PromptTemplate
 from autobyteus_server.workflow.utils.unique_id_generator import UniqueIDGenerator
-from autobyteus.llm.models import LLMModel
+from autobyteus.llm.utils.llm_config import LLMConfig
 from autobyteus.events.event_emitter import EventEmitter
 from autobyteus_server.workflow.utils.prompt_template_manager import PromptTemplateManager
 
@@ -16,20 +16,20 @@ class BaseStep(ABC, EventEmitter):
         super().__init__()
         self.id = UniqueIDGenerator.generate_id()
         self.workflow = workflow
-        self.llm_model: Optional[LLMModel] = None
+        self.llm_model: Optional[str] = None
         self.prompt_template_manager = PromptTemplateManager()
         self.prompt_dir = prompt_dir
 
-    def configure_llm_model(self, llm_model: LLMModel):
+    def configure_llm_model(self, llm_model: str):
         """
         Configure the LLM model for this step.
 
         Args:
-            llm_model (LLMModel): The LLM model to be used for this step.
+            llm_model (str): The LLM model to be used for this step.
         """
         self.llm_model = llm_model
 
-    def get_prompt_template(self, llm_model: LLMModel) -> Optional[PromptTemplate]:
+    def get_prompt_template(self, llm_model: str) -> Optional[PromptTemplate]:
         return self.prompt_template_manager.get_template(self.name, llm_model, self.prompt_dir)
 
     def get_prompt_templates_dict(self) -> Dict[str, Optional[Dict]]:
@@ -47,7 +47,7 @@ class BaseStep(ABC, EventEmitter):
         }
 
     @abstractmethod
-    def construct_initial_prompt(self, requirement: str, context: str, llm_model: LLMModel) -> str:
+    def construct_initial_prompt(self, requirement: str, context: str, llm_model: str) -> str:
         pass
 
     @abstractmethod
@@ -55,7 +55,7 @@ class BaseStep(ABC, EventEmitter):
         self, 
         requirement: str, 
         context_file_paths: List[Dict[str, str]], 
-        llm_model: LLMModel
+        llm_model: Optional[str]
     ) -> None:
         pass
     
