@@ -1,5 +1,4 @@
-# autobyteus_server/workspaces/setting/workspace.py
-
+import uuid
 from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus_server.workspaces.setting.project_types import ProjectType
 from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
@@ -34,6 +33,8 @@ class Workspace:
         """
         self.root_path = root_path
         self.project_type = project_type
+        self.name = root_path  # Name is set to root_path
+        self.workspace_id = str(uuid.uuid4())
         self.file_explorer: FileExplorer = file_explorer
         self._workflow: AutomatedCodingWorkflow = workflow
 

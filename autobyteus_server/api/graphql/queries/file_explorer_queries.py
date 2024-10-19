@@ -1,3 +1,5 @@
+# File: autobyteus_server/api/graphql/queries/file_explorer_queries.py
+
 """
 Module: file_explorer_queries
 
@@ -17,19 +19,19 @@ logger = logging.getLogger(__name__)
 @strawberry.type
 class Query:
     @strawberry.field
-    def file_content(self, workspace_root_path: str, file_path: str) -> str:
+    def file_content(self, workspace_id: str, file_path: str) -> str:
         """
-        Fetches the content of a file using its absolute path.
+        Fetches the content of a file using its relative path from the workspace root.
 
         Args:
-            workspace_root_path (str): The root path of the workspace.
-            file_path (str): The absolute path of the file.
+            workspace_id (str): The ID of the workspace.
+            file_path (str): The relative path of the file from the workspace root.
 
         Returns:
             str: The content of the file.
         """
         try:
-            workspace = workspace_manager.get_workspace(workspace_root_path)
+            workspace = workspace_manager.get_workspace_by_id(workspace_id)
             if not workspace:
                 return json.dumps({"error": "Workspace not found"})
 

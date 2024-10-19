@@ -53,9 +53,9 @@ class DirectoryTraversal:
         TreeNode
             The root node of the directory structure.
         """
-        folder_path = os.path.abspath(folder_path)
+        folder_path = os.path.normpath(folder_path)
         root_name = os.path.basename(folder_path) or folder_path  # Handle root directories like '/'
-        root_node = TreeNode(root_name, folder_path, os.path.isfile(folder_path))
+        root_node = TreeNode(root_name, is_file=os.path.isfile(folder_path))
 
         if root_node.is_file:
             return root_node
@@ -86,18 +86,18 @@ class DirectoryTraversal:
             else:
                 updated_strategies = current_strategies
 
-            for child_path in sorted_children:
-                if any(strategy.should_ignore(child_path) for strategy in updated_strategies):
+            for child_abs_path in sorted_children:
+                if any(strategy.should_ignore(child_abs_path) for strategy in updated_strategies):
                     continue
 
-                name = os.path.basename(child_path)
-                is_file = os.path.isfile(child_path)
-                child_node = TreeNode(name, child_path, is_file)
+                name = os.path.basename(child_abs_path)
+                is_file = os.path.isfile(child_abs_path)
+                child_node = TreeNode(name, is_file=is_file, parent=current_node)
 
                 current_node.add_child(child_node)
 
                 if not is_file:
                     # Add directory to queue with updated strategies
-                    queue.append((child_node, child_path, list(updated_strategies)))
+                    queue.append((child_node, child_abs_path, list(updated_strategies)))
 
         return root_node

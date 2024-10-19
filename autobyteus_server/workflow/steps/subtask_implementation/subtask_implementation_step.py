@@ -1,12 +1,9 @@
-# File: autobyteus_server/workflow/steps/subtask_implementation/subtask_implementation_step.py
-
 import os
 import asyncio
 from typing import List, Optional, Dict, Tuple
 import uuid
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus.agent.agent import StandaloneAgent
-from autobyteus.llm.models import LLMModel
 from autobyteus.llm.base_llm import BaseLLM
 from autobyteus.llm.llm_factory import LLMFactory
 from autobyteus.events.event_types import EventType
@@ -16,21 +13,18 @@ class SubtaskImplementationStep(BaseStep):
     name = "implementation"
 
     def __init__(self, workflow):
-        super().__init__(workflow)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        prompt_dir = os.path.join(current_dir, "prompt")
+        super().__init__(workflow, prompt_dir)
         self.tools = []  # Add more tools as needed
         self.agent: Optional[StandaloneAgent] = None
         self.response_queue: Optional[asyncio.Queue] = None
-
-        # Read the prompt templates
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        prompt_dir = os.path.join(current_dir, "prompt")
-        self.load_prompt_templates(prompt_dir)
-
+        
     def init_response_queue(self):
         if self.response_queue is None:
             self.response_queue = asyncio.Queue()
 
-    def construct_initial_prompt(self, requirement: str, context: str, llm_model: LLMModel) -> str:
+    def construct_initial_prompt(self, requirement: str, context: str, llm_model: str) -> str:
         prompt_template = self.get_prompt_template(llm_model)
         return prompt_template.fill({
             "requirement": requirement,
@@ -48,7 +42,7 @@ class SubtaskImplementationStep(BaseStep):
         self, 
         requirement: str, 
         context_file_paths: List[Dict[str, str]],  # List of dicts with 'path' and 'type'
-        llm_model: Optional[LLMModel]
+        llm_model: Optional[str]
     ) -> None:
         context, image_file_paths = self._construct_context(context_file_paths)
 
@@ -56,11 +50,10 @@ class SubtaskImplementationStep(BaseStep):
             # This is the beginning of a new conversation
             self.init_response_queue()
             await self.clear_response_queue()
-            llm_factory = LLMFactory()
-            llm = llm_factory.create_llm(llm_model)
+            llm_instance = LLMFactory.create_llm(llm_model)
             initial_prompt = self.construct_initial_prompt(requirement, context, llm_model)
             initial_user_message = UserMessage(content=initial_prompt, file_paths=image_file_paths)
-            self.agent = self._create_agent(llm, initial_user_message)
+            self.agent = self._create_agent(llm_instance, initial_user_message)
             self.subscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
             self.agent.start()
             user_message = initial_user_message
@@ -81,19 +74,21 @@ class SubtaskImplementationStep(BaseStep):
     def _construct_context(self, context_file_paths: List[Dict[str, str]]) -> Tuple[str, List[str]]:
         context = ""
         image_file_paths = []
+        root_path = self.workflow.workspace.root_path  # Construct full path using root_path
         for file in context_file_paths:
             path = file['path']
             file_type = file['type']
-            
+            full_path = os.path.join(root_path, path)  # Construct the full path
+
             if file_type == 'image':
-                image_file_paths.append(path)
+                image_file_paths.append(full_path)
             elif file_type == 'text':
-                with open(path, 'r', encoding='utf-8') as f:
+                with open(full_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                     context += f"File: {path}\n{content}\n\n"
             else:
                 raise ValueError(f"Unsupported file type: {file_type} for file: {path}")
-        
+
         return context, image_file_paths
 
     def _create_agent(self, llm: BaseLLM, initial_user_message: UserMessage) -> StandaloneAgent:

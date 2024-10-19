@@ -1,5 +1,3 @@
-# test_directory_traversal.py
-
 import pytest
 import os
 from pathlib import Path
@@ -154,7 +152,7 @@ def traverse_to_dict(node: TreeNode) -> dict:
     """
     result = {
         "name": node.name,
-        "path": node.path,
+        "path": node.get_path(),
         "is_file": node.is_file,
         "children": []
     }
@@ -176,17 +174,17 @@ def test_basic_directory_structure(setup_basic_directory, capsys):
     tree_dict = traverse_to_dict(tree)
 
     expected_children = [
-        {"name": "B", "path": str(A / "B"), "is_file": False, "children": []},
-        {"name": "C", "path": str(A / "C"), "is_file": False, "children": []},
-        {"name": "D", "path": str(A / "D"), "is_file": False, "children": []},
-        {"name": "f.txt", "path": str(A / "f.txt"), "is_file": True, "children": []},
-        {"name": "g.txt", "path": str(A / "g.txt"), "is_file": True, "children": []},
-        {"name": "h.txt", "path": str(A / "h.txt"), "is_file": True, "children": []},
+        {"name": "B", "path": "A/B", "is_file": False, "children": []},
+        {"name": "C", "path": "A/C", "is_file": False, "children": []},
+        {"name": "D", "path": "A/D", "is_file": False, "children": []},
+        {"name": "f.txt", "path": "A/f.txt", "is_file": True, "children": []},
+        {"name": "g.txt", "path": "A/g.txt", "is_file": True, "children": []},
+        {"name": "h.txt", "path": "A/h.txt", "is_file": True, "children": []},
     ]
 
     expected = {
         "name": "A",
-        "path": str(A),
+        "path": "A",
         "is_file": False,
         "children": expected_children
     }
@@ -215,23 +213,23 @@ def test_nested_gitignore(setup_nested_gitignore):
     tree_dict = traverse_to_dict(tree)
 
     expected_children = [
-        {"name": "B", "path": str(A / "B"), "is_file": False, "children": [
-            {"name": "B1", "path": str(A / "B" / "B1"), "is_file": False, "children": [
-                {"name": "b1.txt", "path": str(A / "B" / "B1" / "b1.txt"), "is_file": True, "children": []},
+        {"name": "B", "path": "A/B", "is_file": False, "children": [
+            {"name": "B1", "path": "A/B/B1", "is_file": False, "children": [
+                {"name": "b1.txt", "path": "A/B/B1/b1.txt", "is_file": True, "children": []},
                 # b2.txt is ignored by B's .gitignore
             ]}
         ]},
-        {"name": "C", "path": str(A / "C"), "is_file": False, "children": [
-            {"name": "c1.txt", "path": str(A / "C" / "c1.txt"), "is_file": True, "children": []},
-            {"name": "c2.txt", "path": str(A / "C" / "c2.txt"), "is_file": True, "children": []},
+        {"name": "C", "path": "A/C", "is_file": False, "children": [
+            {"name": "c1.txt", "path": "A/C/c1.txt", "is_file": True, "children": []},
+            {"name": "c2.txt", "path": "A/C/c2.txt", "is_file": True, "children": []},
         ]},
-        {"name": "f.txt", "path": str(A / "f.txt"), "is_file": True, "children": []},
+        {"name": "f.txt", "path": "A/f.txt", "is_file": True, "children": []},
         # g.txt is ignored by root .gitignore
     ]
 
     expected = {
         "name": "A",
-        "path": str(A),
+        "path": "A",
         "is_file": False,
         "children": expected_children
     }
@@ -253,21 +251,21 @@ def test_multiple_git_repositories(setup_multiple_git_repos):
     tree_dict = traverse_to_dict(tree)
 
     expected_children = [
-        {"name": "Repo1", "path": str(A / "Repo1"), "is_file": False, "children": [
-            {"name": "a2.txt", "path": str(A / "Repo1" / "a2.txt"), "is_file": True, "children": []},
+        {"name": "Repo1", "path": "A/Repo1", "is_file": False, "children": [
+            {"name": "a2.txt", "path": "A/Repo1/a2.txt", "is_file": True, "children": []},
             # a1.txt is ignored by Repo1's .gitignore
         ]},
-        {"name": "Repo2", "path": str(A / "Repo2"), "is_file": False, "children": [
-            {"name": "b2.txt", "path": str(A / "Repo2" / "b2.txt"), "is_file": True, "children": []},
+        {"name": "Repo2", "path": "A/Repo2", "is_file": False, "children": [
+            {"name": "b2.txt", "path": "A/Repo2/b2.txt", "is_file": True, "children": []},
             # b1.txt is ignored by Repo2's .gitignore
         ]},
-        {"name": "c1.txt", "path": str(A / "c1.txt"), "is_file": True, "children": []},
-        {"name": "c2.txt", "path": str(A / "c2.txt"), "is_file": True, "children": []},
+        {"name": "c1.txt", "path": "A/c1.txt", "is_file": True, "children": []},
+        {"name": "c2.txt", "path": "A/c2.txt", "is_file": True, "children": []},
     ]
 
     expected = {
         "name": "A",
-        "path": str(A),
+        "path": "A",
         "is_file": False,
         "children": expected_children
     }
@@ -291,16 +289,16 @@ def test_specific_folder_ignore(setup_specific_ignore_folders):
     tree_dict = traverse_to_dict(tree)
 
     expected_children = [
-        {"name": "src", "path": str(A / "src"), "is_file": False, "children": [
-            {"name": "s1.txt", "path": str(A / "src" / "s1.txt"), "is_file": True, "children": []},
+        {"name": "src", "path": "A/src", "is_file": False, "children": [
+            {"name": "s1.txt", "path": "A/src/s1.txt", "is_file": True, "children": []},
         ]},
-        {"name": "main.py", "path": str(A / "main.py"), "is_file": True, "children": []},
+        {"name": "main.py", "path": "A/main.py", "is_file": True, "children": []},
         # venv and __pycache__ are ignored
     ]
 
     assert tree_dict == {
         "name": "A",
-        "path": str(A),
+        "path": "A",
         "is_file": False,
         "children": expected_children
     }
@@ -322,7 +320,7 @@ def test_empty_directory(tmp_path):
 
     expected = {
         "name": "empty",
-        "path": str(empty_dir),
+        "path": "empty",
         "is_file": False,
         "children": []
     }
@@ -347,14 +345,14 @@ def test_directory_with_only_files(tmp_path):
     tree_dict = traverse_to_dict(tree)
 
     expected_children = [
-        {"name": "a.txt", "path": str(dir_path / "a.txt"), "is_file": True, "children": []},
-        {"name": "b.txt", "path": str(dir_path / "b.txt"), "is_file": True, "children": []},
-        {"name": "c.txt", "path": str(dir_path / "c.txt"), "is_file": True, "children": []},
+        {"name": "a.txt", "path": "files_only/a.txt", "is_file": True, "children": []},
+        {"name": "b.txt", "path": "files_only/b.txt", "is_file": True, "children": []},
+        {"name": "c.txt", "path": "files_only/c.txt", "is_file": True, "children": []},
     ]
 
     expected = {
         "name": "files_only",
-        "path": str(dir_path),
+        "path": "files_only",
         "is_file": False,
         "children": expected_children
     }
@@ -379,14 +377,14 @@ def test_directory_with_only_folders(tmp_path):
     tree_dict = traverse_to_dict(tree)
 
     expected_children = [
-        {"name": "A", "path": str(dir_path / "A"), "is_file": False, "children": []},
-        {"name": "B", "path": str(dir_path / "B"), "is_file": False, "children": []},
-        {"name": "C", "path": str(dir_path / "C"), "is_file": False, "children": []},
+        {"name": "A", "path": "folders_only/A", "is_file": False, "children": []},
+        {"name": "B", "path": "folders_only/B", "is_file": False, "children": []},
+        {"name": "C", "path": "folders_only/C", "is_file": False, "children": []},
     ]
 
     expected = {
         "name": "folders_only",
-        "path": str(dir_path),
+        "path": "folders_only",
         "is_file": False,
         "children": expected_children
     }
@@ -416,17 +414,17 @@ def test_case_sensitivity(tmp_path):
     tree_dict = traverse_to_dict(tree)
 
     expected_children = [
-        {"name": "a_folder", "path": str(dir_path / "a_folder"), "is_file": False, "children": []},
-        {"name": "B_folder", "path": str(dir_path / "B_folder"), "is_file": False, "children": []},
-        {"name": "c_folder", "path": str(dir_path / "c_folder"), "is_file": False, "children": []},
-        {"name": "A_file.txt", "path": str(dir_path / "A_file.txt"), "is_file": True, "children": []},
-        {"name": "b_file.txt", "path": str(dir_path / "b_file.txt"), "is_file": True, "children": []},
-        {"name": "C_file.txt", "path": str(dir_path / "C_file.txt"), "is_file": True, "children": []},
+        {"name": "a_folder", "path": "case_test/a_folder", "is_file": False, "children": []},
+        {"name": "B_folder", "path": "case_test/B_folder", "is_file": False, "children": []},
+        {"name": "c_folder", "path": "case_test/c_folder", "is_file": False, "children": []},
+        {"name": "A_file.txt", "path": "case_test/A_file.txt", "is_file": True, "children": []},
+        {"name": "b_file.txt", "path": "case_test/b_file.txt", "is_file": True, "children": []},
+        {"name": "C_file.txt", "path": "case_test/C_file.txt", "is_file": True, "children": []},
     ]
 
     expected = {
         "name": "case_test",
-        "path": str(dir_path),
+        "path": "case_test",
         "is_file": False,
         "children": expected_children
     }
@@ -463,13 +461,13 @@ def test_permission_error(tmp_path, monkeypatch):
     tree_dict = traverse_to_dict(tree)
 
     expected_children = [
-        {"name": "B", "path": str(B), "is_file": False, "children": []},  # B's children are not listed due to PermissionError
-        {"name": "file1.txt", "path": str(A / "file1.txt"), "is_file": True, "children": []},
+        {"name": "B", "path": "A/B", "is_file": False, "children": []},  # B's children are not listed due to PermissionError
+        {"name": "file1.txt", "path": "A/file1.txt", "is_file": True, "children": []},
     ]
 
     assert tree_dict == {
         "name": "A",
-        "path": str(A),
+        "path": "A",
         "is_file": False,
         "children": expected_children
     }
@@ -503,16 +501,16 @@ def test_dot_ignore_strategy(tmp_path):
     tree_dict = traverse_to_dict(tree)
 
     expected_children = [
-        {"name": "visible_folder", "path": str(visible_folder), "is_file": False, "children": [
-            {"name": "visible_file.txt", "path": str(visible_folder / "visible_file.txt"), "is_file": True, "children": []},
+        {"name": "visible_folder", "path": "A/visible_folder", "is_file": False, "children": [
+            {"name": "visible_file.txt", "path": "A/visible_folder/visible_file.txt", "is_file": True, "children": []},
         ]},
-        {"name": "visible_file.txt", "path": str(A / "visible_file.txt"), "is_file": True, "children": []},
+        {"name": "visible_file.txt", "path": "A/visible_file.txt", "is_file": True, "children": []},
         # Hidden files and folders are ignored
     ]
 
     assert tree_dict == {
         "name": "A",
-        "path": str(A),
+        "path": "A",
         "is_file": False,
         "children": expected_children
     }
@@ -550,13 +548,12 @@ def test_specific_and_gitignore_combined(tmp_path):
     tree_dict = traverse_to_dict(tree)
 
     expected_children = [
-        {"name": "repo", "path": str(repo_folder), "is_file": False, "children": [
-            {"name": "repo_file1.txt", "path": str(repo_folder / "repo_file1.txt"), "is_file": True, "children": []},
+        {"name": "repo", "path": "A/repo", "is_file": False, "children": [
+            {"name": "repo_file1.txt", "path": "A/repo/repo_file1.txt", "is_file": True, "children": []},
             # repo_file2.txt is ignored by .gitignore
         ]},
-        {"name": "file3.txt", "path": str(A / "file3.txt"), "is_file": True, "children": []},
+        {"name": "file3.txt", "path": "A/file3.txt", "is_file": True, "children": []},
         # ignored_folder is ignored
     ]
 
     assert tree_dict == expected_children
-

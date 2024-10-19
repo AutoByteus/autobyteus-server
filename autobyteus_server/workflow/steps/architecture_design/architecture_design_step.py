@@ -1,21 +1,18 @@
 import os
 from typing import List, Optional
 from autobyteus_server.workflow.types.base_step import BaseStep
-from autobyteus.llm.models import LLMModel
+from autobyteus.llm.llm_factory import LLMFactory
 
 class ArchitectureDesignStep(BaseStep):
     name = "architecture_design"
 
     def __init__(self, workflow):
-        super().__init__(workflow)
-
-        # Read the prompt templates
         current_dir = os.path.dirname(os.path.abspath(__file__))
         prompt_dir = os.path.join(current_dir, "prompt")
-        self.load_prompt_templates(prompt_dir)
+        super().__init__(workflow, prompt_dir)
 
-    def construct_initial_prompt(self, requirement: str, context: str) -> str:
-        return self.prompt_template.fill({
+    def construct_initial_prompt(self, requirement: str, context: str, llm_model: str) -> str:
+        return self.get_prompt_template(llm_model).fill({
             "requirement": requirement,
             "context": context
         })
@@ -24,18 +21,19 @@ class ArchitectureDesignStep(BaseStep):
         self, 
         requirement: str, 
         context_file_paths: List[str],
-        llm_model: Optional[LLMModel] = None
+        llm_model: Optional[str] = None
     ) -> str:
         model_to_use = llm_model or self.llm_model
         if not model_to_use:
             raise ValueError("LLM model not configured for this step.")
         
         context = self._construct_context(context_file_paths)
-        prompt = self.construct_initial_prompt(requirement, context)
+        prompt = self.construct_initial_prompt(requirement, context, model_to_use)
         
         # Use model_to_use to generate the architecture design
         # This is a placeholder. Replace with actual LLM processing logic.
-        architecture_design = await model_to_use.generate(prompt)
+        llm_instance = LLMFactory.create_llm(model_to_use)
+        architecture_design = await llm_instance.generate(prompt)
         
         return f"Architecture Design:\n{architecture_design}"
 
