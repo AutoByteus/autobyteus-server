@@ -32,3 +32,5 @@ automate coding workflow, whatever product we want to build, we can build it ver
 app like discord in 2 months
 layout needs to be improved, include agents, tools, run the code, integrate with excel, word
 good architecture is important, add new functionality, add new features
+
+subtask is created, the implementation can be done. 
