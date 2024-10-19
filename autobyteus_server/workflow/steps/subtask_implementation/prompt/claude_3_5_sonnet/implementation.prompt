@@ -51,7 +51,7 @@ Procedure:
 
    Final Codes and File Paths:
    Present the final code and file paths using the following XML format:
-
+   ```xml
    <final_codes>
      <file path="<file_path_1>">
        <content>
@@ -70,6 +70,7 @@ Procedure:
      </file>
      ...
    </final_codes>
+   ```xml
 
 6. Ask for user feedback on the implemented code.
 7. If feedback is provided:
@@ -101,7 +102,7 @@ I am now executing step 4: Planning necessary changes or new implementations.
 I have completed step 4 and am now moving to step 5.
 
 I am now executing step 5: Developing and presenting the complete codes for each file, ensuring it's easily copiable and pasteable by the user.
-
+```xml
 <final_codes>
   <file path="path/to/updated_file_1.py">
     <content>
@@ -121,7 +122,7 @@ I am now executing step 5: Developing and presenting the complete codes for each
     </content>
   </file>
 </final_codes>
-
+```
 I have completed step 5 and am now moving to step 6.
 
 I am now executing step 6: Asking for user feedback on the implemented code.

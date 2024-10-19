@@ -1,4 +1,4 @@
-# File: autobyteus_server/api/graphql/mutations/file_explorer_mutations.py
+# File: autobyteus-server/autobyteus_server/api/graphql/mutations/file_explorer_mutations.py
 
 """
 This module contains GraphQL mutations for file explorer operations.
@@ -36,8 +36,7 @@ class Mutation:
             content (str): The new content to be written to the file.
 
         Returns:
-            str: A JSON string indicating success or failure. The string will
-                 contain either a success message or an error message.
+            str: A JSON string containing the changes made to the file.
 
         Raises:
             FileNotFoundError: If the specified file is not found.
@@ -54,20 +53,10 @@ class Mutation:
                 )
             }
         """
-        try:
-            workspace = workspace_manager.get_workspace_by_id(workspace_id)
-            if not workspace:
-                return json.dumps({"error": "Workspace not found"})
+        workspace = workspace_manager.get_workspace_by_id(workspace_id)
+        if not workspace:
+            raise ValueError("Workspace not found")
 
-            file_explorer = workspace.get_file_explorer()
-            file_explorer.write_file_content(file_path, content)
-            return json.dumps({"success": True, "message": "File updated successfully"})
-        except FileNotFoundError as e:
-            return json.dumps({"error": f"File not found: {str(e)}"})
-        except PermissionError as e:
-            return json.dumps({"error": f"Permission denied: {str(e)}"})
-        except ValueError as e:
-            return json.dumps({"error": str(e)})
-        except Exception as e:
-            logger.error(f"Error applying file change: {str(e)}")
-            return json.dumps({"error": "An unexpected error occurred while updating the file"})
+        file_explorer = workspace.get_file_explorer()
+        change_event = file_explorer.write_file_content(file_path, content)
+        return json.dumps(change_event.to_dict())

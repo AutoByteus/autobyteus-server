@@ -1,3 +1,4 @@
+
 """
 app.py: The main entry point for the AutoByteus server application.
 
@@ -13,10 +14,13 @@ For development with auto-reload:
 Note: Adjust the host and port as needed for your environment.
 """
 
+
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
