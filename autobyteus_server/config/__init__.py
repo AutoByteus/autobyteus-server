@@ -40,15 +40,13 @@ class Config(metaclass=SingletonMeta):
         """
         Set the API key for a specific LLM model.
         """
-        config_key = f"LLM_API_KEY_{model.upper()}"
-        self.set(config_key, api_key)
+        self.set(model, api_key)
     
     def get_llm_api_key(self, model: str) -> str:
         """
         Get the API key for a specific LLM model.
         """
-        config_key = f"LLM_API_KEY_{model.upper()}"
-        return self.get(config_key)
+        return self.get(model)
     
     def add_workspace(self, workspace_name: str, workspace: Workspace):
         """
