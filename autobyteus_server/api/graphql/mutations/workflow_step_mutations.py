@@ -1,3 +1,5 @@
+# File: autobyteus-server/autobyteus_server/api/graphql/mutations/workflow_step_mutations.py
+
 import logging
 from typing import List, Optional
 import strawberry
@@ -87,27 +89,3 @@ class WorkflowStepMutation:
         except Exception as e:
             logger.exception(e)
             return f"Error processing step requirement: {str(e)}"
-
-    @strawberry.mutation
-    def set_llm_api_key(self, model: str, api_key: str) -> str:
-        """
-        Set the API key for a specific LLM model.
-        """
-        try:
-            config.set_llm_api_key(model, api_key)
-            return f"API key for model {model} has been set successfully."
-        except Exception as e:
-            logger.exception(e)
-            return f"Error setting API key: {str(e)}"
-
-    @strawberry.mutation
-    def get_llm_api_key(self, model: str) -> str:
-        """
-        Get the API key for a specific LLM model.
-        """
-        try:
-            api_key = config.get_llm_api_key(model)
-            return api_key if api_key else "API key not found for this model."
-        except Exception as e:
-            logger.exception(e)
-            return f"Error retrieving API key: {str(e)}"
