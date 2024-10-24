@@ -7,7 +7,7 @@ and another with the root path of a workspace as the key. Both dictionaries stor
 the corresponding Workspace object as the value.
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from autobyteus.utils.singleton import SingletonMeta
 
 from autobyteus_server.workspaces.workspace import Workspace
@@ -88,3 +88,12 @@ class WorkspaceRegistry(metaclass=SingletonMeta):
             bool: True if the workspace exists, False otherwise.
         """
         return root_path in self.root_path_to_workspace
+
+    def get_all_workspaces(self) -> List[Workspace]:
+        """
+        Retrieves all registered workspaces.
+
+        Returns:
+            List[Workspace]: A list of all Workspace objects.
+        """
+        return list(self.id_to_workspace.values())

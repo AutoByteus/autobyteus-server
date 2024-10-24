@@ -1,15 +1,5 @@
-# autobyteus_server/workspaces/workspace_manager.py
-"""
-This module provides a manager for handling operations related to workspaces.
-
-This manager is responsible for adding workspaces, building their directory structures, 
-and maintaining their settings. A workspace is represented by its root path and a unique ID, 
-and is stored in the WorkspaceRegistry. Upon successful addition of a workspace, 
-a directory tree structure represented by TreeNode objects is returned.
-"""
-
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus.utils.singleton import SingletonMeta
@@ -64,18 +54,22 @@ class WorkspaceManager(metaclass=SingletonMeta):
         """
         existing_workspace = self.workspace_registry.get_workspace_by_root_path(workspace_root_path)
         if existing_workspace:
+            logger.info(f"Workspace already exists at path: {workspace_root_path}")
             return existing_workspace
 
         # Determine the project type
         project_type = self.project_type_determiner.determine(workspace_root_path)
-        
+        logger.info(f"Determined project type '{project_type}' for workspace at {workspace_root_path}")
+
         # Build the directory tree
         file_explorer = FileExplorer(workspace_root_path)
         file_explorer.build_workspace_directory_tree()
-        
+        logger.info(f"Built directory tree for workspace at {workspace_root_path}")
+
         # Create the workflow
         workflow = AutomatedCodingWorkflow()
-        
+        logger.info(f"Initialized AutomatedCodingWorkflow for workspace at {workspace_root_path}")
+
         # Create and register the Workspace
         workspace = Workspace(root_path=workspace_root_path, 
                               project_type=project_type, file_explorer=file_explorer, workflow=workflow)
@@ -83,6 +77,7 @@ class WorkspaceManager(metaclass=SingletonMeta):
         workflow.workspace = workspace
         
         self.workspace_registry.add_workspace(workspace)
+        logger.info(f"Workspace with ID {workspace.workspace_id} added to registry.")
 
         return workspace
 
@@ -109,3 +104,12 @@ class WorkspaceManager(metaclass=SingletonMeta):
             Optional[Workspace]: The workspace if it exists, None otherwise.
         """
         return self.workspace_registry.get_workspace_by_id(workspace_id)
+
+    def get_all_workspaces(self) -> List[Workspace]:
+        """
+        Retrieves all registered workspaces.
+
+        Returns:
+            List[Workspace]: A list of all Workspace objects.
+        """
+        return self.workspace_registry.get_all_workspaces()

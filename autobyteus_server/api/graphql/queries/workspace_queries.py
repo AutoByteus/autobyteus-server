@@ -11,6 +11,7 @@ from typing import List
 import strawberry
 from strawberry.scalars import JSON
 
+from autobyteus_server.api.graphql.types.workspace_info import WorkspaceInfo
 from autobyteus_server.codeverse.search.search_service import SearchService
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.workspaces.workspace_tools_service import (
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 class WorkspaceTool:
     name: str
     prompt_template: str
+
 
 
 @strawberry.type
@@ -60,7 +62,7 @@ class Query:
     @strawberry.field
     def get_available_workspace_tools(
         self, workspace_id: str
-    ) -> List[WorkspaceTool]:
+    ) -> List['WorkspaceTool']:
         """
         Fetches available workspace tools for the given workspace.
 
@@ -91,3 +93,25 @@ class Query:
             raise Exception(
                 f"Failed to fetch available workspace tools: {str(e)}"
             )
+
+    @strawberry.field
+    def all_workspaces(self) -> List[WorkspaceInfo]:
+        """
+        Retrieves all workspaces.
+
+        Returns:
+            List[WorkspaceInfo]: A list of all workspace information objects.
+        """
+        try:
+            workspaces = workspace_manager.get_all_workspaces()
+            logger.info(f"Retrieved {len(workspaces)} workspaces.")
+            return [
+                WorkspaceInfo(
+                    workspace_id=ws.workspace_id,
+                    name=ws.name,
+                    file_explorer=ws.file_explorer.to_json()
+                ) for ws in workspaces
+            ]
+        except Exception as e:
+            logger.error(f"Failed to retrieve all workspaces: {str(e)}")
+            raise Exception("Unable to fetch workspaces at this time.")
