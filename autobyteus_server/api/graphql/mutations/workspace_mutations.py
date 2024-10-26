@@ -2,17 +2,14 @@
 Module: workspace_mutations
 
 This module provides GraphQL mutations related to workspace operations in the AutoByteus server.
-It includes functionality for starting workflows, adding workspaces, and retrieving file content
-within workspaces. These mutations serve as the interface between the GraphQL API and the
-underlying workspace management system.
+It includes functionality for starting workflows and adding workspaces. These mutations serve as 
+the interface between the GraphQL API and the underlying workspace management system.
 
 The module uses Strawberry for GraphQL schema definition and interacts with the WorkspaceManager
 to perform operations on workspaces.
 """
 
-import json
 import logging
-import os
 import strawberry
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.api.graphql.types.workspace_info import WorkspaceInfo
@@ -22,6 +19,12 @@ workspace_manager = WorkspaceManager()
 
 # Set up logging for this module
 logger = logging.getLogger(__name__)
+
+
+@strawberry.type
+class CommandExecutionResult:
+    success: bool
+    message: str
 
 @strawberry.type
 class Mutation:
@@ -91,3 +94,27 @@ class Mutation:
             error_message = f"Error while adding/retrieving workspace: {str(e)}"
             logger.error(error_message)
             raise  # Re-raise the exception after logging
+
+
+    @strawberry.mutation
+    def execute_bash_commands(self, workspace_id: str, command: str) -> CommandExecutionResult:
+        """
+        Executes a bash command within the specified workspace.
+
+        Args:
+            workspace_id (str): The unique identifier of the workspace.
+            command (str): The bash command to be executed.
+
+        Returns:
+            CommandExecutionResult: The result of the command execution.
+        """
+        workspace = workspace_manager.get_workspace_by_id(workspace_id)
+        if not workspace:
+            logger.error(f"Workspace with ID {workspace_id} not found.")
+            return CommandExecutionResult(success=False, message="Workspace not found.")
+
+        result = workspace.execute_command(command)
+        return CommandExecutionResult(
+            success=result.success,
+            message=result.message
+        )

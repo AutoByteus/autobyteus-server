@@ -13,7 +13,7 @@ class TestsGenerationStep(BaseStep):
     
     def construct_initial_prompt(self, requirement: str, context: str, llm_model: str) -> str:
         return self.get_prompt_template(llm_model).fill({
-            "code": context,
+            "context": context,
             "requirement": requirement
         })
     

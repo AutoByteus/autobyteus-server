@@ -1,7 +1,16 @@
+"""
+Represents a workspace containing project configurations, file exploration, and automated workflows.
+
+This class stores the parsed workspace structure along with associated objects such as
+file explorer and automated coding workflows. It manages the project type and provides
+access to the directory tree and workflow functionalities.
+"""
+
 import uuid
 from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus_server.workspaces.setting.project_types import ProjectType
 from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
+from autobyteus_server.workspaces.workspace_tools.command_executor import CommandExecutionResult, CommandExecutor
 
 
 class Workspace:
@@ -37,6 +46,7 @@ class Workspace:
         self.workspace_id = str(uuid.uuid4())
         self.file_explorer: FileExplorer = file_explorer
         self._workflow: AutomatedCodingWorkflow = workflow
+        self._command_executor: CommandExecutor = None
 
     @property
     def project_type(self) -> ProjectType:
@@ -109,3 +119,27 @@ class Workspace:
         if not isinstance(value, AutomatedCodingWorkflow):
             raise ValueError("workflow must be an instance of AutomatedCodingWorkflow.")
         self._workflow = value
+
+    def get_command_executor(self) -> CommandExecutor:
+        """
+        Get the CommandExecutor instance for this workspace.
+
+        Returns:
+            CommandExecutor: The command executor for this workspace.
+        """
+        if self._command_executor is None:
+            self._command_executor = CommandExecutor(self.root_path)
+        return self._command_executor
+
+    def execute_command(self, command: str) -> CommandExecutionResult:
+        """
+        Execute a command in this workspace.
+
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            CommandExecutionResult: The result of the command execution.
+        """
+        executor = self.get_command_executor()
+        return executor.execute_command(command)
