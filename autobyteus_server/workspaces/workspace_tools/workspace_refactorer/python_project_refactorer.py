@@ -7,13 +7,11 @@ best practices and standards specific to Python development.
 """
 import logging
 from autobyteus.prompt.prompt_template import PromptTemplate
-from autobyteus.prompt.prompt_template_variable import PromptTemplateVariable
 from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus_server.file_explorer.file_reader import FileReader
 from autobyteus_server.file_explorer.tree_node import TreeNode
 from autobyteus_server.workspaces.workspace import Workspace
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.base_project_refactorer import BaseProjectRefactorer
-
 
 # Logger setup
 logger = logging.getLogger(__name__)
@@ -23,10 +21,8 @@ class PythonProjectRefactorer(BaseProjectRefactorer):
     Class to refactor Python projects.
     """
     
-    file_path_variable = PromptTemplateVariable(name="file_path", 
-                                           source=PromptTemplateVariable)
-    source_code_variable = PromptTemplateVariable(name="source_code", 
-                                           source=PromptTemplateVariable)
+    # Removed PromptTemplateVariable definitions
+    
     # Define the prompt template string
     template_str = """
     You are a top python software engineer who creates maintainable and understandable codes. You are given a task located between '$start$' and '$end$' tokens in the `[Task]` section.
@@ -46,8 +42,8 @@ class PythonProjectRefactorer(BaseProjectRefactorer):
     $end$
     """
 
-    # Define the class-level prompt_template
-    prompt_template: PromptTemplate = PromptTemplate(template=template_str, variables=[file_path_variable, source_code_variable])
+    # Define the class-level prompt_template without variables
+    prompt_template: PromptTemplate = PromptTemplate(template=template_str)
 
     def __init__(self, workspace: Workspace):
         """

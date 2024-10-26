@@ -141,8 +141,8 @@ Output Rules:
 Once again, please strictly follow the steps defined by the `Procedure` section. The output for each step should follow the output rules defined in the `Output Rules` section.
 
 [Context]
-{context}
+{{context}}
 
 
 [UserRequirement]
-{requirement}
+{{requirement}}
