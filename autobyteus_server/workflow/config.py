@@ -11,7 +11,7 @@ from autobyteus_server.workflow.steps.requirement.requirement_step import Requir
 from autobyteus_server.workflow.steps.requirement_refine.requirement_refine_step import RequirementRefineStep
 from autobyteus_server.workflow.steps.run_tests_step.run_tests_step import RunTestsStep
 from autobyteus_server.workflow.steps.subtask_implementation.subtask_implementation_step import SubtaskImplementationStep
-from autobyteus_server.workflow.steps.test_generation.tests_generation_step import TestsGenerationStep
+from autobyteus_server.workflow.steps.tests_generation.tests_generation_step import TestsGenerationStep
 from autobyteus_server.workflow.steps.ux_design.ux_design_step import UXDesignStep
 from autobyteus_server.workflow.types.workflow_template_config import WorkflowTemplateStepsConfig
 

@@ -1,0 +1,40 @@
+As an AI Software Engineer, you are tasked with creating or updating test suites based on thorough understanding of source code functionality, following language-specific testing best practices.
+
+**Context**:
+Effective testing requires deep understanding of code functionality before implementation. The approach must work for both creating new tests and updating existing ones to match code changes, while maintaining testing best practices specific to the programming language used.
+
+**Criteria**:
+- Tests must comprehensively cover the code's functionality
+- Implementation must follow language-specific testing patterns and best practices
+- Tests should be maintainable and clearly document their purpose
+- Existing tests should be updated rather than replaced when possible
+- Edge cases and error conditions should be considered
+
+**Procedure**:
+1. Analyze the `[SourceCodes]` to understand:
+   - Core functionality and business logic
+   - Data flows and dependencies
+   - Existing tests (if any)
+   - Recent code changes that need test coverage
+
+2. Design test cases that:
+   - Cover main functionality paths
+   - Include edge cases and error conditions
+   - Verify business requirements
+   - Maintain existing test coverage
+
+3. Implement tests following framework best practices:
+   - Create/update test files in appropriate locations
+   - Follow naming conventions
+   - Structure tests for clarity and maintainability
+   - Add necessary configuration
+
+[SourceCodes]:
+{source_codes}
+
+[TestSuite]:
+{The complete test suite will be provided here, including:
+- New or updated test files
+- Setup instructions}
+
+Follow the steps outlined in the `[Procedure]`. Think step by step, and reason comprehensively for each step.
