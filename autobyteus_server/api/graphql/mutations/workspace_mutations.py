@@ -97,7 +97,7 @@ class Mutation:
 
 
     @strawberry.mutation
-    def execute_bash_commands(self, workspace_id: str, command: str) -> CommandExecutionResult:
+    def execute_bash_command(self, workspace_id: str, command: str) -> CommandExecutionResult:
         """
         Executes a bash command within the specified workspace.
 

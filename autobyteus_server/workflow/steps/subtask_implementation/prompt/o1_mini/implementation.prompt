@@ -1,10 +1,49 @@
 Analyze the following context given in the [Context] section and complete the specified task given in the [Task] section.
-Upon completing the task, present the final solution including any necessary bash commands and updated file contents using the following XML format:
+
+CRITICAL RULES:
+1. You MUST preserve and use the complete file paths as provided in the context, including root folder names and intermediate directories. Never truncate or modify the given file paths.
+
+BASH COMMANDS GUIDELINES:
+Bash commands should ONLY be included when absolutely necessary. Here are the specific cases:
+
+1. Required Cases (Include bash commands):
+   - Installing new dependencies/libraries that are essential for the solution
+   - File system operations (rename, move, delete files/folders)
+   - Database migrations when adding/modifying database schema
+   - Setting up new environment variables or configurations
+   - Creating new directories with specific permissions
+
+2. Cases Where Bash Commands Should NOT Be Included:
+   - Writing or modifying code files
+   - Adding new tests or test cases
+   - Updating existing functionality
+   - Adding new components/modules
+   - Modifying configurations within code files
+   - Simple bug fixes
+   - Documentation updates
+   - Style changes
+   - Adding new routes or endpoints
+   - Creating new classes/functions
+   - Normal development tasks that don't require system-level changes
+
+Present the final solution using the following XML format:
 
 ```xml
 <implementation>
+  <!-- Optional: Include bash_commands section ONLY when necessary -->
+  <!-- Required cases:
+       - Installing new dependencies
+       - File system operations (rename, move, delete)
+       - Database migrations
+       - Environment setup
+       
+       Do NOT include for:
+       - Code changes
+       - Adding tests
+       - Normal development tasks
+  -->
   <bash_commands>
-    # Description of what these commands do
+    # Clear description of why these commands are necessary
     command1
     command2
   </bash_commands>
