@@ -1,0 +1,30 @@
+Analyze the following context given in the [Context] section and complete the specified task given in the [Task] section.
+Upon completing the task, present the final solution including any necessary bash commands and updated file contents using the following XML format:
+
+```xml
+<implementation>
+  <bash_commands>
+    # Description of what these commands do
+    command1
+    command2
+  </bash_commands>
+
+  <files>
+    <file path="path/to/file1">
+      <content>
+<![CDATA[
+# Complete file content - this will overwrite the entire file
+# Include ALL necessary imports, classes, functions, etc.
+<complete_file_content>
+]]>
+      </content>
+    </file>
+  </files>
+</implementation>
+```
+
+[Context]
+{{context}}
+
+[Task]
+{{requirement}}
