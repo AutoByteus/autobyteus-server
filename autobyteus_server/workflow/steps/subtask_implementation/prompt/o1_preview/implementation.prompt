@@ -22,7 +22,7 @@ Upon completing the task, present the final content of each updated file using t
 Ensure that you provide the complete content for each updated file specified in the task. Adhere strictly to this format, including accurate file paths within the path attribute. Use the CDATA section to enclose the code content, which allows for special characters without the need for escaping.
 
 [Context]
-{context}
+{{context}}
 
 [Task]
-{requirement}
+{{requirement}}

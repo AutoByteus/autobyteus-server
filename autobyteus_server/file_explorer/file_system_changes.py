@@ -3,7 +3,7 @@ from typing import List, Union, Optional, Literal, Any, Dict
 from dataclasses import dataclass, field
 import json
 
-from autobyteus_server.file_explorer.tree_node import TreeNode  # Ensure TreeNode is available
+from autobyteus_server.file_explorer.tree_node import TreeNode
 
 
 class ChangeType(str, Enum):
@@ -40,10 +40,22 @@ class AddChange(FileSystemChange):
     node: TreeNode = field(default_factory=TreeNode)
     parent_id: str = ""
 
+    def _node_to_dict(self, node: TreeNode) -> Dict[str, Any]:
+        """
+        Custom node serialization that excludes children information.
+        """
+        return {
+            "name": node.name,
+            "path": node.get_path(),
+            "is_file": node.is_file,
+            "id": node.id,
+            "children": []  # Always empty array to maintain structure without children
+        }
+
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
-            "node": self.node.to_dict(),
+            "node": self._node_to_dict(self.node),
             "parent_id": self.parent_id,
         })
         return base
