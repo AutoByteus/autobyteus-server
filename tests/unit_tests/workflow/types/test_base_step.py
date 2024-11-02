@@ -3,20 +3,12 @@
 
 # Mock class for testing purposes
 from autobyteus.prompt.prompt_template import PromptTemplate
-from autobyteus.prompt.prompt_template_variable import PromptTemplateVariable
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus_server.workflow.types.base_workflow import BaseWorkflow
 
 
 class MockStep(BaseStep):
     name = "mock_step"
-    prompt_template = PromptTemplate(
-        template="This is a mock template with {variable1} and {variable2}",
-        variables=[
-            PromptTemplateVariable("variable1", PromptTemplateVariable.SOURCE_USER_INPUT, True, True),
-            PromptTemplateVariable("variable2", PromptTemplateVariable.SOURCE_DYNAMIC, False, False)
-        ]
-    )
     
     def construct_prompt(self) -> str:
         return "Mock Prompt"
