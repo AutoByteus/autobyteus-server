@@ -158,7 +158,7 @@ class Workspace:
             self._command_executor = CommandExecutor(self.root_path)
         return self._command_executor
 
-    def execute_command(self, command: str) -> CommandExecutionResult:
+    async def execute_command(self, command: str) -> CommandExecutionResult:
         """
         Execute a command in this workspace.
 
@@ -169,4 +169,4 @@ class Workspace:
             CommandExecutionResult: The result of the command execution.
         """
         executor = self.get_command_executor()
-        return executor.execute_command(command)
+        return await executor.execute_command(command)

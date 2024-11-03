@@ -29,7 +29,7 @@ class CommandExecutionResult:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def start_workflow(self, workspace_id: str) -> bool:
+    async def start_workflow(self, workspace_id: str) -> bool:
         """
         Starts the workflow associated with the provided workspace.
 
@@ -52,10 +52,10 @@ class Mutation:
         if not workspace:
             logger.error(f"Workspace with ID {workspace_id} not found.")
             return False
-        
+
         # Attempt to start the workflow
         try:
-            workspace.start_workflow()
+            await workspace.start_workflow()
             logger.info(f"Workflow started for workspace ID {workspace_id}.")
             return True
         except Exception as e:
@@ -63,7 +63,7 @@ class Mutation:
             return False
 
     @strawberry.mutation
-    def add_workspace(self, workspace_root_path: str) -> WorkspaceInfo:
+    async def add_workspace(self, workspace_root_path: str) -> WorkspaceInfo:
         """
         Adds a new workspace to the workspace service or returns the existing one.
 
@@ -83,7 +83,7 @@ class Mutation:
             # Attempt to add the workspace or retrieve existing one
             workspace = workspace_manager.add_workspace(workspace_root_path)
             logger.info(f"Workspace added/retrieved with ID {workspace.workspace_id} at path {workspace_root_path}.")
-            
+
             # Construct and return the WorkspaceInfo object
             return WorkspaceInfo(
                 workspace_id=workspace.workspace_id,
@@ -95,9 +95,8 @@ class Mutation:
             logger.error(error_message)
             raise  # Re-raise the exception after logging
 
-
     @strawberry.mutation
-    def execute_bash_commands(self, workspace_id: str, command: str) -> CommandExecutionResult:
+    async def execute_bash_commands(self, workspace_id: str, command: str) -> CommandExecutionResult:
         """
         Executes a bash command within the specified workspace.
 
@@ -113,7 +112,7 @@ class Mutation:
             logger.error(f"Workspace with ID {workspace_id} not found.")
             return CommandExecutionResult(success=False, message="Workspace not found.")
 
-        result = workspace.execute_command(command)
+        result = await workspace.execute_command(command)
         return CommandExecutionResult(
             success=result.success,
             message=result.message
