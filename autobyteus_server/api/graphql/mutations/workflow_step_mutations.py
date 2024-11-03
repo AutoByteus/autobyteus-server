@@ -19,6 +19,11 @@ class ContextFilePathInput:
     type: str
 
 @strawberry.type
+class StepResponse:
+    response: str
+    cost: float
+
+@strawberry.type
 class WorkflowStepMutation:
     @strawberry.mutation
     async def configure_step_llm(
@@ -69,14 +74,21 @@ class WorkflowStepMutation:
             if not isinstance(step, BaseStep):
                 return f"Error: Step {step_id} is not a valid workflow step"
 
-            llm_model_name = llm_model.name if llm_model else None
+            llm_model_name = llm_model.value if llm_model else None
 
             # Convert ContextFileInput to the expected format
-            processed_context_files = [{"path": cf.path, "type": cf.type} for cf in context_file_paths]
+            # Ensure the context files are properly escaped and formatted
+            processed_context_files = [
+                {
+                    "path": str(cf.path).replace("{", "{{").replace("}", "}}"),
+                    "type": str(cf.type)
+                } 
+                for cf in context_file_paths
+            ]
 
             # Process the requirement
             agent_id = await step.process_requirement(
-                requirement,
+                str(requirement),
                 processed_context_files,
                 llm_model_name
             )

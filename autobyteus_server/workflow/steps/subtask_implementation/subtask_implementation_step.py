@@ -19,6 +19,7 @@ class SubtaskImplementationStep(BaseStep):
         self.tools = []  # Add more tools as needed
         self.agent: Optional[StandaloneAgent] = None
         self.response_queue: Optional[asyncio.Queue] = None
+        self.llm_instance: Optional[BaseLLM] = None
         
     def init_response_queue(self):
         if self.response_queue is None:
@@ -50,10 +51,10 @@ class SubtaskImplementationStep(BaseStep):
             # This is the beginning of a new conversation
             self.init_response_queue()
             await self.clear_response_queue()
-            llm_instance = LLMFactory.create_llm(llm_model)
+            self.llm_instance = LLMFactory.create_llm(llm_model)
             initial_prompt = self.construct_initial_prompt(requirement, context, llm_model)
             initial_user_message = UserMessage(content=initial_prompt, file_paths=image_file_paths)
-            self.agent = self._create_agent(llm_instance, initial_user_message)
+            self.agent = self._create_agent(self.llm_instance, initial_user_message)
             self.subscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
             self.agent.start()
             user_message = initial_user_message
@@ -120,3 +121,13 @@ class SubtaskImplementationStep(BaseStep):
             self.unsubscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, self.agent.agent_id)
             self.agent.stop()
             self.agent = None
+
+    def get_current_cost(self) -> float:
+        if self.llm_instance:
+            return self.llm_instance.get_current_cost()
+        return 0.0
+
+    def get_token_usage(self) -> dict:
+        if self.llm_instance:
+            return self.llm_instance.get_token_usage()
+        return {'input_tokens': 0, 'output_tokens': 0, 'total_tokens': 0}
