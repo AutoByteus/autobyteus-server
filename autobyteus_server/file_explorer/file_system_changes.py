@@ -3,7 +3,7 @@ from typing import List, Union, Optional, Literal, Any, Dict
 from dataclasses import dataclass, field
 import json
 
-from autobyteus_server.file_explorer.tree_node import TreeNode
+from autobyteus_server.file_explorer.tree_node import TreeNode  # Ensure TreeNode is available
 
 
 class ChangeType(str, Enum):

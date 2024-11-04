@@ -21,7 +21,8 @@ class RequirementRefineStep(BaseStep):
         self, 
         requirement: str, 
         context_file_paths: List[str],
-        llm_model: Optional[str] = None
+        llm_model: Optional[str] = None,
+        conversation_id: Optional[str] = None
     ) -> str:
         model_to_use = llm_model or self.llm_model
         if not model_to_use:

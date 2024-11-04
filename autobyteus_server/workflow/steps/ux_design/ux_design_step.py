@@ -42,7 +42,8 @@ class UXDesignStep(BaseStep):
         self, 
         requirement: str, 
         context_file_paths: List[Dict[str, str]],
-        llm_model: Optional[str]
+        llm_model: Optional[str],
+        conversation_id: Optional[str] = None
     ) -> None:
         context, image_file_paths = self._construct_context(context_file_paths)
 

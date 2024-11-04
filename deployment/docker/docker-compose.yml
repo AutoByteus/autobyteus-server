@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  mongo1:
+    # Note: Using 'latest' tag will automatically pull the newest MongoDB version.
+    # For production environments, consider specifying an exact version number
+    # to ensure consistency and stability across deployments.
+    image: mongo:latest
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongodb/data/mongo1:/data/db
+    networks:
+      - mongo-network
+
+  mongo2:
+    image: mongo:latest
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - "27018:27017"
+    volumes:
+      - ./mongodb/data/mongo2:/data/db
+    networks:
+      - mongo-network
+
+  mongo3:
+    image: mongo:latest
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - "27019:27017"
+    volumes:
+      - ./mongodb/data/mongo3:/data/db
+    networks:
+      - mongo-network
+
+networks:
+  mongo-network:
+    driver: bridge
