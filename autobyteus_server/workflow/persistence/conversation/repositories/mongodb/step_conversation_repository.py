@@ -68,7 +68,7 @@ class StepConversationRepository(BaseRepository[StepConversation]):
             if not data:
                 return None
 
-            conversation = StepConversation(**data)
+            conversation = StepConversation.from_dict(data)
             # Apply message pagination if requested
             if skip_messages > 0 or limit_messages is not None:
                 conversation.messages = conversation.get_messages(
@@ -100,7 +100,7 @@ class StepConversationRepository(BaseRepository[StepConversation]):
                 session=self.session
             )
             
-            conversations = [StepConversation(**data) for data in cursor]
+            conversations = [StepConversation.from_dict(data) for data in cursor]
             
             return {
                 "conversations": conversations,
@@ -110,4 +110,18 @@ class StepConversationRepository(BaseRepository[StepConversation]):
             }
         except Exception as e:
             logger.error(f"Error retrieving conversations: {str(e)}")
+            raise
+
+    def get_all_conversations(self) -> List[StepConversation]:
+        """
+        Retrieve all conversations from the repository.
+        
+        Returns:
+            List[StepConversation]: A list of all StepConversation instances.
+        """
+        try:
+            data = self.collection.find({}, session=self.session)
+            return [StepConversation.from_dict(item) for item in data]
+        except Exception as e:
+            logger.error(f"Error retrieving all conversations: {str(e)}")
             raise
