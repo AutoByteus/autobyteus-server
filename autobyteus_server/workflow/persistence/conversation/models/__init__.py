@@ -1,14 +1,14 @@
-from autobyteus_server.workflow.persistence.conversation.models.mongodb import Message as MongoMessage
-from autobyteus_server.workflow.persistence.conversation.models.mongodb import StepConversation as MongoStepConversation
-from autobyteus_server.workflow.persistence.conversation.models.postgres import StepConversation as PostgresStepConversation
-from autobyteus_server.workflow.persistence.conversation.models.postgres import StepConversationMessage
+from autobyteus_server.workflow.persistence.conversation.models.mongodb.conversation import Message as MongoMessage
+from autobyteus_server.workflow.persistence.conversation.models.mongodb.conversation import StepConversation as MongoStepConversation
+from autobyteus_server.workflow.persistence.conversation.models.sql.conversation import StepConversation as SQLStepConversation
+from autobyteus_server.workflow.persistence.conversation.models.sql.conversation_message import StepConversationMessage as SQLStepConversationMessage
 
 __all__ = [
     # MongoDB models
     'MongoMessage',
     'MongoStepConversation',
     
-    # PostgreSQL models
-    'PostgresStepConversation',
-    'StepConversationMessage'
+    # SQL models
+    'SQLStepConversation',
+    'SQLStepConversationMessage'
 ]

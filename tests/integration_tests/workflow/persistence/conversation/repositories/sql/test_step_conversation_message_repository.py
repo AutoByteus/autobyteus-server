@@ -1,9 +1,9 @@
 import pytest
 from datetime import datetime
-from autobyteus_server.workflow.persistence.conversation.repositories.postgres.step_conversation_message_repository import (
+from autobyteus_server.workflow.persistence.conversation.repositories.sql.step_conversation_message_repository import (
     StepConversationMessageRepository
 )
-from autobyteus_server.workflow.persistence.conversation.repositories.postgres.step_conversation_repository import StepConversationRepository
+from autobyteus_server.workflow.persistence.conversation.repositories.sql.step_conversation_repository import StepConversationRepository
 
 pytestmark = pytest.mark.integration
 
@@ -30,7 +30,7 @@ def sample_message_data(message_repo):
     """
     # Create a sample conversation to associate messages with
     conversation_repo = StepConversationRepository()
-    step_name = "sample_step"
+    step_name = "sample_step_sql"
     conversation = conversation_repo.create_step_conversation(step_name)
     return {
         "step_conversation_id": conversation.id,

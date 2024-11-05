@@ -2,8 +2,7 @@ from repository_sqlalchemy import BaseRepository
 from typing import Dict, Any, List, Optional
 import json
 import logging
-from autobyteus_server.workflow.persistence.conversation.models.postgres.conversation_message import StepConversationMessage
-from autobyteus.utils.singleton import SingletonMeta
+from autobyteus_server.workflow.persistence.conversation.models.sql.conversation_message import StepConversationMessage
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ class StepConversationMessageRepository(BaseRepository[StepConversationMessage])
                 step_conversation_id=step_conversation_id,
                 role=role,
                 message=message,
-                original_message=original_message,  # Map original_content to original_message in DB
+                original_message=original_message,
                 context_paths=context_paths_json
             )
             return self.create(new_message)

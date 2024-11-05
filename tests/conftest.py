@@ -9,18 +9,42 @@ from repository_sqlalchemy.session_management import get_engine
 from repository_sqlalchemy import Base, transaction
 from dotenv import load_dotenv
 
+# Define the path for the SQLite test database
+TEST_DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'test.db')
+
+def remove_test_db():
+    """Remove test database file if it exists"""
+    try:
+        if os.path.exists(TEST_DB_PATH):
+            os.remove(TEST_DB_PATH)
+    except Exception as e:
+        print(f"Warning: Could not remove test database: {e}")
+
 # Load environment variables from .env.test
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '../.env.test'), override=True)
 
+
 @pytest.fixture(scope="session")
 def db_config():
-    os.environ['DB_TYPE'] = os.getenv('DB_TYPE', 'sqlite')
-    os.environ['DB_NAME'] = os.getenv('DB_NAME', ':memory:')
-    os.environ['DB_USER'] = os.getenv('DB_USER', 'postgres')
-    os.environ['DB_PASSWORD'] = os.getenv('DB_PASSWORD', 'mysecretpassword')
-    os.environ['DB_HOST'] = os.getenv('DB_HOST', 'localhost')
-    os.environ['DB_PORT'] = os.getenv('DB_PORT', '5432')
-    return DatabaseConfig(os.environ['DB_TYPE'])
+    # Ensure we start with a clean database file
+    remove_test_db()
+    
+    os.environ['DB_TYPE'] = 'sqlite'
+    os.environ['DB_NAME'] = TEST_DB_PATH
+    return DatabaseConfig('sqlite')
+
+
+'''
+@pytest.fixture(scope="session")
+def db_config():
+    os.environ['DB_TYPE'] = 'postgresql'
+    os.environ['DB_NAME'] = 'postgres'  # Default database name
+    os.environ['DB_USER'] = 'postgres'  # Default username
+    os.environ['DB_PASSWORD'] = 'mysecretpassword'  # Password set in Docker run command
+    os.environ['DB_HOST'] = 'localhost'
+    os.environ['DB_PORT'] = '5432'  # Default PostgreSQL port
+    return DatabaseConfig('postgresql')
+'''
 
 @pytest.fixture(scope="session")
 def engine(db_config):
@@ -31,6 +55,8 @@ def tables(engine):
     Base.metadata.create_all(engine)
     yield
     Base.metadata.drop_all(engine)
+    # Clean up the database file after all tests
+    remove_test_db()
 
 @pytest.fixture(scope="function", autouse=True)
 def clean_table_data():

@@ -1,13 +1,11 @@
 import pytest
-from repository_mongodb.transaction_management import transaction
-from repository_mongodb.mongo_client import get_mongo_client, get_mongo_database
+from repository_sqlalchemy.transaction_management import transaction
 
 @pytest.fixture(scope="function", autouse=True)
-def mongo_session():
+def transaction_rollback():
     """
     Provides a MongoDB session for testing with automatic rollback.
     """
     with transaction() as session:
         yield session
-        session.abort_transaction()
-        session.end_session()
+        session.rollback()

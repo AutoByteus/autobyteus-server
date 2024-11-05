@@ -1,6 +1,7 @@
 # config.py
 import os
 from typing import Dict
+from pathlib import Path
 import yaml
 from autobyteus_server.config.config_parser import ConfigParser, TOMLConfigParser, ENVConfigParser
 from autobyteus.utils.singleton import SingletonMeta
@@ -18,6 +19,9 @@ class Config(metaclass=SingletonMeta):
         self.parser = parser
         self.config_data = self._read_config_file(config_file, parser)
         self.workspaces: Dict[str, Workspace] = {}
+        
+        # Initialize SQLite path if needed
+        self._init_sqlite_path()
 
     def _read_config_file(self, config_file: str, parser: ConfigParser) -> dict:
         if not os.path.exists(config_file):
@@ -26,6 +30,30 @@ class Config(metaclass=SingletonMeta):
             return parser.parse(config_file)
         except Exception as e:
             raise ValueError(f"Error reading configuration file '{config_file}': {e}")
+
+    def _init_sqlite_path(self):
+        """Initialize SQLite database path if using SQLite."""
+        if self.get('DB_TYPE') == 'sqlite':
+            db_path = self._get_sqlite_path()
+            self.set('DB_NAME', db_path)
+
+    def _get_sqlite_path(self) -> str:
+        """
+        Get the SQLite database file path based on the environment.
+        """
+        # Get project root directory
+        root_dir = Path(self.config_file).parent.parent
+        
+        # Create data directory if it doesn't exist
+        data_dir = root_dir / 'data'
+        data_dir.mkdir(exist_ok=True)
+        
+        # Set database name based on environment
+        env = self.get('APP_ENV', 'production')
+        db_name = 'test.db' if env == 'test' else 'production.db'
+        
+        # Return absolute path as string
+        return str((data_dir / db_name).absolute())
 
     def get(self, key: str, default=None):
         return self.config_data.get(key, default)

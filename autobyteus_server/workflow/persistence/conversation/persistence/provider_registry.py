@@ -3,7 +3,7 @@ from autobyteus.utils.singleton import SingletonMeta
 from .provider import PersistenceProvider
 from .file_based_persistence_provider import FileBasedPersistenceProvider
 from .mongo_persistence_provider import MongoPersistenceProvider
-from .postgresql_persistence_provider import PostgresqlPersistenceProvider
+from .sql_persistence_provider import SqlPersistenceProvider  # Updated import
 
 class PersistenceProviderRegistry(metaclass=SingletonMeta):
     """Registry for managing persistence providers."""
@@ -12,7 +12,8 @@ class PersistenceProviderRegistry(metaclass=SingletonMeta):
         self._providers: Dict[str, Type[PersistenceProvider]] = {
             'file': FileBasedPersistenceProvider,
             'mongodb': MongoPersistenceProvider,
-            'postgresql': PostgresqlPersistenceProvider
+            'postgresql': SqlPersistenceProvider,  # Updated to use SqlPersistenceProvider
+            'sqlite': SqlPersistenceProvider        # Added SQLite support
         }
 
     def register_provider(self, name: str, provider: Type[PersistenceProvider]) -> None:

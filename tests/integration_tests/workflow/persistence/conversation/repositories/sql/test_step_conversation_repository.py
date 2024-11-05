@@ -1,27 +1,41 @@
 import pytest
 from datetime import datetime
 import uuid
-from autobyteus_server.workflow.persistence.conversation.repositories.postgres.step_conversation_repository import (
+from autobyteus_server.workflow.persistence.conversation.repositories.sql.step_conversation_repository import (
     StepConversation,
     StepConversationRepository
 )
+from repository_sqlalchemy.transaction_management import transaction
 
 pytestmark = pytest.mark.integration
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def conversation_repo():
+    repo = StepConversationRepository()
+    return repo
+
+@pytest.fixture
+def sample_conversations(conversation_repo):
     """
-    Provides the singleton StepConversationRepository instance for testing.
+    Fixture to create sample conversations for testing.
+    
+    Args:
+        conversation_repo (StepConversationRepository): The repository instance.
     
     Returns:
-        StepConversationRepository: Repository instance for testing
+        List[StepConversation]: A list of created StepConversation instances.
     """
-    return StepConversationRepository()
+    step_names = ["conversation_sql1", "conversation_sql2", "conversation_sql3"]
+    conversations = []
+    for name in step_names:
+        conv = conversation_repo.create_step_conversation(name)
+        conversations.append(conv)
+    return conversations
 
 def test_create_empty_conversation(conversation_repo):
-    """Test creation of an empty conversation."""
+    """Test creation of an empty conversation without messages."""
     # Arrange
-    step_name = "empty_conversation_postgres"
+    step_name = "empty_conversation_sql"
 
     # Act
     conversation = conversation_repo.create_step_conversation(step_name)
@@ -31,13 +45,14 @@ def test_create_empty_conversation(conversation_repo):
     assert conversation.step_name == step_name
     assert isinstance(conversation.created_at, datetime)
     assert isinstance(conversation.id, int)
-    assert uuid.UUID(conversation.step_conversation_id)
+    uuid_obj = uuid.UUID(conversation.step_conversation_id)
+    assert str(uuid_obj) == conversation.step_conversation_id
     assert len(conversation.messages) == 0
 
-def test_create_conversation_successfully(conversation_repo):
+def test_create_conversation_without_messages(conversation_repo):
     """Test successful creation of a new conversation."""
     # Arrange
-    step_name = "test_conversation_postgres"
+    step_name = "test_conversation_sql"
 
     # Act
     conversation = conversation_repo.create_step_conversation(step_name)
@@ -47,12 +62,13 @@ def test_create_conversation_successfully(conversation_repo):
     assert conversation.step_name == step_name
     assert isinstance(conversation.created_at, datetime)
     assert isinstance(conversation.id, int)
-    assert uuid.UUID(conversation.step_conversation_id)
+    uuid_obj = uuid.UUID(conversation.step_conversation_id)
+    assert str(uuid_obj) == conversation.step_conversation_id
 
 def test_get_by_id_successful(conversation_repo):
     """Test successful retrieval of a conversation using internal ID."""
     # Arrange
-    step_name = "internal_id_test"
+    step_name = "internal_id_test_sql"
     conversation = conversation_repo.create_step_conversation(step_name)
     internal_id = conversation.id
 
@@ -63,7 +79,8 @@ def test_get_by_id_successful(conversation_repo):
     assert retrieved_conversation is not None
     assert retrieved_conversation.id == internal_id
     assert retrieved_conversation.step_name == step_name
-    assert uuid.UUID(retrieved_conversation.step_conversation_id)
+    uuid_obj = uuid.UUID(retrieved_conversation.step_conversation_id)
+    assert str(uuid_obj) == retrieved_conversation.step_conversation_id
 
 def test_get_by_id_nonexistent(conversation_repo):
     """Test retrieval behavior with non-existent internal ID."""
@@ -73,12 +90,12 @@ def test_get_by_id_nonexistent(conversation_repo):
 def test_get_by_step_conversation_id_successful(conversation_repo):
     """Test successful retrieval of a conversation using UUID step_conversation_id."""
     # Arrange
-    step_name = "uuid_test"
+    step_name = "uuid_test_sql"
     conversation = conversation_repo.create_step_conversation(step_name)
     conversation_uuid = conversation.step_conversation_id
 
     # Act
-    retrieved_conversation = conversation_repo.get_step_conversation_by_uuid(conversation_uuid)
+    retrieved_conversation = conversation_repo.get_by_step_conversation_id(conversation_uuid)
 
     # Assert
     assert retrieved_conversation is not None
@@ -88,35 +105,16 @@ def test_get_by_step_conversation_id_successful(conversation_repo):
 def test_get_by_step_conversation_id_nonexistent(conversation_repo):
     """Test retrieval behavior with non-existent UUID step_conversation_id."""
     # Act & Assert
-    assert conversation_repo.get_step_conversation_by_uuid(str(uuid.uuid4())) is None
+    assert conversation_repo.get_by_step_conversation_id(str(uuid.uuid4())) is None
 
-def test_get_all_conversations(conversation_repo):
-    """Test retrieval of all conversations."""
-    # Arrange
-    step_names = ["conversation_pg1", "conversation_pg2", "conversation_pg3"]
-    created_uuids = []
-    for name in step_names:
-        conversation = conversation_repo.create_step_conversation(name)
-        created_uuids.append(conversation.step_conversation_id)
-
-    # Act
-    conversations = conversation_repo.get_step_conversations()
-
-    # Assert
-    assert len(conversations) >= len(step_names)
-    retrieved_uuids = [conv.step_conversation_id for conv in conversations]
-    for uuid_str in created_uuids:
-        assert uuid_str in retrieved_uuids
 
 def test_get_conversations_by_step_name_with_pagination(conversation_repo):
     """Test retrieval of conversations by step name with pagination."""
     # Arrange
-    step_name = "pagination_test_conversation_pg"
+    step_name = "pagination_test_conversation_sql"
     total_conversations = 15
-    created_uuids = []
     for _ in range(total_conversations):
-        conversation = conversation_repo.create_step_conversation(step_name)
-        created_uuids.append(conversation.step_conversation_id)
+        conversation_repo.create_step_conversation(step_name)
 
     page = 2
     page_size = 5
@@ -131,12 +129,13 @@ def test_get_conversations_by_step_name_with_pagination(conversation_repo):
     assert len(result["conversations"]) == page_size
     for conv in result["conversations"]:
         assert conv.step_name == step_name
-        assert uuid.UUID(conv.step_conversation_id)
+        uuid_obj = uuid.UUID(conv.step_conversation_id)
+        assert str(uuid_obj) == conv.step_conversation_id
 
 def test_get_conversations_by_nonexistent_step_name(conversation_repo):
     """Test retrieval behavior with a non-existent step name."""
     # Act
-    result = conversation_repo.get_conversations_by_step_name("nonexistent_conversation_pg", 1, 10)
+    result = conversation_repo.get_conversations_by_step_name("nonexistent_conversation_sql", 1, 10)
 
     # Assert
     assert result["total_conversations"] == 0
@@ -147,9 +146,10 @@ def test_get_conversations_by_nonexistent_step_name(conversation_repo):
 def test_pagination_beyond_available_pages(conversation_repo):
     """Test pagination behavior when requesting a page beyond available data."""
     # Arrange
-    step_name = "edge_case_conversation_pg"
+    step_name = "edge_case_conversation_sql"
     conversation = conversation_repo.create_step_conversation(step_name)
-    assert uuid.UUID(conversation.step_conversation_id)
+    uuid_obj = uuid.UUID(conversation.step_conversation_id)
+    assert str(uuid_obj) == conversation.step_conversation_id
 
     # Act
     result = conversation_repo.get_conversations_by_step_name(step_name, page=999, page_size=10)

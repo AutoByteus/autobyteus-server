@@ -5,18 +5,15 @@ YAML, TOML, and .env file formats.
 """
 
 from abc import ABC, abstractmethod
-import yaml  # For parsing YAML files
-import toml  # For parsing TOML files
-import os  # For file path operations
-from dotenv import dotenv_values  # For parsing .env files
+import yaml
+import toml
+import os
+from dotenv import dotenv_values, set_key
 
 
 class ConfigParser(ABC):
     """
     ConfigParser is an abstract base class for configuration file parsers.
-    
-    This class defines a common interface for all configuration parsers,
-    ensuring that all concrete implementations have a `parse` method.
     """
 
     @abstractmethod
@@ -32,73 +29,68 @@ class ConfigParser(ABC):
         """
         pass
 
-
-class YAMLConfigParser(ConfigParser):
-    """
-    YAMLConfigParser is a class that parses YAML configuration files.
-
-    This class implements the ConfigParser interface for YAML files.
-    """
-
-    def parse(self, config_file: str) -> dict:
+    @abstractmethod
+    def update(self, config_file: str, key: str, value: str):
         """
-        Parse a YAML configuration file.
+        Update a value in the configuration file.
 
         Args:
-            config_file (str): The path to the YAML configuration file.
-
-        Returns:
-            dict: A dictionary containing the parsed YAML configuration.
+            config_file (str): The path to the configuration file.
+            key (str): The key to update.
+            value (str): The new value.
         """
+        pass
+
+
+class YAMLConfigParser(ConfigParser):
+    """YAMLConfigParser is a class that parses YAML configuration files."""
+
+    def parse(self, config_file: str) -> dict:
         with open(config_file, "r") as file:
-            # Use safe_load to prevent arbitrary code execution
             return yaml.safe_load(file)
+
+    def update(self, config_file: str, key: str, value: str):
+        with open(config_file, "r") as file:
+            config = yaml.safe_load(file) or {}
+        
+        config[key] = value
+        
+        with open(config_file, "w") as file:
+            yaml.dump(config, file)
 
 
 class TOMLConfigParser(ConfigParser):
-    """
-    TOMLConfigParser is a class that parses TOML configuration files.
-
-    This class implements the ConfigParser interface for TOML files.
-    """
+    """TOMLConfigParser is a class that parses TOML configuration files."""
 
     def parse(self, config_file: str) -> dict:
-        """
-        Parse a TOML configuration file.
-
-        Args:
-            config_file (str): The path to the TOML configuration file.
-
-        Returns:
-            dict: A dictionary containing the parsed TOML configuration.
-        """
         with open(config_file, "r") as file:
             return toml.load(file)
 
+    def update(self, config_file: str, key: str, value: str):
+        with open(config_file, "r") as file:
+            config = toml.load(file)
+        
+        config[key] = value
+        
+        with open(config_file, "w") as file:
+            toml.dump(config, file)
+
 
 class ENVConfigParser(ConfigParser):
-    """
-    ENVConfigParser is a class that parses .env configuration files.
-
-    This class implements the ConfigParser interface for .env files.
-    """
+    """ENVConfigParser is a class that parses .env configuration files."""
 
     def parse(self, config_file: str) -> dict:
-        """
-        Parse a .env configuration file.
-
-        Args:
-            config_file (str): The path to the .env configuration file.
-
-        Returns:
-            dict: A dictionary containing the parsed .env configuration.
-
-        Raises:
-            FileNotFoundError: If the specified configuration file does not exist.
-        """
-        # Check if the file exists before attempting to parse it
         if not os.path.isfile(config_file):
             raise FileNotFoundError(f"Configuration file '{config_file}' not found.")
-        
-        # Use dotenv_values to parse the .env file
         return dotenv_values(config_file)
+
+    def update(self, config_file: str, key: str, value: str):
+        """
+        Update a value in the .env file.
+        
+        Args:
+            config_file (str): The path to the .env file.
+            key (str): The key to update.
+            value (str): The new value.
+        """
+        set_key(config_file, key, value)

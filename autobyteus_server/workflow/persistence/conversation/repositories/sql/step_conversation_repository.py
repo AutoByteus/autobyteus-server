@@ -3,7 +3,7 @@ from repository_sqlalchemy import BaseRepository
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 import logging
-from autobyteus_server.workflow.persistence.conversation.models.postgres.conversation import StepConversation
+from autobyteus_server.workflow.persistence.conversation.models.sql.conversation import StepConversation
 
 logger = logging.getLogger(__name__)
 
