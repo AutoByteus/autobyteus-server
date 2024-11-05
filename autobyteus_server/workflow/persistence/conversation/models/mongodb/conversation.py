@@ -12,7 +12,7 @@ class Message:
         role: str,
         message: str,
         timestamp: datetime = None,
-        original_message: Optional[str] = None,  # Keep original_message in DB model
+        original_message: Optional[str] = None,
         context_paths: Optional[List[str]] = None
     ):
         self.role = role
@@ -27,28 +27,25 @@ class Message:
             "role": self.role,
             "message": self.message,
             "timestamp": self.timestamp,
-            "original_message": self.original_message,  # Keep original_message in DB model
+            "original_message": self.original_message,
             "context_paths": self.context_paths
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> 'Message':
         """Create message instance from dictionary."""
-        # Ensure that 'timestamp' is a datetime object
         timestamp = data.get("timestamp")
         if isinstance(timestamp, str):
-            # If timestamp is a string, parse it to datetime
             from dateutil import parser
             timestamp = parser.isoparse(timestamp)
         elif not isinstance(timestamp, datetime):
-            # If timestamp is not a datetime object, raise an error
             raise ValueError("Invalid timestamp format in message data.")
         
         return cls(
             role=data["role"],
             message=data["message"],
             timestamp=timestamp,
-            original_message=data.get("original_message"),  # Keep original_message in DB model
+            original_message=data.get("original_message"),
             context_paths=data.get("context_paths", [])
         )
 
@@ -56,7 +53,6 @@ class Message:
 class StepConversation(BaseModel):
     __collection_name__ = "step_conversations"
 
-    step_conversation_id: ObjectId
     step_name: str
     created_at: datetime
     messages: List[Dict]  # List of Message dictionaries
@@ -64,7 +60,6 @@ class StepConversation(BaseModel):
     def __init__(
         self,
         step_name: str,
-        step_conversation_id: ObjectId = None,
         created_at: datetime = None,
         messages: List[Dict] = None,
         **kwargs
@@ -74,17 +69,16 @@ class StepConversation(BaseModel):
 
         Args:
             step_name (str): Name of the step
-            step_conversation_id (ObjectId, optional): Unique identifier
             created_at (datetime, optional): Creation timestamp
             messages (List[Dict], optional): List of message dictionaries
         """
         super().__init__(
-            step_conversation_id=step_conversation_id or ObjectId(),
             step_name=step_name,
             created_at=created_at or datetime.utcnow(),
             messages=messages or [],
             **kwargs
         )
+        # Do not initialize _id here; let MongoDB handle it
 
     def add_message(self, role: str, message: str, original_message: Optional[str] = None, context_paths: Optional[List[str]] = None) -> Message:
         """
@@ -93,13 +87,13 @@ class StepConversation(BaseModel):
         Args:
             role (str): Role of the message sender
             message (str): Message content
-            original_message (Optional[str]): The original user message, if applicable  # Use original_message in domain model
+            original_message (Optional[str]): The original user message, if applicable
             context_paths (Optional[List[str]]): List of context file paths, if applicable
 
         Returns:
             Message: The newly created message
         """
-        new_message = Message(role=role, message=message, original_message=original_message, context_paths=context_paths)  # Use original_message
+        new_message = Message(role=role, message=message, original_message=original_message, context_paths=context_paths)
         message_dict = new_message.to_dict()
         self.messages.append(message_dict)
         return new_message
@@ -120,12 +114,14 @@ class StepConversation(BaseModel):
 
     def to_dict(self) -> dict:
         """Convert conversation to dictionary representation."""
-        return {
-            "step_conversation_id": self.step_conversation_id,
+        data = {
             "step_name": self.step_name,
             "created_at": self.created_at,
             "messages": self.messages
         }
+        if hasattr(self, '_id') and self._id is not None:
+            data["_id"] = self._id
+        return data
 
     @classmethod
     def from_dict(cls, data: dict) -> 'StepConversation':
@@ -139,14 +135,15 @@ class StepConversation(BaseModel):
             StepConversation: The created StepConversation instance.
         """
         messages_data = data.get("messages", [])
-        # Convert each message dict to ensure 'timestamp' is a datetime object
         messages = [Message.from_dict(msg) for msg in messages_data]
         messages_dicts = [msg.to_dict() for msg in messages]
         
-        return cls(
-            step_conversation_id=data.get("step_conversation_id"),
+        conversation = cls(
             step_name=data.get("step_name"),
             created_at=data.get("created_at"),
             messages=messages_dicts,
-            **{k: v for k, v in data.items() if k not in {"step_conversation_id", "step_name", "created_at", "messages"}}
+            **{k: v for k, v in data.items() if k not in {"_id", "step_name", "created_at", "messages"}}
         )
+        if "_id" in data:
+            conversation._id = data["_id"]
+        return conversation

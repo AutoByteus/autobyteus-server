@@ -52,7 +52,7 @@ def test_create_empty_conversation(conversation_repo):
     assert conversation is not None
     assert conversation.step_name == step_name
     assert isinstance(conversation.created_at, datetime)
-    assert isinstance(conversation.step_conversation_id, ObjectId)
+    assert isinstance(conversation._id, ObjectId)
     assert len(conversation.messages) == 0
 
 def test_create_conversation_without_messages(conversation_repo):
@@ -67,7 +67,7 @@ def test_create_conversation_without_messages(conversation_repo):
     assert conversation is not None
     assert conversation.step_name == step_name
     assert isinstance(conversation.created_at, datetime)
-    assert isinstance(conversation.step_conversation_id, ObjectId)
+    assert isinstance(conversation._id, ObjectId)
     assert len(conversation.messages) == 0
 
 def test_get_all_conversations(conversation_repo, sample_conversations):
@@ -85,14 +85,14 @@ def test_get_conversation_by_id(conversation_repo, sample_conversations):
     """Test retrieval of a conversation by its ID."""
     # Arrange
     conversation = sample_conversations[0]
-    conversation_id = conversation.step_conversation_id
+    conversation_id = conversation._id
 
     # Act
     retrieved_conversation = conversation_repo.get_conversation_by_id(conversation_id)
 
     # Assert
     assert retrieved_conversation is not None
-    assert retrieved_conversation.step_conversation_id == conversation_id
+    assert retrieved_conversation._id == conversation_id
     assert retrieved_conversation.step_name == conversation.step_name
 
 def test_get_conversations_by_step_name_with_pagination(conversation_repo):
@@ -146,7 +146,7 @@ def test_add_message_to_conversation(conversation_repo):
     # Arrange
     step_name = "message_test_conversation"
     conversation = conversation_repo.create_conversation(step_name)
-    conversation_id = conversation.step_conversation_id
+    conversation_id = conversation._id
     role = "user"
     message_content = "Hello, this is a test message."
     original_message = "Original test message."
@@ -154,7 +154,7 @@ def test_add_message_to_conversation(conversation_repo):
 
     # Act
     updated_conversation = conversation_repo.add_message(
-        step_conversation_id=conversation_id,
+        conversation_id=conversation_id,
         role=role,
         message=message_content,
         original_message=original_message,
@@ -180,7 +180,7 @@ def test_add_message_to_nonexistent_conversation(conversation_repo):
 
     # Act
     result = conversation_repo.add_message(
-        step_conversation_id=nonexistent_id,
+        conversation_id=nonexistent_id,
         role=role,
         message=message_content
     )
@@ -193,13 +193,13 @@ def test_get_conversation_with_pagination(conversation_repo):
     # Arrange
     step_name = "pagination_message_conversation"
     conversation = conversation_repo.create_conversation(step_name)
-    conversation_id = conversation.step_conversation_id
+    conversation_id = conversation._id
 
     # Add multiple messages
     total_messages = 10
     for i in range(total_messages):
         conversation_repo.add_message(
-            step_conversation_id=conversation_id,
+            conversation_id=conversation_id,
             role="user",
             message=f"Message {i+1}"
         )
@@ -216,8 +216,6 @@ def test_get_conversation_with_pagination(conversation_repo):
 
 def test_concurrent_conversation_creation(conversation_repo):
     """Test creating multiple conversations concurrently."""
-    # This test assumes that the repository can handle concurrent operations.
-    # Depending on the implementation, additional setup might be required.
     import threading
 
     step_name = "concurrent_conversation"
@@ -248,10 +246,10 @@ def test_delete_conversation(conversation_repo):
     # Arrange
     step_name = "delete_test_conversation"
     conversation = conversation_repo.create_conversation(step_name)
-    conversation_id = conversation.step_conversation_id
+    conversation_id = conversation._id
 
     # Act
-    result = conversation_repo.collection.delete_one({"step_conversation_id": conversation_id})
+    result = conversation_repo.collection.delete_one({"_id": conversation_id})
 
     # Assert
     assert result.deleted_count == 1
@@ -264,12 +262,12 @@ def test_update_conversation_step_name(conversation_repo):
     original_step_name = "original_step"
     new_step_name = "updated_step"
     conversation = conversation_repo.create_conversation(original_step_name)
-    conversation_id = conversation.step_conversation_id
+    conversation_id = conversation._id
 
     # Act
     conversation.step_name = new_step_name
     conversation_repo.collection.replace_one(
-        {"step_conversation_id": conversation_id},
+        {"_id": conversation_id},
         conversation.to_dict(),
         session=conversation_repo.session
     )
@@ -284,7 +282,7 @@ def test_add_multiple_messages(conversation_repo):
     # Arrange
     step_name = "multiple_messages_conversation"
     conversation = conversation_repo.create_conversation(step_name)
-    conversation_id = conversation.step_conversation_id
+    conversation_id = conversation._id
     messages = [
         {"role": "user", "message": "First message"},
         {"role": "assistant", "message": "Second message"},
@@ -294,7 +292,7 @@ def test_add_multiple_messages(conversation_repo):
     # Act
     for msg in messages:
         conversation_repo.add_message(
-            step_conversation_id=conversation_id,
+            conversation_id=conversation_id,
             role=msg["role"],
             message=msg["message"]
         )
@@ -313,12 +311,12 @@ def test_message_timestamp(conversation_repo):
     # Arrange
     step_name = "timestamp_test_conversation"
     conversation = conversation_repo.create_conversation(step_name)
-    conversation_id = conversation.step_conversation_id
+    conversation_id = conversation._id
 
     # Act
     before_time = datetime.utcnow()
     conversation_repo.add_message(
-        step_conversation_id=conversation_id,
+        conversation_id=conversation_id,
         role="user",
         message="Timestamp test message"
     )
@@ -338,12 +336,12 @@ def test_context_paths_in_message(conversation_repo):
     # Arrange
     step_name = "context_paths_conversation"
     conversation = conversation_repo.create_conversation(step_name)
-    conversation_id = conversation.step_conversation_id
+    conversation_id = conversation._id
     context_paths = ["path/to/context1", "path/to/context2"]
 
     # Act
     conversation_repo.add_message(
-        step_conversation_id=conversation_id,
+        conversation_id=conversation_id,
         role="user",
         message="Message with context paths",
         context_paths=context_paths
@@ -359,12 +357,12 @@ def test_original_message_field(conversation_repo):
     # Arrange
     step_name = "original_message_conversation"
     conversation = conversation_repo.create_conversation(step_name)
-    conversation_id = conversation.step_conversation_id
+    conversation_id = conversation._id
     original_message = "This is the original message."
 
     # Act
     conversation_repo.add_message(
-        step_conversation_id=conversation_id,
+        conversation_id=conversation_id,
         role="user",
         message="Reply to original message.",
         original_message=original_message

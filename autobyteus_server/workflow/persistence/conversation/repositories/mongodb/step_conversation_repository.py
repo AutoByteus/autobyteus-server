@@ -7,12 +7,17 @@ from autobyteus_server.workflow.persistence.conversation.models.mongodb.conversa
 
 logger = logging.getLogger(__name__)
 
+class ConversationNotFoundError(Exception):
+    """Raised when a conversation is not found by its ID."""
+    pass
+
 class StepConversationRepository(BaseRepository[StepConversation]):
     def create_conversation(self, step_name: str) -> StepConversation:
         """Create a new conversation."""
         try:
             conversation = StepConversation(step_name=step_name)
-            self.collection.insert_one(conversation.to_dict(), session=self.session)
+            result = self.collection.insert_one(conversation.to_dict(), session=self.session)
+            conversation._id = result.inserted_id  # Assign the generated _id back to the instance
             return conversation
         except Exception as e:
             logger.error(f"Error creating conversation: {str(e)}")
@@ -20,53 +25,66 @@ class StepConversationRepository(BaseRepository[StepConversation]):
 
     def add_message(
         self,
-        step_conversation_id: ObjectId,
+        conversation_id: ObjectId,
         role: str,
         message: str,
-        original_message: Optional[str] = None,  # Keep original_message in DB model
+        original_message: Optional[str] = None,
         context_paths: Optional[List[str]] = None
-    ) -> Optional[StepConversation]:
-        """Add a message to an existing conversation."""
+    ) -> StepConversation:
+        """
+        Add a message to an existing conversation.
+        
+        Args:
+            conversation_id (ObjectId): MongoDB _id of the conversation
+            role (str): Role of the message sender
+            message (str): Message content
+            original_message (Optional[str]): Original message if applicable
+            context_paths (Optional[List[str]]): List of context file paths
+        """
         try:
-            conversation = self.get_conversation_by_id(step_conversation_id)
-            if not conversation:
-                return None
-
-            conversation.add_message(role=role, message=message, original_message=original_message, context_paths=context_paths)  # Use original_message
+            conversation = self.get_conversation_by_id(conversation_id)
+            conversation.add_message(role=role, message=message, original_message=original_message, context_paths=context_paths)
             
             # Update the entire conversation document
             self.collection.replace_one(
-                {"step_conversation_id": step_conversation_id},
+                {"_id": conversation_id},
                 conversation.to_dict(),
                 session=self.session
             )
-            
+            logger.info(f"Added message to conversation ID: {conversation_id}")
             return conversation
+        except ConversationNotFoundError as e:
+            logger.error(str(e))
+            raise
         except Exception as e:
             logger.error(f"Error adding message to conversation: {str(e)}")
             raise
 
     def get_conversation_by_id(
         self,
-        step_conversation_id: ObjectId,
+        conversation_id: ObjectId,
         skip_messages: int = 0,
         limit_messages: Optional[int] = None
-    ) -> Optional[StepConversation]:
+    ) -> StepConversation:
         """
         Get a conversation by ID with optional message pagination.
         
         Args:
-            step_conversation_id (ObjectId): Conversation ID
+            conversation_id (ObjectId): MongoDB _id of the conversation
             skip_messages (int): Number of messages to skip
             limit_messages (Optional[int]): Maximum number of messages to return
+
+        Raises:
+            ConversationNotFoundError: If the conversation with the given ID is not found
         """
         try:
             data = self.collection.find_one(
-                {"step_conversation_id": step_conversation_id},
+                {"_id": conversation_id},
                 session=self.session
             )
             if not data:
-                return None
+                logger.error(f"Conversation not found with ID: {conversation_id}")
+                raise ConversationNotFoundError(f"Conversation with ID {conversation_id} not found")
 
             conversation = StepConversation.from_dict(data)
             # Apply message pagination if requested
@@ -75,7 +93,10 @@ class StepConversationRepository(BaseRepository[StepConversation]):
                     skip=skip_messages,
                     limit=limit_messages
                 )
+            logger.info(f"Retrieved conversation ID: {conversation_id} with {len(conversation.messages)} messages")
             return conversation
+        except ConversationNotFoundError:
+            raise
         except Exception as e:
             logger.error(f"Error retrieving conversation: {str(e)}")
             raise

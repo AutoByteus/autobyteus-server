@@ -19,28 +19,6 @@ class ContextFilePathInput:
 @strawberry.type
 class WorkflowStepMutation:
     @strawberry.mutation
-    async def configure_step_llm(
-        self,
-        workspace_id: str,
-        step_id: str,
-        llm_model: GraphQLLLMModel
-    ) -> str:
-        workspace = workspace_manager.get_workspace_by_id(workspace_id)
-        if not workspace:
-            return f"Error: No workspace found for ID {workspace_id}"
-
-        workflow = workspace.workflow
-        if not workflow:
-            return f"Error: No workflow found for workspace {workspace_id}"
-
-        step = workflow.get_step(step_id)
-        if not step:
-            return f"Error: Step {step_id} not found in the workflow"
-
-        step.configure_llm_model(llm_model.value)
-        return f"LLM model configured successfully for step {step_id}"
-
-    @strawberry.mutation
     async def send_step_requirement(
         self,
         workspace_id: str,

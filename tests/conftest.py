@@ -10,7 +10,7 @@ from repository_sqlalchemy import Base, transaction
 from dotenv import load_dotenv
 
 # Load environment variables from .env.test
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '../.env.test'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '../.env.test'), override=True)
 
 @pytest.fixture(scope="session")
 def db_config():
