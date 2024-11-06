@@ -1,8 +1,18 @@
+"""
+Represents a workspace containing project configurations, file exploration, and automated workflows.
+
+This class stores the parsed workspace structure along with associated objects such as
+file explorer and automated coding workflows. It manages the project type and provides
+access to the directory tree and workflow functionalities.
+"""
+
 import uuid
+import os
+from typing import Dict, Optional
 from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus_server.workspaces.setting.project_types import ProjectType
 from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
-
+from autobyteus_server.workspaces.workspace_tools.command_executor import CommandExecutionResult, CommandExecutor
 
 class Workspace:
     """
@@ -33,10 +43,36 @@ class Workspace:
         """
         self.root_path = root_path
         self.project_type = project_type
-        self.name = root_path  # Name is set to root_path
+        self.name = os.path.basename(root_path)  # Name is set to the basename of root_path
         self.workspace_id = str(uuid.uuid4())
         self.file_explorer: FileExplorer = file_explorer
         self._workflow: AutomatedCodingWorkflow = workflow
+        self._command_executor: CommandExecutor = None
+        self._file_name_index: Optional[Dict[str, str]] = None  # Map from file name to file path
+        self._build_file_name_index()
+
+    def _build_file_name_index(self):
+        """
+        Builds an index of file names to file paths for quick search.
+        """
+        file_explorer = self.get_file_explorer()
+        all_file_paths = file_explorer.get_all_file_paths()
+        self._file_name_index = {}
+        for path in all_file_paths:
+            file_name = os.path.basename(path)
+            self._file_name_index[file_name] = path
+
+    def get_file_name_index(self) -> Dict[str, str]:
+        """
+        Returns the file name index.
+
+        Returns:
+            Dict[str, str]: A dictionary mapping file names to their paths.
+        """
+        if self._file_name_index is None:
+            self._build_file_name_index()
+        return self._file_name_index
+
 
     @property
     def project_type(self) -> ProjectType:
@@ -74,6 +110,7 @@ class Workspace:
         """
         if self.file_explorer is None:
             self.file_explorer = FileExplorer(self.root_path)
+            self.file_explorer.build_workspace_directory_tree()
         return self.file_explorer
 
     def set_file_explorer(self, file_explorer: FileExplorer):
@@ -109,3 +146,27 @@ class Workspace:
         if not isinstance(value, AutomatedCodingWorkflow):
             raise ValueError("workflow must be an instance of AutomatedCodingWorkflow.")
         self._workflow = value
+
+    def get_command_executor(self) -> CommandExecutor:
+        """
+        Get the CommandExecutor instance for this workspace.
+
+        Returns:
+            CommandExecutor: The command executor for this workspace.
+        """
+        if self._command_executor is None:
+            self._command_executor = CommandExecutor(self.root_path)
+        return self._command_executor
+
+    async def execute_command(self, command: str) -> CommandExecutionResult:
+        """
+        Execute a command in this workspace.
+
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            CommandExecutionResult: The result of the command execution.
+        """
+        executor = self.get_command_executor()
+        return await executor.execute_command(command)

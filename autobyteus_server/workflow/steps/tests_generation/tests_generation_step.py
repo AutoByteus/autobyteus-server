@@ -13,7 +13,7 @@ class TestsGenerationStep(BaseStep):
     
     def construct_initial_prompt(self, requirement: str, context: str, llm_model: str) -> str:
         return self.get_prompt_template(llm_model).fill({
-            "code": context,
+            "context": context,
             "requirement": requirement
         })
     
@@ -21,7 +21,8 @@ class TestsGenerationStep(BaseStep):
         self, 
         requirement: str, 
         context_file_paths: List[str],
-        llm_model: Optional[str] = None
+        llm_model: Optional[str] = None,
+        conversation_id: Optional[str] = None
     ) -> str:
         model_to_use = llm_model or self.llm_model
         if not model_to_use:

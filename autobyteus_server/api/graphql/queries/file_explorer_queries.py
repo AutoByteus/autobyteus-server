@@ -1,5 +1,3 @@
-# File: autobyteus_server/api/graphql/queries/file_explorer_queries.py
-
 """
 Module: file_explorer_queries
 
@@ -8,8 +6,10 @@ This module provides GraphQL queries related to file explorer operations.
 
 import json
 import logging
+from typing import List
 import strawberry
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
+from rapidfuzz import process, fuzz
 
 # Singleton instance
 workspace_manager = WorkspaceManager()
@@ -46,3 +46,39 @@ class Query:
         except Exception as e:
             logger.error(f"Error reading file content: {str(e)}")
             return json.dumps({"error": "An unexpected error occurred while reading the file"})
+
+    @strawberry.field
+    def search_files(self, workspace_id: str, query: str) -> List[str]:
+        """
+        Searches for files matching the query using fuzzy search on file names.
+
+        Args:
+            workspace_id (str): The ID of the workspace.
+            query (str): The search query.
+
+        Returns:
+            List[str]: A list of file paths that match the search query.
+        """
+        try:
+            workspace = workspace_manager.get_workspace_by_id(workspace_id)
+            if not workspace:
+                return []
+
+            # Get the file name index from the workspace
+            file_name_index = workspace.get_file_name_index()
+            if not file_name_index:
+                return []
+
+            # Perform fuzzy search using rapidfuzz
+            matches = process.extract(
+                query,
+                file_name_index.keys(),
+                limit=10,
+                scorer=fuzz.WRatio
+            )
+
+            # Return the matched file paths
+            return [file_name_index[match[0]] for match in matches]
+        except Exception as e:
+            logger.error(f"Error searching files: {str(e)}")
+            return []

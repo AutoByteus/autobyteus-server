@@ -1,10 +1,11 @@
-from typing import TYPE_CHECKING, List, Optional, Dict
+from typing import TYPE_CHECKING, List, Optional, Dict, Type
 from abc import ABC, abstractmethod
 from autobyteus.prompt.prompt_template import PromptTemplate
 from autobyteus_server.workflow.utils.unique_id_generator import UniqueIDGenerator
 from autobyteus.llm.utils.llm_config import LLMConfig
 from autobyteus.events.event_emitter import EventEmitter
 from autobyteus_server.workflow.utils.prompt_template_manager import PromptTemplateManager
+from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
 
 if TYPE_CHECKING:
     from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
@@ -19,6 +20,7 @@ class BaseStep(ABC, EventEmitter):
         self.llm_model: Optional[str] = None
         self.prompt_template_manager = PromptTemplateManager()
         self.prompt_dir = prompt_dir
+        self.persistence_proxy = PersistenceProxy()
 
     def configure_llm_model(self, llm_model: str):
         """
@@ -55,7 +57,8 @@ class BaseStep(ABC, EventEmitter):
         self, 
         requirement: str, 
         context_file_paths: List[Dict[str, str]], 
-        llm_model: Optional[str]
+        llm_model: Optional[str],
+        conversation_id: Optional[str] = None
     ) -> None:
         pass
     

@@ -270,3 +270,25 @@ class FileExplorer:
             str: The JSON representation of the workspace directory tree.
         """
         return self.root_node.to_json()
+
+    def get_all_file_paths(self) -> List[str]:
+        """
+        Returns a list of all file paths in the workspace.
+
+        Returns:
+            List[str]: A list of file paths.
+        """
+        if not self.root_node:
+            raise ValueError("Directory tree is not built")
+
+        all_paths = []
+
+        def traverse(node: TreeNode):
+            if node.is_file:
+                all_paths.append(node.get_path())
+            else:
+                for child in node.children:
+                    traverse(child)
+
+        traverse(self.root_node)
+        return all_paths
