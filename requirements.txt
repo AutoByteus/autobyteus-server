@@ -4,5 +4,5 @@ python-dotenv==1.0.1
 RapidFuzz==3.10.1
 pathspec
 repository-sqlalchemy==0.1.4
-repository-mongodb==0.1.7
+repository-mongodb==0.1.8
 alembic==1.13.3
