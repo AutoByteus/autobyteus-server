@@ -3,6 +3,6 @@ watchfiles==0.22.0
 python-dotenv==1.0.1
 RapidFuzz==3.10.1
 pathspec
-repository-sqlalchemy=0.1.4
-repository-mongodb=0.1.7
+repository-sqlalchemy==0.1.4
+repository-mongodb==0.1.7
 alembic==1.13.3
