@@ -10,7 +10,16 @@ from repository_sqlalchemy import Base, transaction
 from dotenv import load_dotenv
 
 # Define the path for the SQLite test database
-TEST_DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'test.db')
+TEST_DB_DIR = os.path.join(os.path.dirname(__file__), 'data')
+TEST_DB_PATH = os.path.join(TEST_DB_DIR, 'test.db')
+
+def ensure_test_db_directory():
+    """Ensure the directory for test database exists"""
+    try:
+        os.makedirs(TEST_DB_DIR, exist_ok=True)
+    except Exception as e:
+        logging.error(f"Failed to create test database directory: {e}")
+        raise
 
 def remove_test_db():
     """Remove test database file if it exists"""
@@ -18,21 +27,21 @@ def remove_test_db():
         if os.path.exists(TEST_DB_PATH):
             os.remove(TEST_DB_PATH)
     except Exception as e:
-        print(f"Warning: Could not remove test database: {e}")
+        logging.warning(f"Could not remove test database: {e}")
 
 # Load environment variables from .env.test
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '../.env.test'), override=True)
-
 
 @pytest.fixture(scope="session")
 def db_config():
     # Ensure we start with a clean database file
     remove_test_db()
+    # Ensure the directory exists
+    ensure_test_db_directory()
     
     os.environ['DB_TYPE'] = 'sqlite'
     os.environ['DB_NAME'] = TEST_DB_PATH
     return DatabaseConfig('sqlite')
-
 
 '''
 @pytest.fixture(scope="session")

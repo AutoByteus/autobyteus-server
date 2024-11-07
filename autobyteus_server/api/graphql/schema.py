@@ -10,7 +10,7 @@ from autobyteus_server.api.graphql.mutations import workflow_step_mutations
 from autobyteus_server.api.graphql.mutations import file_explorer_mutations
 from autobyteus_server.api.graphql.mutations import api_key_mutations
 from autobyteus_server.api.graphql.subscriptions import workflow_step_subscriptions
-from autobyteus_server.api.graphql.queries import workspace_queries
+from autobyteus_server.api.graphql.queries import context_search_queries, workspace_queries
 from autobyteus_server.api.graphql.queries import file_explorer_queries
 from autobyteus_server.api.graphql.queries import code_search_queries
 from autobyteus_server.api.graphql.queries import api_key_queries
@@ -24,6 +24,7 @@ class Query(
     file_explorer_queries.Query,
     api_key_queries.Query,
     conversation_queries.Query,
+    context_search_queries.ContextQuery,
 ):
     pass
 

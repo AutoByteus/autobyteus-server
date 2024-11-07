@@ -13,7 +13,7 @@ from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus_server.workspaces.setting.project_types import ProjectType
 from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
 from autobyteus_server.workspaces.workspace_tools.command_executor import CommandExecutionResult, CommandExecutor
-
+from autobyteus_server.codeverse.search.hackathon_search_service import HackathonSearchService
 class Workspace:
     """
     Represents a workspace containing project configurations, file exploration, and automated workflows.
@@ -50,6 +50,7 @@ class Workspace:
         self._command_executor: CommandExecutor = None
         self._file_name_index: Optional[Dict[str, str]] = None  # Map from file name to file path
         self._build_file_name_index()
+        self.hackathon_search_service = HackathonSearchService()  # Initialize HackathonSearchService
 
     def _build_file_name_index(self):
         """
