@@ -2,6 +2,7 @@ Analyze the following context given in the [Context] section and complete the sp
 
 CRITICAL RULES:
 1. You MUST preserve and use the complete file paths as provided in the context, including root folder names and intermediate directories. Never truncate or modify the given file paths.
+2. All code written within <content> tags MUST maintain proper indentation according to the language's conventions.
 
 BASH COMMANDS GUIDELINES:
 Bash commands should ONLY be included when absolutely necessary. Here are the specific cases:

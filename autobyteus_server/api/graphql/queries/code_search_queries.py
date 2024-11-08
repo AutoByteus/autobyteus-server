@@ -1,12 +1,11 @@
 """
-Module: search_queries
+Module: code_search_queries
 
 This module provides GraphQL queries related to code search operations.
 """
 
 import json
 import logging
-from typing import List
 import strawberry
 from strawberry.scalars import JSON
 from autobyteus_server.codeverse.search.search_result import SearchResult
