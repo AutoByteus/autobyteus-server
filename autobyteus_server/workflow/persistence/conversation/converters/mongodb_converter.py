@@ -1,11 +1,9 @@
-from datetime import datetime
 from typing import List
 
 from bson import ObjectId
 
 from autobyteus_server.workflow.persistence.conversation.domain.models import Message, StepConversation
 from autobyteus_server.workflow.persistence.conversation.models.mongodb.conversation import StepConversation as MongoStepConversation
-from autobyteus_server.workflow.persistence.conversation.models.mongodb.conversation import Message as MongoMessage
 
 class MongoDBConverter:
     @staticmethod

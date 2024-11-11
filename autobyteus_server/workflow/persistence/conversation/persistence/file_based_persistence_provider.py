@@ -5,10 +5,14 @@ from datetime import datetime
 from typing import List, Optional
 from autobyteus_server.workflow.persistence.conversation.persistence.provider import PersistenceProvider
 from autobyteus_server.workflow.persistence.conversation.domain.models import Message, StepConversation, ConversationHistory
+import logging
 
+logger = logging.getLogger(__name__)
 class FileBasedPersistenceProvider(PersistenceProvider):
     def __init__(self):
-        super().__init__()
+        #super().__init__()
+        self.base_dir = "conversations"
+        os.makedirs(self.base_dir, exist_ok=True)
 
     def create_conversation(self, step_name: str) -> StepConversation:
         """Create a new conversation file."""
@@ -16,7 +20,7 @@ class FileBasedPersistenceProvider(PersistenceProvider):
         safe_name = ''.join(c if c.isalnum() else '_' for c in step_name)
         file_path = f"conversations/{safe_name}_{timestamp}.txt"
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        open(file_path, 'a').close()  # Create empty file
+        open(file_path, 'a').close()    # Create empty file
         
         return StepConversation(
             step_conversation_id=file_path,
@@ -65,11 +69,11 @@ class FileBasedPersistenceProvider(PersistenceProvider):
                     original_message=data.get("original_message"),  # Mapped original_message from DB to original_message in domain
                     context_paths=data.get("context_paths", [])
                 ))
-        
-        file_timestamp = datetime.strptime(
-            os.path.basename(file_path).split('_')[1].split('.')[0],
-            "%Y%m%d_%H%M%S"
-        )
+        # Corrected timestamp extraction
+        filename = os.path.basename(file_path)
+        filename_without_extension = os.path.splitext(filename)[0]
+        timestamp_str = filename_without_extension[-15:]
+        file_timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
         
         return StepConversation(
             step_conversation_id=file_path,
@@ -107,11 +111,11 @@ class FileBasedPersistenceProvider(PersistenceProvider):
                             original_message=data.get("original_message"),  # Mapped original_message from DB to original_message in domain
                             context_paths=data.get("context_paths", [])
                         ))
-                
-                file_timestamp = datetime.strptime(
-                    os.path.basename(file_path).split('_')[1].split('.')[0],
-                    "%Y%m%d_%H%M%S"
-                )
+                # Corrected timestamp extraction
+                filename = os.path.basename(file_path)
+                filename_without_extension = os.path.splitext(filename)[0]
+                timestamp_str = filename_without_extension.split('_')[-1]
+                file_timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
                 
                 conversations.append(StepConversation(
                     step_conversation_id=file_path,

@@ -8,6 +8,10 @@ from autobyteus_server.workflow.persistence.conversation.models.sql.conversation
 logger = logging.getLogger(__name__)
 
 class StepConversationRepository(BaseRepository[StepConversation]):
+    def __init__(self, session):
+        super().__init__(session)
+        self.model = StepConversation
+
     def create_step_conversation(self, step_name: str) -> StepConversation:
         try:
             conversation = StepConversation(
@@ -19,9 +23,6 @@ class StepConversationRepository(BaseRepository[StepConversation]):
             raise
 
     def get_by_id(self, id: int) -> Optional[StepConversation]:
-        """
-        Retrieve a step conversation by its internal database ID.
-        """
         try:
             return self.session.query(self.model).filter_by(id=id).first()
         except Exception as e:
@@ -29,9 +30,6 @@ class StepConversationRepository(BaseRepository[StepConversation]):
             raise
 
     def get_by_step_conversation_id(self, step_conversation_id: str) -> Optional[StepConversation]:
-        """
-        Retrieve a step conversation by its UUID step_conversation_id.
-        """
         try:
             return self.session.query(self.model).filter_by(step_conversation_id=step_conversation_id).first()
         except Exception as e:
@@ -46,7 +44,6 @@ class StepConversationRepository(BaseRepository[StepConversation]):
             conversations = conversations_query.offset(skip).limit(page_size).all()
             total_pages = (total_conversations + page_size - 1) // page_size
             current_page = page
-
             return {
                 "conversations": conversations,
                 "total_conversations": total_conversations,

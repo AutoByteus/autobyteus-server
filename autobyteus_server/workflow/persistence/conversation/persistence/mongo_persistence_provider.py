@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from bson import ObjectId
 import logging  # Added for logging
@@ -7,14 +7,13 @@ from autobyteus_server.workflow.persistence.conversation.persistence.provider im
 from autobyteus_server.workflow.persistence.conversation.repositories.mongodb.step_conversation_repository import ConversationNotFoundError, StepConversationRepository
 from autobyteus_server.workflow.persistence.conversation.converters.mongodb_converter import MongoDBConverter
 from autobyteus_server.workflow.persistence.conversation.domain.models import Message, StepConversation, ConversationHistory
-from autobyteus.utils.singleton import SingletonMeta
 
 # Initialize logger
 logger = logging.getLogger(__name__)
 
 class MongoPersistenceProvider(PersistenceProvider):
     def __init__(self):
-        super().__init__()
+        #super().__init__()
         self.conversation_repository = StepConversationRepository()
         self.converter = MongoDBConverter()
         self.current_conversations = {}  # Stores domain models instead of MongoDB models

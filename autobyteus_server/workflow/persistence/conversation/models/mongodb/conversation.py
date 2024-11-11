@@ -1,5 +1,4 @@
 from repository_mongodb import BaseModel
-from bson import ObjectId
 from datetime import datetime
 from typing import List, Dict, Optional
 

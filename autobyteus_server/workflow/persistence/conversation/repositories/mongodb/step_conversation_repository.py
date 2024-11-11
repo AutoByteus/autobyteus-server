@@ -2,8 +2,7 @@ import logging
 from repository_mongodb import BaseRepository
 from bson import ObjectId
 from typing import List, Optional, Dict, Any
-from datetime import datetime
-from autobyteus_server.workflow.persistence.conversation.models.mongodb.conversation import StepConversation, Message
+from autobyteus_server.workflow.persistence.conversation.models.mongodb.conversation import StepConversation
 
 logger = logging.getLogger(__name__)
 

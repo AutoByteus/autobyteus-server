@@ -7,10 +7,11 @@ from autobyteus_server.workflow.persistence.conversation.models.sql.conversation
 logger = logging.getLogger(__name__)
 
 class StepConversationMessageRepository(BaseRepository[StepConversationMessage]):
+    def __init__(self, session):
+        super().__init__(session)
+        self.model = StepConversationMessage
+
     def create_message(self, step_conversation_id: int, role: str, message: str, original_message: Optional[str] = None, context_paths: Optional[List[str]] = None) -> StepConversationMessage:
-        """
-        Create a new step conversation message.
-        """
         try:
             context_paths_json = json.dumps(context_paths) if context_paths else None
             new_message = StepConversationMessage(
@@ -26,9 +27,6 @@ class StepConversationMessageRepository(BaseRepository[StepConversationMessage])
             raise
 
     def get_messages_by_step_conversation_id(self, step_conversation_id: int) -> List[StepConversationMessage]:
-        """
-        Retrieve all messages for a specific step conversation.
-        """
         try:
             return self.session.query(self.model)\
                 .filter_by(step_conversation_id=step_conversation_id)\
@@ -39,9 +37,6 @@ class StepConversationMessageRepository(BaseRepository[StepConversationMessage])
             raise
 
     def update_message(self, message_id: int, new_content: str) -> Optional[StepConversationMessage]:
-        """
-        Update the content of an existing message.
-        """
         try:
             message = self.session.query(self.model).filter_by(id=message_id).first()
             if message:
@@ -55,9 +50,6 @@ class StepConversationMessageRepository(BaseRepository[StepConversationMessage])
             raise
 
     def delete_message(self, message_id: int) -> bool:
-        """
-        Delete a message by its ID.
-        """
         try:
             message = self.session.query(self.model).filter_by(id=message_id).first()
             if message:

@@ -8,9 +8,6 @@ from autobyteus.llm.base_llm import BaseLLM
 from autobyteus.llm.llm_factory import LLMFactory
 from autobyteus.events.event_types import EventType
 from autobyteus.conversation.user_message import UserMessage
-from autobyteus_server.workflow.persistence.conversation.domain.models import Message as PersistenceMessage
-from autobyteus_server.workflow.persistence.conversation.domain.models import StepConversation
-from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
 
 class SubtaskImplementationStep(BaseStep):
     name = "implementation"

@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 import strawberry
-from autobyteus_server.config import config
+from autobyteus_server.api.graphql.types.user_requirement_input import ContextFilePathInput
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.api.graphql.types.llm_model_types import LLMModel as GraphQLLLMModel
@@ -10,11 +10,6 @@ from autobyteus_server.api.graphql.types.llm_model_types import LLMModel as Grap
 logger = logging.getLogger(__name__)
 
 workspace_manager = WorkspaceManager()
-
-@strawberry.input
-class ContextFilePathInput:
-    path: str
-    type: str
 
 @strawberry.type
 class WorkflowStepMutation:
