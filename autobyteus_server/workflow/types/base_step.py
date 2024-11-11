@@ -71,3 +71,13 @@ class BaseStep(ABC, EventEmitter):
     
     async def get_latest_response(self) -> Optional[str]:
         pass
+
+    def close_conversation(self, conversation_id: str) -> None:
+        """
+        Close a specific conversation and clean up its resources.
+        This method should be overridden by steps that maintain conversation state.
+        
+        Args:
+            conversation_id (str): The ID of the conversation to close
+        """
+        pass

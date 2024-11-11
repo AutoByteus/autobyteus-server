@@ -175,3 +175,21 @@ class SubtaskImplementationStep(BaseStep):
             agent.stop()
             del self.agents[conversation_id]
             del self.response_queues[conversation_id]
+
+    def close_conversation(self, conversation_id: str) -> None:
+        """
+        Close a specific conversation and clean up its resources.
+        
+        Args:
+            conversation_id (str): The ID of the conversation to close
+            
+        Raises:
+            ValueError: If the conversation_id is invalid or conversation is already closed
+        """
+        if conversation_id not in self.agents:
+            raise ValueError(f"No active conversation found with ID: {conversation_id}")
+            
+        try:
+            self.stop_agent(conversation_id)
+        except Exception as e:
+            raise Exception(f"Failed to close conversation {conversation_id}: {str(e)}")
