@@ -8,10 +8,43 @@ from repository_sqlalchemy.database_config import DatabaseConfig
 from repository_sqlalchemy.session_management import get_engine
 from repository_sqlalchemy import Base, transaction
 from dotenv import load_dotenv
+import sys
 
 # Define the path for the SQLite test database
 TEST_DB_DIR = os.path.join(os.path.dirname(__file__), 'data')
 TEST_DB_PATH = os.path.join(TEST_DB_DIR, 'test.db')
+
+def configure_logging():
+    """Configure logging for tests"""
+    # Clear any existing handlers
+    root_logger = logging.getLogger()
+    if root_logger.handlers:
+        for handler in root_logger.handlers:
+            root_logger.removeHandler(handler)
+    
+    # Always set to DEBUG level
+    log_level = 'DEBUG'
+    root_logger.setLevel(log_level)
+    
+    # Create console handler with DEBUG level
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
+    
+    # Create formatter
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    console_handler.setFormatter(formatter)
+    
+    # Add handler to root logger
+    root_logger.addHandler(console_handler)
+    
+    # Log configuration completion
+    logging.debug(f"Test logging configured with level: {log_level}")
+
+# Configure logging before any tests run
+configure_logging()
 
 def ensure_test_db_directory():
     """Ensure the directory for test database exists"""

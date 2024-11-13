@@ -33,12 +33,14 @@ class Mutation(
     workspace_mutations.Mutation, 
     workflow_step_mutations.WorkflowStepMutation,
     file_explorer_mutations.Mutation,
-    api_key_mutations.Mutation
+    api_key_mutations.Mutation,
 ):
     pass
 
 @strawberry.type
-class Subscription(workflow_step_subscriptions.Subscription):
+class Subscription(
+    workflow_step_subscriptions.Subscription,
+):
     pass
 
 schema = strawberry.Schema(

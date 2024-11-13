@@ -25,15 +25,15 @@ class WorkflowStepMutation:
     ) -> str:
         workspace = workspace_manager.get_workspace_by_id(workspace_id)
         if not workspace:
-            return f"Error: No workspace found for ID {workspace_id}"
+            raise ValueError(f"No workspace found for ID {workspace_id}")
 
         workflow = workspace.workflow
         if not workflow:
-            return f"Error: No workflow found for workspace {workspace_id}"
+            raise ValueError(f"No workflow found for workspace {workspace_id}")
 
         step = workflow.get_step(step_id)
         if not isinstance(step, BaseStep):
-            return f"Error: Step {step_id} is not a valid workflow step"
+            raise ValueError(f"Step {step_id} is not a valid workflow step")
 
         llm_model_name = llm_model.value if llm_model else None
 
@@ -49,3 +49,46 @@ class WorkflowStepMutation:
         )
 
         return conversation_id
+
+    @strawberry.mutation
+    async def close_conversation(
+        self,
+        workspace_id: str,
+        step_id: str,
+        conversation_id: str
+    ) -> bool:
+        """
+        Close a specific conversation and clean up its resources.
+        
+        Args:
+            workspace_id (str): ID of the workspace
+            step_id (str): ID of the step
+            conversation_id (str): ID of the conversation to close
+            
+        Returns:
+            bool: True if the conversation was successfully closed
+            
+        Raises:
+            ValueError: If workspace, workflow, or step is not found
+            Exception: If there's an error during conversation closure
+        """
+        try:
+            workspace = workspace_manager.get_workspace_by_id(workspace_id)
+            if not workspace:
+                raise ValueError(f"No workspace found for ID {workspace_id}")
+
+            workflow = workspace.workflow
+            if not workflow:
+                raise ValueError(f"No workflow found for workspace {workspace_id}")
+
+            step = workflow.get_step(step_id)
+            if not isinstance(step, BaseStep):
+                raise ValueError(f"Step {step_id} is not a valid workflow step")
+
+            # Attempt to close the conversation
+            step.close_conversation(conversation_id)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error closing conversation: {str(e)}")
+            raise
