@@ -119,7 +119,6 @@ celerybeat.pid
 # Environments
 .direnv/
 .env
-.env.template
 .venv
 env/
 venv*/
