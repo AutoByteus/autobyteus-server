@@ -29,6 +29,7 @@ from strawberry.fastapi import GraphQLRouter
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from autobyteus_server.api.rest.upload_file import router as upload_file_router
 from autobyteus_server.config.logging_config import configure_logger
+from autobyteus_server.real_time_audio import real_time_audio_router
 
 # Configure logging
 configure_logger()
@@ -58,5 +59,6 @@ app.include_router(graphql_router, prefix="/graphql")
 
 # Include REST router for file uploads
 app.include_router(upload_file_router, prefix="/rest")
+app.include_router(real_time_audio_router)
 
 # The 'app' variable is now available for uvicorn to use when starting the server
