@@ -128,7 +128,7 @@ async def test_file_transcription(transcription_service):
     Args:
         transcription_service: The TranscriptionService instance
     """
-    audio_file_path = "/home/ryan-ai/miniHDD/Learning/chatgpt/autobyteus_org_workspace/autobyteus-server/audio_chunks/chunk_3.wav"
+    audio_file_path = os.path.join(os.path.dirname(__file__), 'chunk.wav')
     
     # Verify file exists
     assert os.path.exists(audio_file_path), f"Audio file not found at: {audio_file_path}"
@@ -150,3 +150,60 @@ async def test_file_transcription(transcription_service):
         
     except Exception as e:
         pytest.fail(f"Transcription failed with error: {str(e)}")
+
+@pytest.mark.asyncio
+async def test_concurrent_transcription():
+    """
+    Test running two TranscriptionService instances concurrently to utilize GPU memory.
+    Compares the time taken to transcribe one audio chunk versus two simultaneous transcriptions.
+    """
+    audio_file_path = os.path.join(os.path.dirname(__file__), 'chunk.wav')
+    
+    # Verify file exists
+    assert os.path.exists(audio_file_path), f"Audio file not found at: {audio_file_path}"
+    
+    try:
+        # Read the audio file
+        with open(audio_file_path, 'rb') as audio_file:
+            audio_data = audio_file.read()
+        
+        # Initialize two transcription services
+        transcription_service1 = TranscriptionService()
+        transcription_service2 = TranscriptionService()
+        
+        # Function to perform transcription and record time
+        def transcribe_and_record(service, results, index):
+            start_time = time.perf_counter()
+            transcription = service.transcribe(audio_data)
+            end_time = time.perf_counter()
+            results[index] = end_time - start_time
+        
+        # Single transcription
+        single_start = time.perf_counter()
+        transcription_service1.transcribe(audio_data)
+        single_end = time.perf_counter()
+        single_duration = single_end - single_start
+        
+        # Concurrent transcriptions
+        results = [0, 0]
+        thread1 = threading.Thread(target=transcribe_and_record, args=(transcription_service1, results, 0))
+        thread2 = threading.Thread(target=transcribe_and_record, args=(transcription_service2, results, 1))
+        
+        concurrent_start = time.perf_counter()
+        thread1.start()
+        thread2.start()
+        thread1.join()
+        thread2.join()
+        concurrent_end = time.perf_counter()
+        concurrent_duration = concurrent_end - concurrent_start
+        
+        # Log the durations
+        print(f"Single transcription duration: {single_duration:.3f}s")
+        print(f"Concurrent transcriptions durations: {results[0]:.3f}s and {results[1]:.3f}s")
+        print(f"Total concurrent duration: {concurrent_duration:.3f}s")
+        
+        # Assertions to ensure that concurrent transcriptions are faster than sequential
+        assert concurrent_duration < (results[0] + results[1]), "Concurrent transcriptions took longer than sequential."
+        
+    except Exception as e:
+        pytest.fail(f"Concurrent transcription test failed with error: {str(e)}")
