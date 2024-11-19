@@ -30,7 +30,7 @@ class PromptCreationStep(BaseStep):
     def construct_initial_prompt(self, prompt_request: str, context: str, llm_model: str) -> str:
         prompt_template = self.get_prompt_template(llm_model)
         return prompt_template.fill({
-            "prompt_request": prompt_request,
+            "requirement": prompt_request,
             "context": context
         })
 

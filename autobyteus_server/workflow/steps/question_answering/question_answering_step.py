@@ -30,7 +30,7 @@ class QuestionAnsweringStep(BaseStep):
     def construct_initial_prompt(self, question: str, context: str, llm_model: str) -> str:
         prompt_template = self.get_prompt_template(llm_model)
         return prompt_template.fill({
-            "question": question,
+            "requirement": question,
             "context": context
         })
 
