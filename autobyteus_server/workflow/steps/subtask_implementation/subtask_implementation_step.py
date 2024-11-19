@@ -149,7 +149,11 @@ class SubtaskImplementationStep(BaseStep):
                     break
             if conversation_id:
                 self.init_response_queue(conversation_id)
-                asyncio.create_task(self.response_queues[conversation_id].put(response))
+                # Get the current cost from the agent's LLM
+                agent = self.agents[conversation_id]
+                current_cost = agent.llm.get_current_cost() if agent.llm else 0.0
+                # Put both response and cost into the queue
+                asyncio.create_task(self.response_queues[conversation_id].put((response, current_cost)))
 
                 # Store the assistant's response
                 self.persistence_proxy.store_message(
@@ -161,7 +165,7 @@ class SubtaskImplementationStep(BaseStep):
                     conversation_id=conversation_id
                 )
 
-    async def get_latest_response(self, conversation_id: str, timeout: float = 30.0) -> Optional[str]:
+    async def get_latest_response(self, conversation_id: str, timeout: float = 30.0) -> Optional[Tuple[str, float]]:
         self.init_response_queue(conversation_id)
         try:
             return await asyncio.wait_for(self.response_queues[conversation_id].get(), timeout=timeout)
@@ -193,4 +197,3 @@ class SubtaskImplementationStep(BaseStep):
             self.stop_agent(conversation_id)
         except Exception as e:
             raise Exception(f"Failed to close conversation {conversation_id}: {str(e)}")
-        
