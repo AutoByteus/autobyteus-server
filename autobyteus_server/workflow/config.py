@@ -13,6 +13,9 @@ from autobyteus_server.workflow.steps.run_tests_step.run_tests_step import RunTe
 from autobyteus_server.workflow.steps.subtask_implementation.subtask_implementation_step import SubtaskImplementationStep
 from autobyteus_server.workflow.steps.tests_generation.tests_generation_step import TestsGenerationStep
 from autobyteus_server.workflow.steps.ux_design.ux_design_step import UXDesignStep
+from autobyteus_server.workflow.steps.article_writing.article_writing_step import ArticleWritingStep
+from autobyteus_server.workflow.steps.question_answering.question_answering_step import QuestionAnsweringStep
+from autobyteus_server.workflow.steps.prompt_creation.prompt_creation_step import PromptCreationStep
 from autobyteus_server.workflow.types.workflow_template_config import WorkflowTemplateStepsConfig
 
 WORKFLOW_CONFIG: WorkflowTemplateStepsConfig = {
@@ -39,6 +42,15 @@ WORKFLOW_CONFIG: WorkflowTemplateStepsConfig = {
         },
         'testing_step': {
             'step_class': RunTestsStep,
+        },
+        'article_writing': {
+            'step_class': ArticleWritingStep,
+        },
+        'question_answering': {
+            'step_class': QuestionAnsweringStep,
+        },
+        'prompt_creation': {
+            'step_class': PromptCreationStep,
         },
     }
 }
