@@ -38,13 +38,6 @@ class Subscription:
             return
 
         step = workflow.get_step(step_id)
-        if not isinstance(step, SubtaskImplementationStep):
-            yield StepResponse(
-                conversation_id=conversation_id,
-                message=f"Error: Step {step_id} is not a valid subtask implementation step"
-            )
-            return
-
         while True:
             response = await step.get_latest_response(conversation_id)
             if response:
