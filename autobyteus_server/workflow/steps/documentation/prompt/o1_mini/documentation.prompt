@@ -1,0 +1,25 @@
+Analyze and understand the code provided in the Source Code section, then create comprehensive technical documentation with architectural diagrams. The final documentation should follow the requirements in the Criteria section and include all components listed in Required Output.
+
+[Criteria]
+- Include high-level architectural views and detailed technical specifications
+- Use standard architectural notation (UML, C4 model)
+- Ensure clear organization and maintainability
+- Maintain technical accuracy throughout
+- Make content accessible to both technical and semi-technical readers
+- Format all documentation using Markdown syntax
+
+[Required Output]
+Technical documentation package containing:
+- High-level architectural diagrams
+- Component interaction and dependency diagrams
+- Technical specifications (APIs, interfaces)
+- Implementation details
+- Data flow documentation
+
+[SourceCode]
+{{context}}
+
+[Documentation]
+{Insert complete technical documentation here}
+
+

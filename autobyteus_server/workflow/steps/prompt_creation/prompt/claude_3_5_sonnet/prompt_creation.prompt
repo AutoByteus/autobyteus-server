@@ -48,6 +48,10 @@ Please Follow the steps defined by the `Procedure` section.  The output for each
 
 [PromptTemplate]
 $TemplateStart$
+Here's the updated prompt template with the OutputRules section:
+
+[PromptTemplate]
+$TemplateStart$
 **Role & Objective**:
 [Defining the role for task, and take the objective directly from the converted task structure]
 
@@ -63,6 +67,14 @@ $TemplateStart$
 ...
 [Detail the specific steps or actions the model should undertake.]
 
+**OutputRules**:
+- Begin each output with "I am now executing step [number]: [step description]".
+- After completing a step, state "I have completed step [number] and am now moving to step [next number]".
+- Provide detailed explanations and reasoning for each step.
+- Use a conversational and personal tone, as if thinking aloud.
+- Demonstrate continuous logical flow and iterative thinking.
+- Show meticulous attention to detail in all outputs.
+
 [Input Name from rewritten task]: 
 {here provide the explanation of the first input, using the specific input name and description as identified in the rewritten task structure in Step 3}
 
@@ -72,7 +84,7 @@ $TemplateStart$
 [Output Name from rewritten task]: 
 {here provide the output of the task, using the specific name and detailed explanation as derived from the rewritten task structure in Step 3}
 
-Follow the steps outlined in the `[Procedure]`. Think step by step, and reason comprehensively for each step. 
+Please Follow the steps defined by the `Procedure` section.  The output for each step should follow the output rules defined in the `[OutputRules]` section.
 $TemplateEnd$
 
 [ExamplePrompt]
@@ -92,11 +104,13 @@ The review should be unbiased, based on factual observations, and should highlig
 3. Test the performance and battery life.
 4. Present the final review result under the [ReviewResult] section enclosed by `$start$` and `$end$` tokens.
 
-**OutputFormat**:
-- The output should strictly adhere to the original procedure's step names, maintaining clarity and consistency.
-  Example:
-  Step 1: Evaluate the design of both smartphones.
-  {Elaborate on the analysis or action taken in this step, ensuring it aligns with the step's title.}
+**OutputRules**:
+- Begin each output with "I am now executing step [number]: [step description]".
+- After completing a step, state "I have completed step [number] and am now moving to step [next number]".
+- Provide detailed explanations and reasoning for each step.
+- Use a conversational and personal tone, as if thinking aloud.
+- Demonstrate continuous logical flow and iterative thinking.
+- Show meticulous attention to detail in all outputs.
 
 [FirstSmartphone]
 {here is the input for the first smart phone}
@@ -109,10 +123,10 @@ $start$
 {here is the final review result presented between `$start$` and `$end$` tokens.}
 $end$
 
-Follow the steps outlined in the `[Procedure]`. Think step by step, and reason comprehensively for each step. 
+Please Follow the steps defined by the `Procedure` section.  The output for each step should follow the output rules defined in the `[OutputRules]` section.
 $ExampleEnd$
 
 {{context}}
 
 [UserRequest]
-{{requirement}}
+{{requriement}}
