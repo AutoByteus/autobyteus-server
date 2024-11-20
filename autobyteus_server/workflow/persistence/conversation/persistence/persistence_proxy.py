@@ -1,6 +1,8 @@
 import os
 import logging
 from typing import List, Tuple, Optional, Type
+
+from autobyteus_server.workflow.persistence.conversation.persistence.conversation_dao import ConversationDAO
 from .provider import PersistenceProvider
 from .provider_registry import PersistenceProviderRegistry
 from .file_based_persistence_provider import FileBasedPersistenceProvider
@@ -20,6 +22,12 @@ class PersistenceProxy(PersistenceProvider):
         """Initialize the persistence proxy."""
         self._provider: Optional[PersistenceProvider] = None
         self._registry = PersistenceProviderRegistry()
+        self.dao = ConversationDAO()
+    def save_message(self, step_conversation_id: str, message: Message):
+        self.dao.save_message(step_conversation_id, message)
+
+    def update_total_cost(self, step_conversation_id: str, total_cost: float):
+        self.dao.update_total_cost(step_conversation_id, total_cost)
 
     @property
     def provider(self) -> PersistenceProvider:

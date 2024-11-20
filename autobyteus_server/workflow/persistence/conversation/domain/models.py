@@ -14,6 +14,7 @@ class Message:
     message_id: Optional[str] = None
     original_message: Optional[str] = None  # Changed from original_content to original_message
     context_paths: Optional[List[str]] = None  # Included context_paths
+    original_message: Optional[str] = None
 
 @dataclass
 class StepConversation:
@@ -24,7 +25,8 @@ class StepConversation:
     step_conversation_id: str
     step_name: str
     created_at: datetime
-    messages: List[Message]
+    messages: List[Message] = field(default_factory=list)
+    total_cost: float = 0.0  # Added total_cost field
 
 T = TypeVar('T')
 

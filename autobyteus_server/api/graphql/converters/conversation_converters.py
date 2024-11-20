@@ -44,7 +44,8 @@ class StepConversationConverter:
                 step_conversation_id=domain_conversation.step_conversation_id,
                 step_name=domain_conversation.step_name,
                 created_at=domain_conversation.created_at.isoformat(),
-                messages=messages
+                messages=messages,
+                total_cost=domain_conversation.total_cost
             )
         except Exception as e:
             raise ValueError(f"Failed to convert StepConversation to GraphQL type: {str(e)}")

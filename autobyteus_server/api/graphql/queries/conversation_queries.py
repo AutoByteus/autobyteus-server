@@ -1,5 +1,6 @@
+from datetime import datetime, timedelta
 import strawberry
-from typing import List
+from typing import List, Optional
 from autobyteus_server.api.graphql.types.conversation_types import ConversationHistory
 from autobyteus_server.api.graphql.converters.conversation_converters import ConversationHistoryConverter
 from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
@@ -47,3 +48,24 @@ class Query:
         except Exception as e:
             error_message = f"Failed to retrieve conversation history: {str(e)}"
             raise Exception(error_message)
+    @strawberry.field
+    async def getCostSummary(
+        self,
+        stepName: Optional[str] = None,
+        timeFrame: str = "week",  # "week" or "month"
+    ) -> float:
+        if timeFrame not in ["week", "month"]:
+            raise ValueError("Invalid timeFrame. Must be 'week' or 'month'.")
+
+        now = datetime.utcnow()
+        if timeFrame == "week":
+            start_date = now - timedelta(weeks=1)
+        else:
+            start_date = now - timedelta(days=30)
+
+        total_cost = persistence_proxy.get_total_cost(
+            step_name=stepName,
+            start_date=start_date,
+            end_date=now,
+        )
+        return total_cost

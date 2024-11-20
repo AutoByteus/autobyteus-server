@@ -19,6 +19,7 @@ class StepConversation:
     step_name: str
     created_at: str
     messages: List[Message]
+    total_cost: float  # Added total_cost field
 
 @strawberry.type
 class ConversationHistory:
