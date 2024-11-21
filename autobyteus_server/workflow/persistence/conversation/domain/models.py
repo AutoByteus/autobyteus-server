@@ -1,6 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional, TypeVar, Generic
+
+from strawberry import field
 
 @dataclass
 class Message:
@@ -14,7 +16,7 @@ class Message:
     message_id: Optional[str] = None
     original_message: Optional[str] = None  # Changed from original_content to original_message
     context_paths: Optional[List[str]] = None  # Included context_paths
-    original_message: Optional[str] = None
+    cost: float = 0.0  # Added cost attribute
 
 @dataclass
 class StepConversation:
@@ -49,3 +51,15 @@ class ConversationHistory:
     total_conversations: int
     total_pages: int
     current_page: int
+
+@dataclass
+class CostEntry:
+    """
+    Domain model representing a cost entry.
+    """
+    cost_entry_id: Optional[str] = None
+    conversation_id: Optional[str] = None
+    message_id: Optional[str] = None
+    role: str
+    cost: float
+    timestamp: datetime

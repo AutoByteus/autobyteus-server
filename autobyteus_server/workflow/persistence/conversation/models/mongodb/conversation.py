@@ -6,20 +6,22 @@ from typing import List, Dict, Optional
 
 class Message:
     """Embedded message schema for conversations."""
-    
+
     def __init__(
         self,
         role: str,
         message: str,
         timestamp: datetime = None,
         original_message: Optional[str] = None,
-        context_paths: Optional[List[str]] = None
+        context_paths: Optional[List[str]] = None,
+        cost: float = 0.0  # Added cost attribute
     ):
         self.role = role
         self.message = message
         self.timestamp = timestamp or datetime.utcnow()
         self.original_message = original_message
         self.context_paths = context_paths or []
+        self.cost = cost
 
     def to_dict(self) -> dict:
         """Convert message to dictionary representation."""
@@ -28,7 +30,8 @@ class Message:
             "message": self.message,
             "timestamp": self.timestamp,
             "original_message": self.original_message,
-            "context_paths": self.context_paths
+            "context_paths": self.context_paths,
+            "cost": self.cost  # Include cost in the dictionary
         }
 
     @classmethod
@@ -46,7 +49,8 @@ class Message:
             message=data["message"],
             timestamp=timestamp,
             original_message=data.get("original_message"),
-            context_paths=data.get("context_paths", [])
+            context_paths=data.get("context_paths", []),
+            cost=data.get("cost", 0.0)  # Get cost from data or default to 0.0
         )
 
 
@@ -80,7 +84,7 @@ class StepConversation(BaseModel):
         )
         # Do not initialize _id here; let MongoDB handle it
 
-    def add_message(self, role: str, message: str, original_message: Optional[str] = None, context_paths: Optional[List[str]] = None) -> Message:
+    def add_message(self, role: str, message: str, original_message: Optional[str] = None, context_paths: Optional[List[str]] = None, cost: float = 0.0) -> Message:
         """
         Add a new message to the conversation.
 
@@ -89,11 +93,9 @@ class StepConversation(BaseModel):
             message (str): Message content
             original_message (Optional[str]): The original user message, if applicable
             context_paths (Optional[List[str]]): List of context file paths, if applicable
-
-        Returns:
-            Message: The newly created message
+            cost (float): Cost associated with the message
         """
-        new_message = Message(role=role, message=message, original_message=original_message, context_paths=context_paths)
+        new_message = Message(role=role, message=message, original_message=original_message, context_paths=context_paths, cost=cost)
         message_dict = new_message.to_dict()
         self.messages.append(message_dict)
         return new_message

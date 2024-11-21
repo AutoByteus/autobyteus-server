@@ -13,15 +13,18 @@ class SQLConverter:
             timestamp=sql_message.timestamp,
             message_id=str(sql_message.id),
             original_message=sql_message.original_message,
-            context_paths=json.loads(sql_message.context_paths) if sql_message.context_paths else []
+            context_paths=json.loads(sql_message.context_paths) if sql_message.context_paths else [],
+            cost=sql_message.cost  # Include cost
         )
 
     @staticmethod
     def to_domain_conversation(sql_conv: SqlStepConversation, messages: List[SqlMessage]) -> StepConversation:
         domain_messages = [SQLConverter.to_domain_message(msg) for msg in messages]
+        total_cost = sum(msg.cost for msg in messages)  # Calculate total cost
         return StepConversation(
             step_conversation_id=sql_conv.step_conversation_id,
             step_name=sql_conv.step_name,
             created_at=sql_conv.created_at,
-            messages=domain_messages
+            messages=domain_messages,
+            total_cost=total_cost  # Include total_cost
         )

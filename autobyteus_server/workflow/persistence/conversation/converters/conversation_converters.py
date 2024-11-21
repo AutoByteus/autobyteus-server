@@ -19,6 +19,7 @@ class MessageConverter:
             timestamp=domain_message.timestamp.isoformat(),
             context_paths=domain_message.context_paths,
             original_message=domain_message.original_message,
+            cost=domain_message.cost  # Include cost
         )
 
 class StepConversationConverter:

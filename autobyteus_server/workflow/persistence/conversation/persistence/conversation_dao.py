@@ -3,7 +3,7 @@ from autobyteus_server.workflow.persistence.conversation.domain.models import (
     StepConversation,
     ConversationHistory,
 )
-from typing import List
+from typing import List, Optional  # Added Optional
 from datetime import datetime
 import pymongo
 
@@ -47,6 +47,7 @@ class ConversationDAO:
             total_pages=total_pages,
             current_page=page
         )
+
     def get_total_cost(
         self,
         step_name: Optional[str],

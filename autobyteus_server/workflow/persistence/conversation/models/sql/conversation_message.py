@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Text
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Text, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from repository_sqlalchemy import Base
@@ -13,6 +13,7 @@ class StepConversationMessage(Base):
     original_message = Column(Text, nullable=True)
     context_paths = Column(Text, nullable=True)  # JSON serialized list
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    cost = Column(Float, default=0.0)  # Added cost column
 
     conversation = relationship("StepConversation", back_populates="messages")
 
@@ -24,7 +25,8 @@ class StepConversationMessage(Base):
             "message": self.message,
             "original_message": self.original_message,
             "context_paths": self.context_paths,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
+            "cost": self.cost  # Include cost in the dictionary
         }
 
     @classmethod
@@ -35,5 +37,6 @@ class StepConversationMessage(Base):
             message=data["message"],
             original_message=data.get("original_message"),
             context_paths=data.get("context_paths"),
-            timestamp=data["timestamp"]
+            timestamp=data["timestamp"],
+            cost=data.get("cost", 0.0)  # Get cost from data or default to 0.0
         )
