@@ -13,11 +13,10 @@ class ConversationNotFoundError(Exception):
 
 class StepConversationRepository(BaseRepository[StepConversation]):
     def create_conversation(self, step_name: str) -> StepConversation:
-        """Create a new conversation."""
         try:
             conversation = StepConversation(step_name=step_name)
             result = self.collection.insert_one(conversation.to_dict(), session=self.session)
-            conversation._id = result.inserted_id  # Assign the generated _id back to the instance
+            conversation._id = result.inserted_id
             return conversation
         except Exception as e:
             logger.error(f"Error creating conversation: {str(e)}")
@@ -29,23 +28,13 @@ class StepConversationRepository(BaseRepository[StepConversation]):
         role: str,
         message: str,
         original_message: Optional[str] = None,
-        context_paths: Optional[List[str]] = None
+        context_paths: Optional[List[str]] = None,
+        cost: float = 0.0  # Added cost parameter
     ) -> StepConversation:
-        """
-        Add a message to an existing conversation.
-        
-        Args:
-            conversation_id (ObjectId): MongoDB _id of the conversation
-            role (str): Role of the message sender
-            message (str): Message content
-            original_message (Optional[str]): Original message if applicable
-            context_paths (Optional[List[str]]): List of context file paths
-        """
         try:
             conversation = self.get_conversation_by_id(conversation_id)
-            conversation.add_message(role=role, message=message, original_message=original_message, context_paths=context_paths)
+            conversation.add_message(role=role, message=message, original_message=original_message, context_paths=context_paths, cost=cost)
             
-            # Update the entire conversation document
             self.collection.replace_one(
                 {"_id": conversation_id},
                 conversation.to_dict(),
@@ -66,17 +55,6 @@ class StepConversationRepository(BaseRepository[StepConversation]):
         skip_messages: int = 0,
         limit_messages: Optional[int] = None
     ) -> StepConversation:
-        """
-        Get a conversation by ID with optional message pagination.
-        
-        Args:
-            conversation_id (ObjectId): MongoDB _id of the conversation
-            skip_messages (int): Number of messages to skip
-            limit_messages (Optional[int]): Maximum number of messages to return
-
-        Raises:
-            ConversationNotFoundError: If the conversation with the given ID is not found
-        """
         try:
             data = self.collection.find_one(
                 {"_id": conversation_id},
@@ -87,7 +65,6 @@ class StepConversationRepository(BaseRepository[StepConversation]):
                 raise ConversationNotFoundError(f"Conversation with ID {conversation_id} not found")
 
             conversation = StepConversation.from_dict(data)
-            # Apply message pagination if requested
             if skip_messages > 0 or limit_messages is not None:
                 conversation.messages = conversation.get_messages(
                     skip=skip_messages,
@@ -107,7 +84,6 @@ class StepConversationRepository(BaseRepository[StepConversation]):
         page: int,
         page_size: int
     ) -> Dict[str, Any]:
-        """Get paginated conversations by step name."""
         try:
             skip = (page - 1) * page_size
             
@@ -134,12 +110,6 @@ class StepConversationRepository(BaseRepository[StepConversation]):
             raise
 
     def get_all_conversations(self) -> List[StepConversation]:
-        """
-        Retrieve all conversations from the repository.
-        
-        Returns:
-            List[StepConversation]: A list of all StepConversation instances.
-        """
         try:
             data = self.collection.find({}, session=self.session)
             return [StepConversation.from_dict(item) for item in data]

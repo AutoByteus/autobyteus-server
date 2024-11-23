@@ -7,7 +7,15 @@ from autobyteus_server.workflow.persistence.conversation.models.sql.conversation
 logger = logging.getLogger(__name__)
 
 class StepConversationMessageRepository(BaseRepository[StepConversationMessage]):
-    def create_message(self, step_conversation_id: int, role: str, message: str, original_message: Optional[str] = None, context_paths: Optional[List[str]] = None) -> StepConversationMessage:
+    def create_message(
+        self,
+        step_conversation_id: int,
+        role: str,
+        message: str,
+        original_message: Optional[str] = None,
+        context_paths: Optional[List[str]] = None,
+        cost: float = 0.0
+    ) -> StepConversationMessage:
         """
         Create a new step conversation message.
         """
@@ -18,7 +26,8 @@ class StepConversationMessageRepository(BaseRepository[StepConversationMessage])
                 role=role,
                 message=message,
                 original_message=original_message,
-                context_paths=context_paths_json
+                context_paths=context_paths_json,
+                cost=cost
             )
             return self.create(new_message)
         except Exception as e:

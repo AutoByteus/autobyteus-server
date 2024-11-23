@@ -11,6 +11,7 @@ class Message:
     timestamp: str
     context_paths: Optional[List[str]]  # Included context_paths
     original_message: Optional[str]      # Changed from original_content to original_message
+    cost: float
 
 @strawberry.type
 class StepConversation:

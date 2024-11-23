@@ -16,7 +16,8 @@ class PersistenceProvider(ABC):
         message: str,
         original_message: Optional[str] = None,
         context_paths: Optional[List[str]] = None,
-        conversation_id: Optional[str] = None
+        conversation_id: Optional[str] = None,
+        cost: float = 0.0  # Added cost parameter
     ) -> StepConversation:
         pass
 

@@ -1,8 +1,7 @@
 import os
 import logging
-from typing import List, Optional
+from typing import List, Optional, Type
 from datetime import datetime
-from autobyteus_server.workflow.persistence.conversation.persistence.conversation_dao import ConversationDAO
 from .provider import PersistenceProvider
 from .provider_registry import PersistenceProviderRegistry
 from .file_based_persistence_provider import FileBasedPersistenceProvider
@@ -16,7 +15,6 @@ class PersistenceProxy(PersistenceProvider):
     def __init__(self):
         self._provider: Optional[PersistenceProvider] = None
         self._registry = PersistenceProviderRegistry()
-        self.dao = ConversationDAO()
 
     @property
     def provider(self) -> PersistenceProvider:
@@ -51,12 +49,6 @@ class PersistenceProxy(PersistenceProvider):
                 return FileBasedPersistenceProvider()
             raise
 
-    def save_message(self, step_conversation_id: str, message: Message):
-        self.dao.save_message(step_conversation_id, message)
-
-    def update_total_cost(self, step_conversation_id: str, total_cost: float):
-        self.dao.update_total_cost(step_conversation_id, total_cost)
-
     def create_conversation(self, step_name: str) -> StepConversation:
         try:
             return self.provider.create_conversation(step_name)
@@ -71,11 +63,12 @@ class PersistenceProxy(PersistenceProvider):
         message: str,
         original_message: Optional[str] = None,
         context_paths: Optional[List[str]] = None,
-        conversation_id: Optional[str] = None
+        conversation_id: Optional[str] = None,
+        cost: float = 0.0  # Added cost parameter
     ) -> StepConversation:
         try:
             return self.provider.store_message(
-                step_name, role, message, original_message, context_paths, conversation_id
+                step_name, role, message, original_message, context_paths, conversation_id, cost=cost  # Pass cost
             )
         except Exception as e:
             logger.error(f"Error storing step conversation: {str(e)}")
@@ -99,10 +92,11 @@ class PersistenceProxy(PersistenceProvider):
         except Exception as e:
             logger.error(f"Error retrieving total cost: {str(e)}")
             raise
+
     def register_provider(self, name: str, provider_class: Type[PersistenceProvider]) -> None:
         """
         Register a new persistence provider.
-        
+
         Args:
             name: Name of the provider
             provider_class: Provider class

@@ -42,6 +42,7 @@ class Query:
                         timestamp=msg.timestamp,
                         original_message=msg.original_message,
                         context_paths=msg.context_paths,
+                        cost=msg.cost,
                     )
                     for msg in conv.messages
                 ],
