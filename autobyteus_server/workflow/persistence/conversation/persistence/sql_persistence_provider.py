@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
+from uuid import uuid4
 from autobyteus_server.api.graphql.types.conversation_types import Message
 from autobyteus_server.workflow.persistence.conversation.persistence.provider import PersistenceProvider
 from autobyteus_server.workflow.persistence.conversation.repositories.sql.step_conversation_repository import StepConversationRepository
@@ -79,6 +80,7 @@ class SqlPersistenceProvider(PersistenceProvider):
                 original_message=original_message,
                 context_paths=context_paths or [],
                 cost=cost,
+                message_id=str(uuid4())
             )
             domain_conv.messages.append(new_message)
             domain_conv.total_cost += cost

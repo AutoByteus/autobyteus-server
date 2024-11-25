@@ -57,9 +57,9 @@ class CostEntry:
     """
     Domain model representing a cost entry.
     """
-    cost_entry_id: Optional[str] = None
-    conversation_id: Optional[str] = None
-    message_id: Optional[str] = None
     role: str
     cost: float
     timestamp: datetime
+    cost_entry_id: Optional[str] = None
+    conversation_id: Optional[str] = None
+    message_id: Optional[str] = None

@@ -8,11 +8,11 @@ class StepConversationMessage(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     step_conversation_id = Column(Integer, ForeignKey('step_conversations.id'), nullable=False)
-    role = Column(String(50), nullable=False)
+    role = Column(String(), nullable=False)
     message = Column(Text, nullable=False)
     original_message = Column(Text, nullable=True)
     context_paths = Column(Text, nullable=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
     cost = Column(Float, default=0.0)  # Add cost field
 
     conversation = relationship("StepConversation", back_populates="messages")

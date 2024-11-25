@@ -2,7 +2,6 @@ import strawberry
 from datetime import datetime, timedelta
 from typing import Optional
 from autobyteus_server.api.graphql.types.conversation_types import ConversationHistory, Message, StepConversation
-from autobyteus_server.workflow.persistence.conversation.persistence import persistence_proxy
 from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
 
 
