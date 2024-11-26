@@ -94,10 +94,6 @@ export const userService = {
     <h1>User Profile</h1>
     <div v-if="loading">Loading...</div>
     <div v-else-if="error">{{ error }}</div>
-    <div v-else>
-      <p>Name: {{ user.name }}</p>
-      <p>Email: {{ user.email }}</p>
-    </div>
   </div>
 </template>
 
