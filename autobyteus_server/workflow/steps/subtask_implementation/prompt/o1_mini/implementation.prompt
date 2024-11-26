@@ -2,12 +2,12 @@ Analyze the following context given in the [Context] section and complete the sp
 
 CRITICAL RULES:
 1. You MUST preserve and use the complete file paths as provided in the context, including root folder names and intermediate directories. Never truncate or modify the given file paths.
-2. All code written within <content> tags MUST maintain proper indentation according to the language's conventions.
+2. All code written within `<content>` tags MUST maintain proper indentation according to the language's conventions.
 
 BASH COMMANDS GUIDELINES:
 Bash commands should ONLY be included when absolutely necessary. Here are the specific cases:
 
-1. Required Cases (Include bash commands):
+1. Required Cases (Include Bash commands):
    - Installing new dependencies/libraries that are essential for the solution
    - File system operations (rename, move, delete files/folders)
    - Database migrations when adding/modifying database schema
@@ -27,40 +27,177 @@ Bash commands should ONLY be included when absolutely necessary. Here are the sp
    - Creating new classes/functions
    - Normal development tasks that don't require system-level changes
 
-Present the final solution using the following XML format:
+Present the final solution following a natural implementation flow. Commands and file changes should be ordered in the sequence they need to be executed, regardless of their type. Use the following format for the solution:
 
 ```xml
-<implementation>
-  <!-- Optional: Include bash_commands section ONLY when necessary -->
-  <!-- Required cases:
-       - Installing new dependencies
-       - File system operations (rename, move, delete)
-       - Database migrations
-       - Environment setup
-       
-       Do NOT include for:
-       - Code changes
-       - Adding tests
-       - Normal development tasks
-  -->
-  <bash_commands>
-    # Clear description of why these commands are necessary
-    command1
-    command2
-  </bash_commands>
+<bash command="your_command_here" description="Brief description of why this command is necessary" />
 
-  <files>
-    <file path="path/to/file1">
-      <content>
+<file path="path/to/your/file">
 <![CDATA[
-# Complete file content - this will overwrite the entire file
-# Include ALL necessary imports, classes, functions, etc.
 <complete_file_content>
 ]]>
-      </content>
-    </file>
-  </files>
-</implementation>
+</file>
+```
+
+**Ensure that:**
+
+- **Bash commands and file changes are interleaved as needed in the natural sequence.**
+- **Each `<bash>` tag includes a `command` attribute with the command to be executed and a `description` attribute explaining why it is necessary.**
+- **Each `<file>` tag includes a `path` attribute with the full file path and the complete file content within CDATA tags.**
+- **All code maintains proper indentation according to language conventions.**
+- **Do NOT include Bash commands for tasks where they are not necessary, as per the guidelines above.**
+
+**Example Solutions:**
+
+*Example 1 (Setting up a new Vue.js component with required dependencies):*
+
+```xml
+<bash command="npm install @vue/composition-api" description="Install Vue Composition API dependency" />
+
+<file path="src/types/user.ts">
+<![CDATA[
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+]]>
+</file>
+
+<bash command="npm install axios" description="Install HTTP client for API calls" />
+
+<file path="src/services/api.js">
+<![CDATA[
+import axios from 'axios';
+
+const apiClient = axios.create({
+  baseURL: process.env.API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+export const userService = {
+  async getUser(id) {
+    return await apiClient.get(`/users/${id}`);
+  }
+};
+]]>
+</file>
+
+<bash command="echo 'API_URL=https://api.example.com' >> .env" description="Configure API endpoint" />
+
+<file path="src/components/UserProfile.vue">
+<![CDATA[
+<template>
+  <div class="user-profile">
+    <h1>User Profile</h1>
+    <div v-if="loading">Loading...</div>
+    <div v-else-if="error">{{ error }}</div>
+    <div v-else>
+      <p>Name: {{ user.name }}</p>
+      <p>Email: {{ user.email }}</p>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref, onMounted } from 'vue'
+import { userService } from '@/services/api'
+import type { User } from '@/types/user'
+
+export default defineComponent({
+  name: 'UserProfile',
+  setup() {
+    const user = ref<User | null>(null)
+    const loading = ref(true)
+    const error = ref('')
+
+    const loadUser = async () => {
+      try {
+        const response = await userService.getUser('123')
+        user.value = response.data
+      } catch (e) {
+        error.value = 'Failed to load user data'
+      } finally {
+        loading.value = false
+      }
+    }
+
+    onMounted(loadUser)
+
+    return {
+      user,
+      loading,
+      error
+    }
+  }
+})
+</script>
+
+<style scoped>
+.user-profile {
+  padding: 20px;
+}
+</style>
+]]>
+</file>
+```
+
+*Example 2 (Simple file update only):*
+
+```xml
+<file path="src/utils/formatter.ts">
+<![CDATA[
+export const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }).format(date)
+}
+]]>
+</file>
+```
+
+*Example 3 (Complex setup with interleaved commands and files):*
+
+```xml
+<bash command="mkdir -p src/database/migrations" description="Create migrations directory" />
+
+<file path="src/database/migrations/001_create_users.sql">
+<![CDATA[
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+]]>
+</file>
+
+<bash command="npm install pg knex" description="Install database dependencies" />
+<bash command="createdb myapp_development" description="Create development database" />
+
+<file path="src/database/knexfile.js">
+<![CDATA[
+module.exports = {
+  development: {
+    client: 'postgresql',
+    connection: {
+      database: 'myapp_development',
+      user: 'postgres',
+      password: 'postgres'
+    },
+    migrations: {
+      directory: './migrations'
+    }
+  }
+};
+]]>
+</file>
+
+<bash command="npx knex migrate:latest" description="Run database migrations" />
 ```
 
 [Context]
