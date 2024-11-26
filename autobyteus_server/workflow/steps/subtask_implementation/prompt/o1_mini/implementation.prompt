@@ -3,6 +3,7 @@ Analyze the following context given in the [Context] section and complete the sp
 CRITICAL RULES:
 1. You MUST preserve and use the complete file paths as provided in the context, including root folder names and intermediate directories. Never truncate or modify the given file paths.
 2. All code written within `<content>` tags MUST maintain proper indentation according to the language's conventions.
+3. **All CDATA sections MUST be correctly closed with the exact ending tag `]]>`. Do NOT omit, alter, or misspell this ending tag under any circumstances.**
 
 BASH COMMANDS GUIDELINES:
 Bash commands should ONLY be included when absolutely necessary. Here are the specific cases:
@@ -46,6 +47,7 @@ Present the final solution following a natural implementation flow. Commands and
 - **Each `<file>` tag includes a `path` attribute with the full file path and the complete file content within CDATA tags.**
 - **All code maintains proper indentation according to language conventions.**
 - **Do NOT include Bash commands for tasks where they are not necessary, as per the guidelines above.**
+- **All CDATA sections are correctly closed with the exact ending tag `]]>`.**
 
 **Example Solutions:**
 
@@ -195,6 +197,73 @@ module.exports = {
 
 <bash command="npx knex migrate:latest" description="Run database migrations" />
 ```
+
+**Negative Examples (Common Mistakes to Avoid):**
+
+*These negative examples are mistakes which should be avoided. They illustrate common errors in CDATA closure that can lead to malformed XML and parsing issues.*
+
+*Incorrect Example 1 (Missing CDATA Ending Tag `]]>`):*
+
+```xml
+<file path="src/components/Footer.vue">
+<![CDATA[
+<template>
+  <footer>
+    <p>&copy; 2023 My App</p>
+  </footer>
+</template>
+
+<script>
+export default {
+  name: 'Footer'
+}
+</script>
+
+<style scoped>
+footer {
+  background-color: #333;
+  color: #fff;
+  padding: 10px;
+}
+</style>
+</file>
+```
+
+*Issue:* The CDATA section is not properly closed with `]]>`, leading to malformed XML.
+
+*Incorrect Example 2 (Incorrect CDATA Ending Tag `]]` Instead of `]]>`):*
+
+```xml
+<file path="src/App.vue">
+<![CDATA[
+<template>
+  <div id="app">
+    <Navbar />
+    <router-view/>
+  </div>
+</template>
+
+<script>
+import Navbar from './components/Navbar.vue'
+
+export default {
+  name: 'App',
+  components: {
+    Navbar
+  }
+}
+</script>
+
+<style>
+#app {
+  font-family: 'Roboto', sans-serif;
+}
+</style>
+]]
+</file>
+```
+
+*Issue:* The CDATA section ends with `]]` instead of `]]>`, causing XML parsing errors.
 
 [Context]
 {{context}}
