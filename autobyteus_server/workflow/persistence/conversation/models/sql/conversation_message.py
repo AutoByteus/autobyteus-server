@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Text, Floa
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from repository_sqlalchemy import Base
+from .cost_entry import CostEntry  # Added import
 
 class StepConversationMessage(Base):
     __tablename__ = 'step_conversation_messages'
@@ -16,6 +17,7 @@ class StepConversationMessage(Base):
     cost = Column(Float, default=0.0)  # Add cost field
 
     conversation = relationship("StepConversation", back_populates="messages")
+    cost_entry = relationship("CostEntry", back_populates="message", uselist=False)  # Added relationship
 
     def to_dict(self):
         return {

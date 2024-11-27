@@ -4,7 +4,6 @@ from typing import Optional
 from autobyteus_server.api.graphql.types.conversation_types import ConversationHistory, Message, StepConversation
 from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
 
-
 @strawberry.type
 class Query:
     @strawberry.field
@@ -55,7 +54,6 @@ class Query:
             total_pages=conversation_history.total_pages,
             current_page=conversation_history.current_page,
         )
-
 
     @strawberry.field
     def get_cost_summary(self, step_name: Optional[str], time_frame: str) -> float:

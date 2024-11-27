@@ -1,12 +1,12 @@
 from datetime import datetime
 from typing import List, Optional
 from uuid import uuid4
-from autobyteus_server.api.graphql.types.conversation_types import Message
 from autobyteus_server.workflow.persistence.conversation.persistence.provider import PersistenceProvider
 from autobyteus_server.workflow.persistence.conversation.repositories.sql.step_conversation_repository import StepConversationRepository
 from autobyteus_server.workflow.persistence.conversation.repositories.sql.step_conversation_message_repository import StepConversationMessageRepository
+from autobyteus_server.workflow.persistence.conversation.repositories.sql.cost_entry_repository import CostEntryRepository  # Added import
 from autobyteus_server.workflow.persistence.conversation.converters.sql_converter import SQLConverter
-from autobyteus_server.workflow.persistence.conversation.domain.models import StepConversation, ConversationHistory
+from autobyteus_server.workflow.persistence.conversation.domain.models import StepConversation, ConversationHistory, Message
 import json
 import logging
 
@@ -20,6 +20,7 @@ class SqlPersistenceProvider(PersistenceProvider):
         super().__init__()
         self.conversation_repository = StepConversationRepository()
         self.message_repository = StepConversationMessageRepository()
+        self.cost_entry_repository = CostEntryRepository()  # Initialize CostEntryRepository
         self.converter = SQLConverter()
         self.current_conversations = {}  # Handles multiple conversations
 
@@ -100,6 +101,15 @@ class SqlPersistenceProvider(PersistenceProvider):
                 cost=cost,  # Include cost
             )
 
+            # Create a cost entry
+            self.cost_entry_repository.create_cost_entry(
+                role=role,
+                cost=cost,
+                timestamp=datetime.utcnow(),
+                conversation_id=sql_conv.id,
+                message_id=sql_message.id
+            )
+
             # Update the total cost in the conversation
             sql_conv.total_cost += cost
             self.conversation_repository.update(sql_conv)
@@ -123,7 +133,7 @@ class SqlPersistenceProvider(PersistenceProvider):
             conversations = []
             for sql_conv in result["conversations"]:
                 messages = self.message_repository.get_messages_by_step_conversation_id(
-                    sql_conv.step_conversation_id  # Updated from sql_conv.id
+                    sql_conv.id  # Use internal database ID
                 )
                 conversations.append(self.converter.to_domain_conversation(sql_conv, messages))
             
@@ -136,6 +146,7 @@ class SqlPersistenceProvider(PersistenceProvider):
         except Exception as e:
             logger.error(f"Error retrieving conversation history for step '{step_name}': {str(e)}")
             raise
+
     def get_total_cost(
         self,
         step_name: Optional[str],
@@ -143,7 +154,15 @@ class SqlPersistenceProvider(PersistenceProvider):
         end_date: datetime,
     ) -> float:
         """
-        Implement the logic to calculate total cost from the SQL database.
-        For now, you can return 0.0 if the implementation is pending.
+        Calculate total cost from the cost_entries table.
         """
-        return 0.0
+        try:
+            total_cost = self.cost_entry_repository.get_total_cost(
+                start_date=start_date,
+                end_date=end_date,
+                step_name=step_name
+            )
+            return total_cost
+        except Exception as e:
+            logger.error(f"Error calculating total cost: {str(e)}")
+            raise

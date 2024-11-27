@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from uuid import uuid4  # Import uuid4 to generate unique IDs
 from repository_sqlalchemy import Base
+from .cost_entry import CostEntry  # Added import
 
 class StepConversation(Base):
     __tablename__ = 'step_conversations'
@@ -14,6 +15,7 @@ class StepConversation(Base):
     total_cost = Column(Float, default=0.0)  # Add total_cost field
 
     messages = relationship("StepConversationMessage", back_populates="conversation", cascade="all, delete-orphan")
+    cost_entries = relationship("CostEntry", back_populates="conversation", cascade="all, delete-orphan")  # Added relationship
 
     def to_dict(self):
         return {
@@ -22,7 +24,8 @@ class StepConversation(Base):
             "step_name": self.step_name,
             "created_at": self.created_at,
             "messages": [message.to_dict() for message in self.messages],
-            "total_cost": self.total_cost
+            "total_cost": self.total_cost,
+            "cost_entries": [cost_entry.to_dict() for cost_entry in self.cost_entries]  # Include cost_entries
         }
 
     @classmethod
@@ -33,5 +36,5 @@ class StepConversation(Base):
             created_at=data["created_at"],
             total_cost=data.get("total_cost", 0.0)
         )
-        # Messages can be added separately
+        # Messages and cost_entries can be added separately
         return conversation

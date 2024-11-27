@@ -7,6 +7,9 @@ from autobyteus_server.workflow.persistence.conversation.models.sql.conversation
 logger = logging.getLogger(__name__)
 
 class StepConversationMessageRepository(BaseRepository[StepConversationMessage]):
+    def __init__(self, session):
+        super().__init__(session)  # Initialize with session
+
     def create_message(
         self,
         step_conversation_id: int,
@@ -55,6 +58,7 @@ class StepConversationMessageRepository(BaseRepository[StepConversationMessage])
             message = self.session.query(self.model).filter_by(id=message_id).first()
             if message:
                 message.message = new_content
+                self.session.commit()  # Commit changes
                 return message
             else:
                 logger.warning(f"Message with id {message_id} not found")

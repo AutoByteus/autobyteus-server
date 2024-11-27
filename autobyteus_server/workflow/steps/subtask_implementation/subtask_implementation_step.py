@@ -58,7 +58,7 @@ class SubtaskImplementationStep(BaseStep):
             user_message = UserMessage(content=initial_prompt, file_paths=image_file_paths)
 
             # Calculate cost for user message
-            user_message_cost = llm_instance.calculate_cost(initial_prompt)
+            user_message_cost = llm_instance.cost_calculator.calculate_text_cost(initial_prompt)
 
             new_conversation = self.persistence_proxy.store_message(
                 step_name=self.name,
@@ -92,7 +92,7 @@ class SubtaskImplementationStep(BaseStep):
             await self.agents[conversation_id].receive_user_message(user_message)
 
             # Calculate cost for user message
-            user_message_cost = self.agents[conversation_id].llm.calculate_cost(prompt)
+            user_message_cost = self.agents[conversation_id].llm.cost_calculator.calculate_text_cost(prompt)
 
             updated_conversation = self.persistence_proxy.store_message(
                 step_name=self.name,
@@ -161,7 +161,7 @@ class SubtaskImplementationStep(BaseStep):
                 # Get the current cost from the agent's LLM
                 agent = self.agents[conversation_id]
                 # Calculate cost for assistant's response
-                assistant_response_cost = agent.llm.calculate_cost(response)
+                assistant_response_cost = agent.llm.cost_calculator.calculate_text_cost(response)
                 # Put both response and cost into the queue
                 asyncio.create_task(self.response_queues[conversation_id].put((response, assistant_response_cost)))
 
