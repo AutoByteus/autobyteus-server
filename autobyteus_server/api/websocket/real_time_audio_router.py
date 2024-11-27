@@ -1,12 +1,12 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from .handler import transcription_handler
+from autobyteus_server.services.real_time_audio.handler import transcription_handler
 import logging
 import asyncio
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
+transcription_router = APIRouter()
 
-@router.websocket("/ws/transcribe/{workspace_id}/{step_id}")
+@transcription_router.websocket("/ws/transcribe/{workspace_id}/{step_id}")
 async def transcribe_audio(
     websocket: WebSocket,
     workspace_id: str,

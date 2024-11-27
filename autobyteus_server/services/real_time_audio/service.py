@@ -1,6 +1,5 @@
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-import numpy as np
 from autobyteus.utils.singleton import SingletonMeta
 import logging
 import time

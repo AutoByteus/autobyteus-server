@@ -49,6 +49,7 @@ class Subscription:
             )
             return
 
+        
         while True:
             result = await step.get_latest_response(conversation_id)
             if result:
