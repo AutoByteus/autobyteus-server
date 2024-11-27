@@ -10,7 +10,7 @@ from typing import Dict, NamedTuple
 
 from fastapi import WebSocket
 
-from .service import TranscriptionService
+from autobyteus_server.services.real_time_audio.service import TranscriptionService
 
 logger = logging.getLogger(__name__)
 
