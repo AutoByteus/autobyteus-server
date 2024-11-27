@@ -4,10 +4,9 @@ from uuid import uuid4
 from autobyteus_server.workflow.persistence.conversation.persistence.provider import PersistenceProvider
 from autobyteus_server.workflow.persistence.conversation.repositories.sql.step_conversation_repository import StepConversationRepository
 from autobyteus_server.workflow.persistence.conversation.repositories.sql.step_conversation_message_repository import StepConversationMessageRepository
-from autobyteus_server.workflow.persistence.conversation.repositories.sql.cost_entry_repository import CostEntryRepository  # Added import
+from autobyteus_server.workflow.persistence.conversation.repositories.sql.cost_entry_repository import CostEntryRepository
 from autobyteus_server.workflow.persistence.conversation.converters.sql_converter import SQLConverter
 from autobyteus_server.workflow.persistence.conversation.domain.models import StepConversation, ConversationHistory, Message
-import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,9 +19,9 @@ class SqlPersistenceProvider(PersistenceProvider):
         super().__init__()
         self.conversation_repository = StepConversationRepository()
         self.message_repository = StepConversationMessageRepository()
-        self.cost_entry_repository = CostEntryRepository()  # Initialize CostEntryRepository
+        self.cost_entry_repository = CostEntryRepository()
         self.converter = SQLConverter()
-        self.current_conversations = {}  # Handles multiple conversations
+        self.current_conversations = {}
 
     def create_conversation(self, step_name: str) -> StepConversation:
         """Create a new empty conversation."""
@@ -50,7 +49,7 @@ class SqlPersistenceProvider(PersistenceProvider):
         original_message: Optional[str] = None,
         context_paths: Optional[List[str]] = None,
         conversation_id: Optional[str] = None,
-        cost: float = 0.0  # Include cost parameter
+        cost: float = 0.0
     ) -> StepConversation:
         try:
             if conversation_id:
@@ -98,12 +97,13 @@ class SqlPersistenceProvider(PersistenceProvider):
                 message=message,
                 original_message=original_message,
                 context_paths=context_paths,
-                cost=cost,  # Include cost
+                cost=cost,
             )
 
             # Create a cost entry
             self.cost_entry_repository.create_cost_entry(
                 role=role,
+                step_name=step_name,
                 cost=cost,
                 timestamp=datetime.utcnow(),
                 conversation_id=sql_conv.id,
@@ -132,9 +132,7 @@ class SqlPersistenceProvider(PersistenceProvider):
             
             conversations = []
             for sql_conv in result["conversations"]:
-                messages = self.message_repository.get_messages_by_step_conversation_id(
-                    sql_conv.id  # Use internal database ID
-                )
+                messages = self.message_repository.get_messages_by_step_conversation_id(sql_conv.id)
                 conversations.append(self.converter.to_domain_conversation(sql_conv, messages))
             
             return ConversationHistory(
@@ -165,4 +163,19 @@ class SqlPersistenceProvider(PersistenceProvider):
             return total_cost
         except Exception as e:
             logger.error(f"Error calculating total cost: {str(e)}")
+            raise
+
+    def delete_conversation(self, conversation_id: str) -> None:
+        """
+        Delete a conversation without affecting the cost entries.
+        """
+        try:
+            sql_conv = self.conversation_repository.get_by_step_conversation_id(conversation_id)
+            if not sql_conv:
+                logger.error(f"Conversation with ID {conversation_id} not found.")
+                raise ValueError(f"Conversation with ID {conversation_id} not found")
+            self.conversation_repository.delete(sql_conv)
+            logger.info(f"Deleted conversation with ID: {conversation_id}")
+        except Exception as e:
+            logger.error(f"Error deleting conversation '{conversation_id}': {str(e)}")
             raise

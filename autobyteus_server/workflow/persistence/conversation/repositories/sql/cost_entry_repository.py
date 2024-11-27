@@ -1,6 +1,5 @@
 from repository_sqlalchemy import BaseRepository
 from autobyteus_server.workflow.persistence.conversation.models.sql.cost_entry import CostEntry
-from autobyteus_server.workflow.persistence.conversation.models.sql.conversation import StepConversation
 from datetime import datetime
 from typing import List
 import logging
@@ -15,6 +14,7 @@ class CostEntryRepository(BaseRepository[CostEntry]):
     def create_cost_entry(
         self,
         role: str,
+        step_name: str,
         cost: float,
         timestamp: datetime,
         conversation_id: int = None,
@@ -23,6 +23,7 @@ class CostEntryRepository(BaseRepository[CostEntry]):
         try:
             cost_entry = CostEntry(
                 role=role,
+                step_name=step_name,
                 cost=cost,
                 timestamp=timestamp,
                 conversation_id=conversation_id,
@@ -40,7 +41,7 @@ class CostEntryRepository(BaseRepository[CostEntry]):
                 self.model.timestamp <= end_date
             )
             if step_name:
-                query = query.join(CostEntry.conversation).filter(StepConversation.step_name == step_name)
+                query = query.filter(self.model.step_name == step_name)
             total_cost = query.scalar() or 0.0
             return total_cost
         except Exception as e:
@@ -54,7 +55,7 @@ class CostEntryRepository(BaseRepository[CostEntry]):
                 self.model.timestamp <= end_date
             )
             if step_name:
-                query = query.join(CostEntry.conversation).filter(StepConversation.step_name == step_name)
+                query = query.filter(self.model.step_name == step_name)
             return query.all()
         except Exception as e:
             logger.error(f"Error retrieving cost entries: {str(e)}")
