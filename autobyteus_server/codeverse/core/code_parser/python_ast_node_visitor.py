@@ -1,13 +1,7 @@
 """
-File: autobyteus/source_code_tree/code_entities/ast_node_visitor.py
-
 This module contains a class that extends the NodeVisitor class from Python's ast module.
 It overrides methods to extract information from function and class definitions and returns
 corresponding Entity objects.
-
-Classes:
-    - AstNodeVisitor: An extension of the NodeVisitor class that extracts information from
-                      function and class definitions and returns corresponding Entity objects.
 """
 
 import ast
@@ -15,25 +9,24 @@ from autobyteus_server.codeverse.core.code_entities.class_entity import ClassEnt
 from autobyteus_server.codeverse.core.code_entities.function_entity import FunctionEntity
 from autobyteus_server.codeverse.core.code_entities.method_entity import MethodEntity
 
-
-class AstNodeVisitor(ast.NodeVisitor):
+class PythonAstNodeVisitor(ast.NodeVisitor):
     """
     This class is an extension of the NodeVisitor class from Python's ast module.
     It overrides methods to extract information from function and class definitions and 
     returns corresponding Entity objects.
 
     Attributes:
-        file_path (str): The path of the source code file being visited by the AstNodeVisitor.
+        file_path (str): The path of the source code file being visited by the PythonAstNodeVisitor.
 
     Methods:
-        __init__(self, file_path: str): Initializes AstNodeVisitor with the provided file path.
+        __init__(self, file_path: str): Initializes PythonAstNodeVisitor with the provided file path.
         visit_FunctionDef(node): Returns a FunctionEntity object created from a function definition node.
         visit_ClassDef(node): Returns a ClassEntity object created from a class definition node.
     """
 
     def __init__(self, file_path: str):
         """
-        Initialize AstNodeVisitor with the provided file path.
+        Initialize PythonAstNodeVisitor with the provided file path.
 
         :param file_path: The path of the source code file being visited.
         :type file_path: str
@@ -68,7 +61,7 @@ class AstNodeVisitor(ast.NodeVisitor):
         methods = [self.visit(n) for n in node.body if isinstance(n, ast.FunctionDef)]
 
         for method in methods:
-            method_entity = MethodEntity(method.name, method.docstring, method.signature, class_entity, self.file_path)
+            method_entity = MethodEntity(method.name, method.docstring, method.signature, self.file_path, class_entity)
             class_entity.add_method(method_entity)
 
         return class_entity

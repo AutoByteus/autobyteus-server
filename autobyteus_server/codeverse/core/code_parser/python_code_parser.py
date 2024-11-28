@@ -1,20 +1,10 @@
-"""
-This module contains the SourceCodeParser class which provides functionality to parse Python source code files.
-
-The SourceCodeParser class has a method `parse_source_code` that takes a Python file's path as input, reads
-the source code from the file, parses it, and extracts its module-level docstring, functions, classes,
-and their associated docstrings. 
-
-It returns a ModuleEntity object representing the module, containing FunctionEntity objects for each function 
-and ClassEntity objects for each class, which in turn contain MethodEntity objects for each method within the class.
-"""
-
-import ast
+from autobyteus_server.codeverse.core.code_parser.base_code_parser import BaseCodeParser
 from autobyteus_server.codeverse.core.code_entities.module_entity import ModuleEntity
-from autobyteus_server.codeverse.core.code_parser.ast_node_visitor import AstNodeVisitor
+import ast
+from autobyteus_server.codeverse.core.code_parser.python_ast_node_visitor import PythonAstNodeVisitor
 from autobyteus_server.file_explorer.file_reader import FileReader
 
-class CodeFileParser:
+class PythonCodeParser(BaseCodeParser):
     """
     This class provides functionality to parse Python source code.
 
@@ -39,7 +29,7 @@ class CodeFileParser:
             return None
 
         module = ast.parse(source_code)
-        visitor = AstNodeVisitor(filepath)
+        visitor = PythonAstNodeVisitor(filepath)
 
         module_entity = ModuleEntity(filepath, ast.get_docstring(module))
 
@@ -53,4 +43,3 @@ class CodeFileParser:
             module_entity.add_class(class_)
 
         return module_entity
-
