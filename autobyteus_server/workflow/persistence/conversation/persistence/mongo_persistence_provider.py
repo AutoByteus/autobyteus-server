@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import Any, List, Optional
-
 from bson import ObjectId
 import logging
 from autobyteus_server.workflow.persistence.conversation.persistence.provider import PersistenceProvider
 from autobyteus_server.workflow.persistence.conversation.repositories.mongodb.step_conversation_repository import ConversationNotFoundError, StepConversationRepository
+from autobyteus_server.workflow.persistence.conversation.repositories.mongodb.step_conversation_message_repository import StepConversationMessageRepository
+from autobyteus_server.workflow.persistence.conversation.repositories.mongodb.cost_entry_repository import CostEntryRepository
 from autobyteus_server.workflow.persistence.conversation.converters.mongodb_converter import MongoDBConverter
 from autobyteus_server.workflow.persistence.conversation.domain.models import Message, StepConversation, ConversationHistory
 
@@ -14,6 +15,8 @@ class MongoPersistenceProvider(PersistenceProvider):
     def __init__(self):
         super().__init__()
         self.conversation_repository = StepConversationRepository()
+        self.message_repository = StepConversationMessageRepository()
+        self.cost_entry_repository = CostEntryRepository()
         self.converter = MongoDBConverter()
         self.current_conversations = {}
 
@@ -37,18 +40,13 @@ class MongoPersistenceProvider(PersistenceProvider):
         original_message: Optional[str] = None,
         context_paths: Optional[List[str]] = None,
         conversation_id: Optional[str] = None,
-        cost: float = 0.0  # Added cost parameter
+        cost: float = 0.0
     ) -> StepConversation:
         try:
             if conversation_id:
                 domain_conv = self.current_conversations.get(conversation_id)
                 if not domain_conv:
-                    try:
-                        conversation_object_id = ObjectId(conversation_id)
-                    except Exception as e:
-                        logger.error(f"Invalid conversation_id format: {conversation_id}. Error: {str(e)}")
-                        raise ValueError(f"Invalid conversation_id format: {conversation_id}")
-
+                    conversation_object_id = ObjectId(conversation_id)
                     mongo_conv = self.conversation_repository.get_conversation_by_id(conversation_object_id)
                     if not mongo_conv:
                         logger.error(f"Conversation with ID {conversation_id} not found in the database.")
@@ -60,25 +58,40 @@ class MongoPersistenceProvider(PersistenceProvider):
                 domain_conv = self.create_conversation(step_name)
                 conversation_id = domain_conv.step_conversation_id
 
-            domain_conv.messages.append(
-                Message(
-                    role=role,
-                    message=message,
-                    timestamp=datetime.utcnow(),
-                    original_message=original_message,
-                    context_paths=context_paths or [],
-                    cost=cost  # Include cost
-                )
+            # Add message to domain model
+            new_message = Message(
+                role=role,
+                message=message,
+                timestamp=datetime.utcnow(),
+                original_message=original_message,
+                context_paths=context_paths or [],
+                cost=cost,
+                message_id=str(ObjectId())
             )
+            domain_conv.messages.append(new_message)
 
-            mongo_conv = self.converter.to_mongo_conversation(domain_conv)
-            self.conversation_repository.add_message(
+            # Persist the message to the database
+            self.message_repository.create_message(
                 conversation_id=ObjectId(conversation_id),
                 role=role,
                 message=message,
                 original_message=original_message,
                 context_paths=context_paths,
-                cost=cost  # Include cost
+                cost=cost
+            )
+
+            # Update total cost
+            total_cost = sum(msg.cost for msg in domain_conv.messages)
+            self.conversation_repository.update_total_cost(ObjectId(conversation_id), total_cost)
+
+            # Create a cost entry
+            self.cost_entry_repository.create_cost_entry(
+                role=role,
+                step_name=step_name,
+                cost=cost,
+                timestamp=datetime.utcnow(),
+                conversation_id=conversation_id,
+                message_id=new_message.message_id
             )
 
             logger.info(f"Added message to conversation ID: {conversation_id}")
@@ -99,7 +112,8 @@ class MongoPersistenceProvider(PersistenceProvider):
             
             conversations = []
             for mongo_conv in result["conversations"]:
-                domain_conv = self.converter.to_domain_conversation(mongo_conv, mongo_conv.messages)
+                messages = self.message_repository.get_messages_by_conversation_id(mongo_conv._id)
+                domain_conv = self.converter.to_domain_conversation(mongo_conv, messages)
                 conversations.append(domain_conv)
                 self.current_conversations[domain_conv.step_conversation_id] = domain_conv
             
@@ -114,6 +128,7 @@ class MongoPersistenceProvider(PersistenceProvider):
         except Exception as e:
             logger.error(f"Error retrieving conversation history for step '{step_name}': {str(e)}")
             raise
+
     def get_total_cost(
         self,
         step_name: Optional[str],
@@ -121,23 +136,11 @@ class MongoPersistenceProvider(PersistenceProvider):
         end_date: datetime,
     ) -> float:
         """
-        Implement the logic to calculate total cost from MongoDB.
+        Calculate total cost from the cost_entries collection.
         """
-        total_cost = 0.0
-        query = {
-            "created_at": {"$gte": start_date, "$lte": end_date},
-        }
-        if step_name:
-            query["step_name"] = step_name
-
-        pipeline = [
-            {"$match": query},
-            {"$unwind": "$messages"},
-            {"$group": {"_id": None, "total_cost": {"$sum": "$messages.cost"}}},
-        ]
-
-        result = list(self.conversation_repository.collection.aggregate(pipeline))
-        if result:
-            total_cost = result[0]["total_cost"]
-
-        return total_cost
+        try:
+            total_cost = self.cost_entry_repository.get_total_cost(start_date, end_date, step_name)
+            return total_cost
+        except Exception as e:
+            logger.error(f"Error retrieving total cost: {str(e)}")
+            raise

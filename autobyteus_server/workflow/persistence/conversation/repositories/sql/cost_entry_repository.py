@@ -8,8 +8,6 @@ from sqlalchemy import func
 logger = logging.getLogger(__name__)
 
 class CostEntryRepository(BaseRepository[CostEntry]):
-    def __init__(self, session):
-        super().__init__(session)
 
     def create_cost_entry(
         self,

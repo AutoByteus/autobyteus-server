@@ -48,7 +48,7 @@ class SubtaskImplementationStep(BaseStep):
         context_file_paths: List[Dict[str, str]],  # List of dicts with 'path' and 'type'
         llm_model: Optional[str],
         conversation_id: Optional[str] = None  # New parameter
-    ) -> str:
+    ) -> Tuple[str, float]:
         context, image_file_paths = self._construct_context(context_file_paths)
 
         if not conversation_id:
@@ -76,7 +76,7 @@ class SubtaskImplementationStep(BaseStep):
             self.agents[conversation_id] = agent
             self.subscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, agent.agent_id)
             agent.start()
-            return conversation_id
+            return conversation_id, user_message_cost
         else:
             # This is a continuation of an existing conversation
             if conversation_id not in self.agents:
@@ -104,7 +104,7 @@ class SubtaskImplementationStep(BaseStep):
                 cost=user_message_cost  # Store cost
             )
 
-            return conversation_id
+            return conversation_id, user_message_cost
 
     async def clear_response_queue(self, conversation_id: str):
         self.init_response_queue(conversation_id)

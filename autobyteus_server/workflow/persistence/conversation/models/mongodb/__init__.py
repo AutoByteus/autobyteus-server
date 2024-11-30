@@ -1,3 +1,4 @@
-from autobyteus_server.workflow.persistence.conversation.models.mongodb.conversation import Message, StepConversation
+from .conversation import Message, StepConversation
+from .cost_entry import CostEntry
 
-__all__ = ['Message', 'StepConversation']
+__all__ = ['Message', 'StepConversation', 'CostEntry']

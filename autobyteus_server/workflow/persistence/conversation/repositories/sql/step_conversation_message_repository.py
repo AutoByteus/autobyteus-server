@@ -7,8 +7,6 @@ from autobyteus_server.workflow.persistence.conversation.models.sql.conversation
 logger = logging.getLogger(__name__)
 
 class StepConversationMessageRepository(BaseRepository[StepConversationMessage]):
-    def __init__(self, session):
-        super().__init__(session)  # Initialize with session
 
     def create_message(
         self,
