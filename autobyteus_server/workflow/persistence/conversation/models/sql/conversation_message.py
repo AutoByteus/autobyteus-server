@@ -7,15 +7,16 @@ class StepConversationMessage(Base):
     __tablename__ = 'step_conversation_messages'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    step_conversation_id = Column(Integer, ForeignKey('step_conversations.id'), nullable=False)
+    step_conversation_id = Column(Integer, ForeignKey('step_conversations.id', ondelete='CASCADE'), nullable=False)
     role = Column(String(), nullable=False)
     message = Column(Text, nullable=False)
     original_message = Column(Text, nullable=True)
     context_paths = Column(Text, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
-    cost = Column(Float, default=0.0)  # Add cost field
+    cost = Column(Float, default=0.0)
 
     conversation = relationship("StepConversation", back_populates="messages")
+    cost_entry = relationship("CostEntry", back_populates="message", uselist=False)
 
     def to_dict(self):
         return {
@@ -26,7 +27,7 @@ class StepConversationMessage(Base):
             "original_message": self.original_message,
             "context_paths": self.context_paths,
             "timestamp": self.timestamp,
-            "cost": self.cost  # Include cost in the dictionary
+            "cost": self.cost
         }
 
     @classmethod
@@ -38,5 +39,5 @@ class StepConversationMessage(Base):
             original_message=data.get("original_message"),
             context_paths=data.get("context_paths"),
             timestamp=data["timestamp"],
-            cost=data.get("cost", 0.0)  # Get cost from data or default to 0.0
+            cost=data.get("cost", 0.0)
         )

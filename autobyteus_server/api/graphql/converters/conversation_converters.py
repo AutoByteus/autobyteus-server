@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from autobyteus_server.workflow.persistence.conversation.domain.models import (
     Message as DomainMessage,
     StepConversation as DomainStepConversation,
@@ -20,10 +20,11 @@ class MessageConverter:
             return GraphQLMessage(
                 message_id=domain_message.message_id,
                 role=domain_message.role,
-                message=domain_message.message,  # Mapped message
+                message=domain_message.message,
                 timestamp=domain_message.timestamp.isoformat(),
-                context_paths=domain_message.context_paths,       # Mapped context_paths
-                original_message=domain_message.original_message  # Mapped original_message
+                context_paths=domain_message.context_paths,
+                original_message=domain_message.original_message,
+                cost=domain_message.cost
             )
         except Exception as e:
             raise ValueError(f"Failed to convert Message to GraphQL type: {str(e)}")

@@ -4,7 +4,7 @@ import queue
 import pyaudio
 import wave
 import io
-from autobyteus_server.real_time_audio.service import TranscriptionService
+from autobyteus_server.services.real_time_audio.service import TranscriptionService
 import time
 import os
 

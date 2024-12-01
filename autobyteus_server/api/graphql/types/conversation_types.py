@@ -1,6 +1,5 @@
 import strawberry
 from typing import List, Optional
-from datetime import datetime
 
 @strawberry.type
 class Message:
@@ -29,3 +28,9 @@ class ConversationHistory:
     total_conversations: int
     total_pages: int
     current_page: int
+
+@strawberry.type
+class SendStepRequirementResponse:
+    """GraphQL type for send_step_requirement mutation response"""
+    conversation_id: str
+    cost: float
