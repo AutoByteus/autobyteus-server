@@ -1,8 +1,8 @@
-"""Modify cost_entries table to retain cost data
+"""added cost entries table for llm cost
 
-Revision ID: cef0b27dcd88
+Revision ID: a61c1380dd23
 Revises: 
-Create Date: 2024-11-27 19:04:39.122532
+Create Date: 2024-12-02 21:30:25.392175
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'cef0b27dcd88'
+revision: str = 'a61c1380dd23'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
