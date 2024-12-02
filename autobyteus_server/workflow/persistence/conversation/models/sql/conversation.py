@@ -14,7 +14,6 @@ class StepConversation(Base):
     total_cost = Column(Float, default=0.0)
 
     messages = relationship("StepConversationMessage", back_populates="conversation", cascade="all, delete-orphan")
-    cost_entries = relationship("CostEntry", back_populates="conversation", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {

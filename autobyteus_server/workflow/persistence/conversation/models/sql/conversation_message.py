@@ -16,7 +16,6 @@ class StepConversationMessage(Base):
     cost = Column(Float, default=0.0)
 
     conversation = relationship("StepConversation", back_populates="messages")
-    cost_entry = relationship("CostEntry", back_populates="message", uselist=False)
 
     def to_dict(self):
         return {

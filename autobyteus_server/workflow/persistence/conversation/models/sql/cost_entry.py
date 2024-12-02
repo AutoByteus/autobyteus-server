@@ -13,6 +13,3 @@ class CostEntry(Base):
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
     conversation_id = Column(Integer, ForeignKey('step_conversations.id', ondelete='SET NULL'), nullable=True)
     message_id = Column(Integer, ForeignKey('step_conversation_messages.id', ondelete='SET NULL'), nullable=True)
-
-    conversation = relationship("StepConversation", back_populates="cost_entries")
-    message = relationship("StepConversationMessage", back_populates="cost_entry")
