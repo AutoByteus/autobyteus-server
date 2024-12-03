@@ -1,16 +1,17 @@
-from sqlalchemy import Column, String, DateTime, Integer, ForeignKey
+from sqlalchemy import Column, Float, String, DateTime, Integer
 from sqlalchemy.orm import relationship
 from datetime import datetime
-import uuid
+from uuid import uuid4
 from repository_sqlalchemy import Base
 
 class StepConversation(Base):
     __tablename__ = 'step_conversations'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    step_conversation_id = Column(String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
-    step_name = Column(String, nullable=False)
+    id = Column(Integer, primary_key=True)
+    step_conversation_id = Column(String(36), unique=True, nullable=False, default=lambda: str(uuid4()))
+    step_name = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    total_cost = Column(Float, default=0.0)
 
     messages = relationship("StepConversationMessage", back_populates="conversation", cascade="all, delete-orphan")
 
@@ -20,15 +21,17 @@ class StepConversation(Base):
             "step_conversation_id": self.step_conversation_id,
             "step_name": self.step_name,
             "created_at": self.created_at,
-            "messages": [message.to_dict() for message in self.messages]
+            "messages": [message.to_dict() for message in self.messages],
+            "total_cost": self.total_cost,
+            # Exclude cost_entries to prevent circular reference
         }
 
     @classmethod
     def from_dict(cls, data):
         conversation = cls(
-            step_conversation_id=data["step_conversation_id"],
+            step_conversation_id=data.get("step_conversation_id"),
             step_name=data["step_name"],
-            created_at=data["created_at"]
+            created_at=data["created_at"],
+            total_cost=data.get("total_cost", 0.0)
         )
-        # Messages can be added separately
         return conversation

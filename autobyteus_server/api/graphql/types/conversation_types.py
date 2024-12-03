@@ -1,6 +1,5 @@
 import strawberry
 from typing import List, Optional
-from datetime import datetime
 
 @strawberry.type
 class Message:
@@ -11,6 +10,7 @@ class Message:
     timestamp: str
     context_paths: Optional[List[str]]  # Included context_paths
     original_message: Optional[str]      # Changed from original_content to original_message
+    cost: float
 
 @strawberry.type
 class StepConversation:
@@ -19,6 +19,7 @@ class StepConversation:
     step_name: str
     created_at: str
     messages: List[Message]
+    total_cost: float  # Added total_cost field
 
 @strawberry.type
 class ConversationHistory:
@@ -27,3 +28,9 @@ class ConversationHistory:
     total_conversations: int
     total_pages: int
     current_page: int
+
+@strawberry.type
+class SendStepRequirementResponse:
+    """GraphQL type for send_step_requirement mutation response"""
+    conversation_id: str
+    cost: float

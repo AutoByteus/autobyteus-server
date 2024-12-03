@@ -25,7 +25,8 @@ class MongoDBConverter:
             timestamp=mongo_message.get('timestamp'),
             message_id=str(mongo_message.get('_id', '')),
             original_message=mongo_message.get('original_message'),
-            context_paths=mongo_message.get('context_paths', [])
+            context_paths=mongo_message.get('context_paths', []),
+            cost=mongo_message.get('cost', 0.0)  # Include cost
         )
 
     @staticmethod
@@ -41,11 +42,13 @@ class MongoDBConverter:
             StepConversation: The domain StepConversation object.
         """
         domain_messages = [MongoDBConverter.to_domain_message(msg) for msg in messages]
+        total_cost = sum(msg.cost for msg in domain_messages)  # Calculate total cost
         return StepConversation(
             step_conversation_id=str(mongo_conv._id),  # Map MongoDB's _id to domain's step_conversation_id
             step_name=mongo_conv.step_name,
             created_at=mongo_conv.created_at,
-            messages=domain_messages
+            messages=domain_messages,
+            total_cost=total_cost  # Include total_cost
         )
     
     @staticmethod
@@ -67,7 +70,8 @@ class MongoDBConverter:
                 "message": msg.message,
                 "timestamp": msg.timestamp,
                 "original_message": msg.original_message,
-                "context_paths": msg.context_paths
+                "context_paths": msg.context_paths,
+                "cost": msg.cost  # Include cost
             } for msg in domain_conv.messages]
         )
         mongo_conv._id = ObjectId(domain_conv.step_conversation_id)

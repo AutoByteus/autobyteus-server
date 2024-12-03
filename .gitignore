@@ -11,15 +11,20 @@ logs
 *.log
 *.mp3
 mem.sqlite3
-
+*.db
+data/
+autobyteus_server/data/
+*.db-shm
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
+data/
 # C extensions
 *.so
-
+conversation_data/
+conv/
+conversations
 # Distribution / packaging
 .Python
 build/

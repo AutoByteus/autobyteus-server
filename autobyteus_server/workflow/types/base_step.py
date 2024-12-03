@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 class BaseStep(ABC, EventEmitter):
     name: str
+    def __init__(self, step_id: str):
+        self.step_id = step_id
 
     def __init__(self, workflow: 'AutomatedCodingWorkflow', prompt_dir: str):
         super().__init__()
@@ -54,12 +56,12 @@ class BaseStep(ABC, EventEmitter):
 
     @abstractmethod
     async def process_requirement(
-        self, 
-        requirement: str, 
-        context_file_paths: List[Dict[str, str]], 
-        llm_model: Optional[str],
-        conversation_id: Optional[str] = None
-    ) -> None:
+        self,
+        requirement: str,
+        context_files: List[Dict[str, str]],
+        llm_model_name: Optional[str],
+        conversation_id: Optional[str],
+    ) -> str:
         pass
     
     def to_dict(self) -> dict:

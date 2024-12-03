@@ -1,49 +1,99 @@
 import strawberry
-from typing import List
-from autobyteus_server.api.graphql.types.conversation_types import ConversationHistory
-from autobyteus_server.api.graphql.converters.conversation_converters import ConversationHistoryConverter
+from datetime import datetime, timedelta
+from typing import Optional
+from autobyteus_server.api.graphql.types.conversation_types import ConversationHistory, Message, StepConversation
 from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
-
-persistence_proxy = PersistenceProxy()
 
 @strawberry.type
 class Query:
     @strawberry.field
-    async def getConversationHistory(
-        self,
-        stepName: str,
-        page: int = 1,
-        pageSize: int = 10
+    def get_conversation_history(
+        self, step_name: str, page: int, page_size: int
     ) -> ConversationHistory:
         """
-        Retrieve paginated conversation history for a specific step.
-        
+        Retrieve conversation history for a given step.
+
         Args:
-            stepName (str): The name of the step to get conversation history for
-            page (int): Page number (1-based indexing)
-            pageSize (int): Number of items per page
-            
+            step_name: The name of the step.
+            page: The page number.
+            page_size: The number of items per page.
+
         Returns:
-            ConversationHistory: Paginated conversation history
+            ConversationHistory: The conversation history.
         """
-        if page < 1:
-            raise ValueError("Page number must be at least 1.")
-        if pageSize < 1 or pageSize > 100:
-            raise ValueError("Page size must be between 1 and 100.")        
-        try:
-            # Get conversation history from persistence layer
-            domain_history = persistence_proxy.get_conversation_history(
-                step_name=stepName,
-                page=page,
-                page_size=pageSize
+        persistence_proxy = PersistenceProxy()
+        conversation_history = persistence_proxy.get_conversation_history(
+            step_name, page, page_size)
+
+        # Map domain models to GraphQL types
+        conversations = [
+            StepConversation(
+                step_conversation_id=conv.step_conversation_id,
+                step_name=conv.step_name,
+                created_at=conv.created_at.isoformat(),
+                total_cost=conv.total_cost,
+                messages=[
+                    Message(
+                        message_id=msg.message_id,
+                        role=msg.role,
+                        message=msg.message,
+                        timestamp=msg.timestamp.isoformat(),
+                        original_message=msg.original_message,
+                        context_paths=msg.context_paths,
+                        cost=msg.cost,
+                    )
+                    for msg in conv.messages
+                ],
             )
-            
-            # Convert domain history to GraphQL type using converter
-            return ConversationHistoryConverter.to_graphql(domain_history)
-            
-        except ValueError as e:
-            # Re-raise validation errors
-            raise e
-        except Exception as e:
-            error_message = f"Failed to retrieve conversation history: {str(e)}"
-            raise Exception(error_message)
+            for conv in conversation_history.conversations
+        ]
+
+        return ConversationHistory(
+            conversations=conversations,
+            total_conversations=conversation_history.total_conversations,
+            total_pages=conversation_history.total_pages,
+            current_page=conversation_history.current_page,
+        )
+
+    @strawberry.field
+    def get_cost_summary(self, step_name: Optional[str], time_frame: str) -> float:
+        """
+        Get the total cost for a given time frame.
+
+        Args:
+            step_name: The name of the step (optional).
+            time_frame: The time frame ('week' or 'month').
+
+        Returns:
+            float: The total cost.
+        """
+        persistence_proxy = PersistenceProxy()
+        end_date = datetime.utcnow()
+        if time_frame == 'week':
+            start_date = end_date - timedelta(weeks=1)
+        elif time_frame == 'month':
+            start_date = end_date - timedelta(days=30)
+        else:
+            raise ValueError("Invalid time frame. Use 'week' or 'month'.")
+
+        total_cost = persistence_proxy.get_total_cost(
+            step_name, start_date, end_date)
+        return total_cost
+
+    @strawberry.field
+    def delete_conversation(self, conversation_id: str) -> bool:
+        """
+        Delete a conversation by its ID.
+
+        Args:
+            conversation_id: The ID of the conversation to delete.
+
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
+        persistence_proxy = PersistenceProxy()
+        try:
+            persistence_proxy.delete_conversation(conversation_id)
+            return True
+        except Exception:
+            return False

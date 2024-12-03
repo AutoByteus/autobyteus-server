@@ -56,3 +56,15 @@ class StepConversationRepository(BaseRepository[StepConversation]):
         except Exception as e:
             logger.error(f"Error retrieving paginated step conversations by name: {str(e)}")
             raise
+
+    def update(self, conversation: StepConversation) -> StepConversation:
+        """
+        Update an existing step conversation.
+        """
+        try:
+            self.session.merge(conversation)
+            self.session.commit()
+            return conversation
+        except Exception as e:
+            logger.error(f"Error updating step conversation: {str(e)}")
+            raise

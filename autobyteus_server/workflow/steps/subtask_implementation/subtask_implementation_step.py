@@ -22,6 +22,7 @@ class SubtaskImplementationStep(BaseStep):
         self.tools = []  # Add more tools as needed
         self.agents: Dict[str, StandaloneAgent] = {}  # Changed to handle multiple agents
         self.response_queues: Dict[str, asyncio.Queue] = {}  # Queues per conversation
+        self.persistence_proxy = PersistenceProxy()  # Ensure persistence_proxy is initialized
 
     def init_response_queue(self, conversation_id: str):
         if conversation_id not in self.response_queues:
@@ -47,7 +48,7 @@ class SubtaskImplementationStep(BaseStep):
         context_file_paths: List[Dict[str, str]],  # List of dicts with 'path' and 'type'
         llm_model: Optional[str],
         conversation_id: Optional[str] = None  # New parameter
-    ) -> str:
+    ) -> Tuple[str, float]:
         context, image_file_paths = self._construct_context(context_file_paths)
 
         if not conversation_id:
@@ -55,12 +56,17 @@ class SubtaskImplementationStep(BaseStep):
             llm_instance = LLMFactory.create_llm(llm_model)
             initial_prompt = self.construct_initial_prompt(requirement, context, llm_model)
             user_message = UserMessage(content=initial_prompt, file_paths=image_file_paths)
+
+            # Calculate cost for user message
+            user_message_cost = llm_instance.cost_calculator.calculate_text_cost(initial_prompt)
+
             new_conversation = self.persistence_proxy.store_message(
                 step_name=self.name,
                 role='user',
                 message=initial_prompt,
                 original_message=requirement,
-                context_paths=[file['path'] for file in context_file_paths]
+                context_paths=[file['path'] for file in context_file_paths],
+                cost=user_message_cost  # Store cost
             )
             conversation_id = new_conversation.step_conversation_id
 
@@ -70,8 +76,7 @@ class SubtaskImplementationStep(BaseStep):
             self.agents[conversation_id] = agent
             self.subscribe(EventType.ASSISTANT_RESPONSE, self.on_assistant_response, agent.agent_id)
             agent.start()
-
-            return conversation_id
+            return conversation_id, user_message_cost
         else:
             # This is a continuation of an existing conversation
             if conversation_id not in self.agents:
@@ -86,16 +91,20 @@ class SubtaskImplementationStep(BaseStep):
             user_message = UserMessage(content=prompt, file_paths=image_file_paths)
             await self.agents[conversation_id].receive_user_message(user_message)
 
+            # Calculate cost for user message
+            user_message_cost = self.agents[conversation_id].llm.cost_calculator.calculate_text_cost(prompt)
+
             updated_conversation = self.persistence_proxy.store_message(
                 step_name=self.name,
                 role='user',
                 message=prompt,
                 original_message=requirement,
                 context_paths=[file['path'] for file in context_file_paths],
-                conversation_id=conversation_id
+                conversation_id=conversation_id,
+                cost=user_message_cost  # Store cost
             )
 
-            return conversation_id
+            return conversation_id, user_message_cost
 
     async def clear_response_queue(self, conversation_id: str):
         self.init_response_queue(conversation_id)
@@ -149,7 +158,12 @@ class SubtaskImplementationStep(BaseStep):
                     break
             if conversation_id:
                 self.init_response_queue(conversation_id)
-                asyncio.create_task(self.response_queues[conversation_id].put(response))
+                # Get the current cost from the agent's LLM
+                agent = self.agents[conversation_id]
+                # Calculate cost for assistant's response
+                assistant_response_cost = agent.llm.cost_calculator.calculate_text_cost(response)
+                # Put both response and cost into the queue
+                asyncio.create_task(self.response_queues[conversation_id].put((response, assistant_response_cost)))
 
                 # Store the assistant's response
                 self.persistence_proxy.store_message(
@@ -158,10 +172,11 @@ class SubtaskImplementationStep(BaseStep):
                     message=response,
                     original_message=None,
                     context_paths=None,
-                    conversation_id=conversation_id
+                    conversation_id=conversation_id,
+                    cost=assistant_response_cost  # Store cost
                 )
 
-    async def get_latest_response(self, conversation_id: str, timeout: float = 30.0) -> Optional[str]:
+    async def get_latest_response(self, conversation_id: str, timeout: float = 30.0) -> Optional[Tuple[str, float]]:
         self.init_response_queue(conversation_id)
         try:
             return await asyncio.wait_for(self.response_queues[conversation_id].get(), timeout=timeout)
@@ -193,4 +208,3 @@ class SubtaskImplementationStep(BaseStep):
             self.stop_agent(conversation_id)
         except Exception as e:
             raise Exception(f"Failed to close conversation {conversation_id}: {str(e)}")
-        

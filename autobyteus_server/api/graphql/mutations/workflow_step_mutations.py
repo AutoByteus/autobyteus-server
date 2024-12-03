@@ -5,16 +5,13 @@ from autobyteus_server.config import config
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.api.graphql.types.llm_model_types import LLMModel as GraphQLLLMModel
+from autobyteus_server.api.graphql.types.conversation_types import SendStepRequirementResponse
+from autobyteus_server.api.graphql.types.user_requirement_input import ContextFilePathInput
 
 # Logger setup
 logger = logging.getLogger(__name__)
 
 workspace_manager = WorkspaceManager()
-
-@strawberry.input
-class ContextFilePathInput:
-    path: str
-    type: str
 
 @strawberry.type
 class WorkflowStepMutation:
@@ -27,7 +24,7 @@ class WorkflowStepMutation:
         requirement: str,
         conversation_id: Optional[str] = None,
         llm_model: Optional[GraphQLLLMModel] = None
-    ) -> str:
+    ) -> SendStepRequirementResponse:
         workspace = workspace_manager.get_workspace_by_id(workspace_id)
         if not workspace:
             raise ValueError(f"No workspace found for ID {workspace_id}")
@@ -46,14 +43,17 @@ class WorkflowStepMutation:
         processed_context_files = [{"path": cf.path, "type": cf.type} for cf in context_file_paths]
 
         # Process the requirement
-        conversation_id = await step.process_requirement(
+        conversation_id, user_message_cost = await step.process_requirement(
             requirement,
             processed_context_files,
             llm_model_name,
             conversation_id
         )
 
-        return conversation_id
+        return SendStepRequirementResponse(
+            conversation_id=conversation_id,
+            cost=user_message_cost
+        )
 
     @strawberry.mutation
     async def close_conversation(
@@ -64,15 +64,15 @@ class WorkflowStepMutation:
     ) -> bool:
         """
         Close a specific conversation and clean up its resources.
-        
+
         Args:
             workspace_id (str): ID of the workspace
             step_id (str): ID of the step
             conversation_id (str): ID of the conversation to close
-            
+
         Returns:
             bool: True if the conversation was successfully closed
-            
+
         Raises:
             ValueError: If workspace, workflow, or step is not found
             Exception: If there's an error during conversation closure
@@ -93,7 +93,7 @@ class WorkflowStepMutation:
             # Attempt to close the conversation
             step.close_conversation(conversation_id)
             return True
-            
+
         except Exception as e:
             logger.error(f"Error closing conversation: {str(e)}")
             raise
