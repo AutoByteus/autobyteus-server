@@ -62,17 +62,7 @@ class BaseStep(ABC, EventEmitter):
         llm_model_name: Optional[str],
         conversation_id: Optional[str],
     ) -> str:
-        # ... (existing code)
-        # Save user message to conversation
-        message = Message(
-            message_id=str(uuid4()),
-            role="user",
-            message=requirement,
-            timestamp=datetime.utcnow(),
-            context_paths=[cf["path"] for cf in context_files],
-            original_message=requirement,
-        )
-        self.persistence_proxy.save_message(conversation_id, message)
+        pass
     
     def to_dict(self) -> dict:
         return {
