@@ -108,17 +108,30 @@ class Config(metaclass=SingletonMeta):
         # Update the .env file
         self.parser.update(self.config_file, key, value)
     
-    def set_llm_api_key(self, model: str, api_key: str):
+    def set_llm_api_key(self, provider: str, api_key: str):
         """
-        Set the API key for a specific LLM model.
+        Set the API key for a specific LLM provider.
+        
+        Args:
+            provider (str): The LLM provider name (e.g., 'OPENAI', 'ANTHROPIC')
+            api_key (str): The API key value
         """
-        self.set(model, api_key)
+        key_name = f"{provider}_API_KEY"
+        self.set(key_name, api_key)
     
-    def get_llm_api_key(self, model: str) -> str:
+    def get_llm_api_key(self, provider: str) -> str:
         """
-        Get the API key for a specific LLM model.
+        Get the API key for a specific LLM provider.
+        
+        Args:
+            provider (str): The LLM provider name (e.g., 'OPENAI', 'ANTHROPIC')
+            
+        Returns:
+            str: The API key value for the provider
         """
-        return self.get(model)
+        key_name = f"{provider}_API_KEY"
+        return self.get(key_name)
+    
     
     def add_workspace(self, workspace_name: str, workspace: Workspace):
         """
