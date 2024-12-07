@@ -3,6 +3,7 @@ import asyncio
 from typing import List, Optional, Dict, Tuple
 import uuid
 from autobyteus_server.workflow.types.base_step import BaseStep
+from autobyteus.agent.async_agent import AsyncAgent
 from autobyteus.agent.agent import StandaloneAgent
 from autobyteus.llm.base_llm import BaseLLM
 from autobyteus.llm.llm_factory import LLMFactory
@@ -20,7 +21,7 @@ class SubtaskImplementationStep(BaseStep):
         prompt_dir = os.path.join(current_dir, "prompt")
         super().__init__(workflow, prompt_dir)
         self.tools = []  # Add more tools as needed
-        self.agents: Dict[str, StandaloneAgent] = {}  # Changed to handle multiple agents
+        self.agents: Dict[str, AsyncAgent] = {}  # Changed to handle multiple agents
         self.response_queues: Dict[str, asyncio.Queue] = {}  # Queues per conversation
 
     def init_response_queue(self, conversation_id: str):
@@ -126,9 +127,9 @@ class SubtaskImplementationStep(BaseStep):
 
         return context, image_file_paths
 
-    def _create_agent(self, llm: BaseLLM, initial_user_message: UserMessage, conversation_id: str) -> StandaloneAgent:
+    def _create_agent(self, llm: BaseLLM, initial_user_message: UserMessage, conversation_id: str) -> AsyncAgent:
         agent_id = f"subtask_implementation_{uuid.uuid4()}"
-        return StandaloneAgent(
+        return AsyncAgent(
             role=self.name,
             llm=llm,
             tools=self.tools,
@@ -138,28 +139,35 @@ class SubtaskImplementationStep(BaseStep):
         )
 
     def on_assistant_response(self, *args, **kwargs):
-        response = kwargs.get('response')
-        agent_id = kwargs.get('agent_id')
-        if response and agent_id:
-            # Find the conversation_id associated with this agent
-            conversation_id = None
-            for cid, agent in self.agents.items():
-                if agent.agent_id == agent_id:
-                    conversation_id = cid
-                    break
-            if conversation_id:
-                self.init_response_queue(conversation_id)
-                asyncio.create_task(self.response_queues[conversation_id].put(response))
+            response = kwargs.get('response')
+            agent_id = kwargs.get('agent_id')
+            is_complete = kwargs.get('is_complete', False)  # Changed from streaming
+            
+            if response and agent_id:
+                conversation_id = None
+                for cid, agent in self.agents.items():
+                    if agent.agent_id == agent_id:
+                        conversation_id = cid
+                        break
 
-                # Store the assistant's response
-                self.persistence_proxy.store_message(
-                    step_name=self.name,
-                    role='assistant',
-                    message=response,
-                    original_message=None,
-                    context_paths=None,
-                    conversation_id=conversation_id
-                )
+                if conversation_id:
+                    self.init_response_queue(conversation_id)
+                    response_data = StepResponseData(
+                        message=response,
+                        is_complete=is_complete  # Directly use is_complete
+                    )
+                    asyncio.create_task(self.response_queues[conversation_id].put(response_data))
+
+                    # Only store complete messages in persistence
+                    if is_complete:
+                        self.persistence_proxy.store_message(
+                            step_name=self.name,
+                            role='assistant',
+                            message=response,
+                            original_message=None,
+                            context_paths=None,
+                            conversation_id=conversation_id
+                        )
 
     async def get_latest_response(self, conversation_id: str, timeout: float = 30.0) -> Optional[str]:
         self.init_response_queue(conversation_id)
