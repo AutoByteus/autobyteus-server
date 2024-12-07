@@ -12,6 +12,7 @@ from autobyteus.conversation.user_message import UserMessage
 from autobyteus_server.workflow.persistence.conversation.domain.models import Message as PersistenceMessage
 from autobyteus_server.workflow.persistence.conversation.domain.models import StepConversation
 from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
+from autobyteus_server.workflow.types.step_response import StepResponseData
 
 class SubtaskImplementationStep(BaseStep):
     name = "implementation"
