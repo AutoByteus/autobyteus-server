@@ -32,41 +32,35 @@ class WorkflowStepStreamingConversationManager(metaclass=SingletonMeta):
         """
         Creates a new streaming conversation.
         """
-        try:
-            if conversation_id in self._conversations:
-                raise RuntimeError(f"Conversation with ID {conversation_id} already exists")
-                
-            llm = LLMFactory.create_llm(llm_model)
+        if conversation_id in self._conversations:
+            raise RuntimeError(f"Conversation with ID {conversation_id} already exists")
             
-            conversation = StreamingConversation(
-                conversation_id=conversation_id,
-                step_name=step_name,
-                workspace_id=workspace_id,
-                step_id=step_id,
-                llm=llm,
-                initial_message=initial_message,
-                tools=tools
-            )
-            
-            # Start conversation using runtime's event loop
-            self._runtime.execute_coroutine(conversation.start()).result()
-            
-            self._conversations[conversation_id] = conversation
-            return conversation
-            
-        except Exception as e:
-            logger.error(f"Failed to create conversation with ID {conversation_id}: {str(e)}")
-            raise RuntimeError(f"Failed to create conversation: {str(e)}")
+        llm = LLMFactory.create_llm(llm_model)
+        
+        conversation = StreamingConversation(
+            conversation_id=conversation_id,
+            step_name=step_name,
+            workspace_id=workspace_id,
+            step_id=step_id,
+            llm=llm,
+            initial_message=initial_message,
+            tools=tools
+        )
+        
+        # Fire and forget - don't care about the result
+        _ = self._runtime.execute_coroutine(conversation.start())
+        
+        self._conversations[conversation_id] = conversation
+        return conversation
 
-    async def send_message(self, conversation_id: str, message: str) -> None:
+    def send_message(self, conversation_id: str, message: str) -> None:
         """Sends a message to the specified conversation."""
         conversation = self._conversations.get(conversation_id)
         if not conversation:
             raise RuntimeError(f"No conversation found with ID: {conversation_id}")
             
         # Execute send_message in runtime's event loop
-        future = self._runtime.execute_coroutine(conversation.send_message(message))
-        await future
+        self._runtime.execute_coroutine(conversation.send_message(message))
 
     def get_conversation(self, conversation_id: str) -> Optional[StreamingConversation]:
         """Retrieves a conversation by ID."""

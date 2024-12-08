@@ -57,7 +57,7 @@ class SubtaskImplementationStep(BaseStep):
             self.streaming_conversation_manager.create_conversation(
                 conversation_id=conversation_id,
                 step_name=self.name,
-                workspace_id=self.workflow.workspace.id,
+                workspace_id=self.workflow.workspace.workspace_id,
                 step_id=self.id,
                 llm_model=llm_model,
                 initial_message=user_message,
@@ -68,7 +68,7 @@ class SubtaskImplementationStep(BaseStep):
         else:
             # Continue existing conversation
             prompt = self.construct_subsequent_prompt(requirement, context)
-            await self.streaming_conversation_manager.send_message(conversation_id, prompt)
+            self.streaming_conversation_manager.send_message(conversation_id, prompt)
 
             self.persistence_proxy.store_message(
                 step_name=self.name,

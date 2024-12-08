@@ -1,9 +1,11 @@
+from typing import List
 import pytest
 import asyncio
 from unittest.mock import MagicMock
 from autobyteus.llm.models import LLMModel
 from autobyteus.conversation.user_message import UserMessage
 from autobyteus_server.workflow.runtime.workflow_step_streaming_conversation_manager import WorkflowStepStreamingConversationManager
+from autobyteus_server.workflow.types.step_response import StepResponseData
 
 @pytest.fixture
 def conversation_manager():
@@ -24,7 +26,7 @@ async def test_create_conversation(conversation_manager, mock_message):
     workspace_id = "test-workspace"
     step_id = "test-step-id"
     llm_model = LLMModel.MISTRAL_LARGE_API.name
-
+    
     # Act
     conversation = conversation_manager.create_conversation(
         conversation_id=conversation_id,
@@ -34,10 +36,24 @@ async def test_create_conversation(conversation_manager, mock_message):
         llm_model=llm_model,
         initial_message=mock_message
     )
+    
+    # Wait for complete response
+    responses: List[StepResponseData] = []
+    async for response in conversation:
+        responses.append(response)
+        if response.is_complete:
+            break
 
     # Assert
     assert conversation is not None
     assert conversation_manager.get_conversation(conversation_id) is not None
+    assert len(responses) > 0
+    assert any(r.is_complete for r in responses), "No complete response received"
+    
+    # Optional: Print out the responses for debugging
+    for i, r in enumerate(responses):
+        print(f"Response {i}: {r.message} (complete: {r.is_complete})")
+
 
 @pytest.mark.asyncio
 async def test_send_message(conversation_manager, mock_message):
