@@ -1,7 +1,7 @@
 import pytest
 import os
 from pathlib import Path
-from autobyteus_server.services.diagram_service import plantuml_service
+from autobyteus_server.services.diagram.diagram_service import plantuml_service
 from autobyteus_server.config import config
 
 @pytest.fixture(scope="session")
