@@ -2,8 +2,8 @@ import pytest
 import asyncio
 from fastapi import WebSocket
 from unittest.mock import AsyncMock, MagicMock, patch
-from autobyteus_server.real_time_audio.handler import TranscriptionHandler, TranscriptionRequest
-from autobyteus_server.real_time_audio.service import TranscriptionService
+from autobyteus_server.services.real_time_audio.handler import TranscriptionHandler, TranscriptionRequest
+from autobyteus_server.services.real_time_audio.service import TranscriptionService
 
 @pytest.fixture
 def mock_websocket():
