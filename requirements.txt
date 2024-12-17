@@ -7,3 +7,7 @@ repository-sqlalchemy==0.1.4
 repository-mongodb==0.1.8
 alembic==1.13.3
 accelerate>=0.26.0
+javalang
+tree_sitter
+git clone https://github.com/tree-sitter/tree-sitter-go.git
+git clone https://github.com/tree-sitter/tree-sitter-javascript.git
