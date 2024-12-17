@@ -11,7 +11,7 @@ from autobyteus_server.workflow.types.step_response import StepResponseData
 
 logger = logging.getLogger(__name__)
 
-class StreamingConversation:
+class AgentStreamingConversation:
     """
     A streaming conversation that manages its own agent and message flow.
     Handles the lifecycle of a single conversation and its associated agent.
