@@ -61,80 +61,65 @@ class BaseStep(ABC, EventEmitter):
         prompt += f"{requirement}"
         return prompt
 
-    async def start_conversation(
+    async def process_requirement(
         self, 
         requirement: str, 
         context_file_paths: List[Dict[str, str]],  
-        llm_model: str
-    ) -> Any:
+        llm_model: Optional[str],
+        conversation_id: Optional[str] = None
+    ) -> str:
         """
-        Initiates a new conversation based on the provided requirement and context.
+        Process a requirement either as a new conversation or as part of an existing one.
         
         Args:
-            requirement (str): The requirement to process.
-            context_file_paths (List[Dict[str, str]]): List of context file paths with their types.
-            llm_model (str): The LLM model to use (mandatory).
-        
+            requirement (str): The requirement to process
+            context_file_paths (List[Dict[str, str]]): List of context file paths
+            llm_model (Optional[str]): The LLM model to use
+            conversation_id (Optional[str]): Existing conversation ID if continuing a conversation
+            
         Returns:
-            Any: The agent conversation object
-            
-        Raises:
-            ValueError: If llm_model is None or empty.
+            str: The conversation ID
         """
-        if not llm_model:
-            raise ValueError("llm_model is mandatory and cannot be None or empty")
-            
         context, image_file_paths = self._construct_context(context_file_paths)
-        initial_prompt = self.construct_initial_prompt(requirement, context, llm_model)
-        user_message = UserMessage(content=initial_prompt, file_paths=image_file_paths)
-        
-        new_conversation = self.persistence_proxy.store_message(
-            step_name=self.name,
-            role='user',
-            message=initial_prompt,
-            original_message=requirement,
-            context_paths=[file['path'] for file in context_file_paths]
-        )
-        conversation_id = new_conversation.step_conversation_id
 
-        agent_conversation = self.agent_conversation_manager.create_conversation(
-            conversation_id=conversation_id,
-            step_name=self.name,
-            workspace_id=self.workflow.workspace.workspace_id,
-            step_id=self.id,
-            llm_model=llm_model,
-            initial_message=user_message,
-            tools=self.tools
-        )
+        if not conversation_id:
+            # Start of a new conversation
+            initial_prompt = self.construct_initial_prompt(requirement, context, llm_model)
+            user_message = UserMessage(content=initial_prompt, file_paths=image_file_paths)
+            
+            new_conversation = self.persistence_proxy.store_message(
+                step_name=self.name,
+                role='user',
+                message=initial_prompt,
+                original_message=requirement,
+                context_paths=[file['path'] for file in context_file_paths]
+            )
+            conversation_id = new_conversation.step_conversation_id
 
-        return agent_conversation
+            self.agent_conversation_manager.create_conversation(
+                conversation_id=conversation_id,
+                step_name=self.name,
+                workspace_id=self.workflow.workspace.workspace_id,
+                step_id=self.id,
+                llm_model=llm_model,
+                initial_message=user_message,
+                tools=self.tools
+            )
+        else:
+            # Continue existing conversation
+            prompt = self.construct_subsequent_prompt(requirement, context)
+            self.agent_conversation_manager.send_message(conversation_id, prompt)
 
-    async def continue_conversation(
-        self, 
-        requirement: str, 
-        context_file_paths: List[Dict[str, str]], 
-        conversation_id: str
-    ) -> None:
-        """
-        Continues an existing conversation with the provided requirement and context.
-        
-        Args:
-            requirement (str): The requirement to process.
-            context_file_paths (List[Dict[str, str]]): List of context file paths with their types.
-            conversation_id (str): The ID of the existing conversation.
-        """
-        context, _ = self._construct_context(context_file_paths)
-        prompt = self.construct_subsequent_prompt(requirement, context)
-        self.agent_conversation_manager.send_message(conversation_id, prompt)
+            self.persistence_proxy.store_message(
+                step_name=self.name,
+                role='user',
+                message=prompt,
+                original_message=requirement,
+                context_paths=[file['path'] for file in context_file_paths],
+                conversation_id=conversation_id
+            )
 
-        self.persistence_proxy.store_message(
-            step_name=self.name,
-            role='user',
-            message=prompt,
-            original_message=requirement,
-            context_paths=[file['path'] for file in context_file_paths],
-            conversation_id=conversation_id
-        )
+        return conversation_id
 
     def _construct_context(self, context_file_paths: List[Dict[str, str]]) -> Tuple[str, List[str]]:
         """Constructs context string and list of image paths from provided file paths."""
