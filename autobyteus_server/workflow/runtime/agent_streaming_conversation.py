@@ -44,9 +44,7 @@ class AgentStreamingConversation:
         """Handles responses from the agent."""
         response = kwargs.get('response')
         is_complete = kwargs.get('is_complete', False)
-        
-        logger.debug(f"Received assistant response: {response}, is_complete: {is_complete}")
-        
+                
         if response:
             response_data = StepResponseData(
                 message=response,
