@@ -4,7 +4,6 @@ import strawberry
 from autobyteus_server.config import config
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
-from autobyteus_server.api.graphql.types.llm_model_types import LLMModel as GraphQLLLMModel
 
 # Logger setup
 logger = logging.getLogger(__name__)
@@ -26,7 +25,7 @@ class WorkflowStepMutation:
         context_file_paths: List[ContextFilePathInput],
         requirement: str,
         conversation_id: Optional[str] = None,
-        llm_model: Optional[GraphQLLLMModel] = None
+        llm_model: Optional[str] = None
     ) -> str:
         workspace = workspace_manager.get_workspace_by_id(workspace_id)
         if not workspace:
@@ -40,7 +39,8 @@ class WorkflowStepMutation:
         if not isinstance(step, BaseStep):
             raise ValueError(f"Step {step_id} is not a valid workflow step")
 
-        llm_model_name = llm_model.value if llm_model else None
+        # No need to access .value since llm_model is now a string
+        llm_model_name = llm_model
 
         # Convert ContextFileInput to the expected format
         processed_context_files = [{"path": cf.path, "type": cf.type} for cf in context_file_paths]

@@ -7,3 +7,4 @@ repository-sqlalchemy==0.1.4
 repository-mongodb==0.1.8
 alembic==1.13.3
 watchdog
+accelerate>=0.26.0

@@ -9,6 +9,7 @@ from repository_sqlalchemy.session_management import get_engine
 from repository_sqlalchemy import Base, transaction
 from dotenv import load_dotenv
 import sys
+from autobyteus_server.workflow.runtime.agent_runtime import AgentRuntime
 
 # Define the path for the SQLite test database
 TEST_DB_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -76,18 +77,6 @@ def db_config():
     os.environ['DB_NAME'] = TEST_DB_PATH
     return DatabaseConfig('sqlite')
 
-'''
-@pytest.fixture(scope="session")
-def db_config():
-    os.environ['DB_TYPE'] = 'postgresql'
-    os.environ['DB_NAME'] = 'postgres'  # Default database name
-    os.environ['DB_USER'] = 'postgres'  # Default username
-    os.environ['DB_PASSWORD'] = 'mysecretpassword'  # Password set in Docker run command
-    os.environ['DB_HOST'] = 'localhost'
-    os.environ['DB_PORT'] = '5432'  # Default PostgreSQL port
-    return DatabaseConfig('postgresql')
-'''
-
 @pytest.fixture(scope="session")
 def engine(db_config):
     return get_engine()
@@ -125,3 +114,16 @@ def mongo_client(mongo_config):
 @pytest.fixture(scope="session")
 def mongo_database(mongo_client, mongo_config):
     return mongo_client[mongo_config.database]
+
+# Agent Runtime specific fixtures
+@pytest.fixture(autouse=True)
+def cleanup_agent_runtime():
+    """Fixture to ensure clean AgentRuntime state between tests"""
+    yield
+    # Get the current runtime instance if it exists
+    runtime = AgentRuntime._instances.get(AgentRuntime, None)
+    if runtime:
+        # Shutdown the runtime
+        runtime.shutdown()
+    # Reset the singleton instance
+    AgentRuntime._instances = {}

@@ -27,9 +27,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from autobyteus_server.api.graphql.schema import schema
 from strawberry.fastapi import GraphQLRouter
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from autobyteus_server.api.rest.upload_file import router as upload_file_router
+from autobyteus_server.api.rest import router as rest_router
 from autobyteus_server.config.logging_config import configure_logger
-from autobyteus_server.real_time_audio import real_time_audio_router
+from autobyteus_server.api.websocket.real_time_audio_router import transcription_router
 
 # Configure logging
 configure_logger()
@@ -38,14 +38,12 @@ configure_logger()
 app = FastAPI()
 
 # Allow all origins for CORS
-# Note: This can pose security risks if not managed properly.
-# Ensure that your application has appropriate security measures in place.
 origins = "*"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=False,  # Must be False when using "*" for allow_origins
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -57,8 +55,6 @@ graphql_router = GraphQLRouter(schema, subscription_protocols=[
 ])
 app.include_router(graphql_router, prefix="/graphql")
 
-# Include REST router for file uploads
-app.include_router(upload_file_router, prefix="/rest")
-app.include_router(real_time_audio_router)
-
-# The 'app' variable is now available for uvicorn to use when starting the server
+# Include REST routers
+app.include_router(rest_router, prefix="/rest")
+app.include_router(transcription_router)

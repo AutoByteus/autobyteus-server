@@ -157,3 +157,9 @@ CURRENT_BULLETIN.md
 
 config.toml
 note
+
+## Resources downloaded from the internet
+autobyteus_server/resources/* 
+
+## conversations logs
+conversations/*

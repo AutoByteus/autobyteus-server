@@ -1,16 +1,13 @@
 import asyncio
 import strawberry
 from typing import AsyncGenerator
-from autobyteus_server.workflow.types.base_step import BaseStep
+from autobyteus_server.api.graphql.types.step_response import StepResponse
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
-from autobyteus_server.workflow.steps.subtask_implementation.subtask_implementation_step import SubtaskImplementationStep
+from autobyteus_server.api.graphql.converters import to_graphql_step_response
+from autobyteus_server.workflow.runtime.step_agent_conversation_manager import StepAgentConversationManager
 
 workspace_manager = WorkspaceManager()
-
-@strawberry.type
-class StepResponse:
-    conversation_id: str
-    message: str
+streaming_manager = StepAgentConversationManager()
 
 @strawberry.type
 class Subscription:
@@ -25,7 +22,8 @@ class Subscription:
         if not workspace:
             yield StepResponse(
                 conversation_id=conversation_id,
-                message=f"Error: No workspace found for ID {workspace_id}"
+                message_chunk=f"Error: No workspace found for ID {workspace_id}",
+                is_complete=True
             )
             return
 
@@ -33,17 +31,26 @@ class Subscription:
         if not workflow:
             yield StepResponse(
                 conversation_id=conversation_id,
-                message=f"Error: No workflow found for workspace {workspace_id}"
+                message_chunk=f"Error: No workflow found for workspace {workspace_id}",
+                is_complete=True
             )
             return
 
         step = workflow.get_step(step_id)
-        while True:
-            response = await step.get_latest_response(conversation_id)
-            if response:
-                yield StepResponse(
-                    conversation_id=conversation_id,
-                    message=response
-                )
-            else:
-                await asyncio.sleep(1)  # Wait for 1 second before checking again
+        streaming_conversation = streaming_manager.get_conversation(conversation_id)
+        
+        if not streaming_conversation:
+            yield StepResponse(
+                conversation_id=conversation_id,
+                message_chunk=f"Error: No conversation found with ID {conversation_id}",
+                is_complete=True
+            )
+            return
+
+        try:
+            async for response_data in streaming_conversation:
+                if response_data:
+                    yield to_graphql_step_response(conversation_id, response_data)
+        finally:
+            # No explicit close here as it's handled by the mutation
+            pass

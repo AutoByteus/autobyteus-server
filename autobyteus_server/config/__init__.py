@@ -20,8 +20,52 @@ class Config(metaclass=SingletonMeta):
         self.config_data = self._read_config_file(config_file, parser)
         self.workspaces: Dict[str, Workspace] = {}
         
+        # Initialize application directories and paths
+        self._initialize_application_directories()
+        
         # Initialize SQLite path if needed
         self._init_sqlite_path()
+
+    def _initialize_application_directories(self):
+        """
+        Initialize and create essential application directories and paths.
+        This includes setting up the resources directory and defining paths
+        for various resource files used by the application.
+        """
+        # Get project root directory
+        self.root_dir = Path(self.config_file).parent.parent
+        
+        # Set up resources directory
+        self.resources_dir = self.root_dir / 'resources'
+        self.resources_dir.mkdir(exist_ok=True)
+        
+        # Define specific resource paths
+        self.set('RESOURCES_DIR', str(self.resources_dir))
+        self.set('PLANTUML_JAR_PATH', str(self.resources_dir / 'plantuml.jar'))
+
+    def get_resource_path(self, resource_name: str) -> Path:
+        """
+        Get the path for a specific resource file.
+        
+        Args:
+            resource_name (str): Name of the resource file
+            
+        Returns:
+            Path: Full path to the resource file
+        """
+        return self.resources_dir / resource_name
+
+    def ensure_resource_exists(self, resource_name: str) -> bool:
+        """
+        Check if a resource exists in the resources directory.
+        
+        Args:
+            resource_name (str): Name of the resource file
+            
+        Returns:
+            bool: True if resource exists, False otherwise
+        """
+        return (self.resources_dir / resource_name).exists()
 
     def _read_config_file(self, config_file: str, parser: ConfigParser) -> dict:
         if not os.path.exists(config_file):
@@ -64,17 +108,30 @@ class Config(metaclass=SingletonMeta):
         # Update the .env file
         self.parser.update(self.config_file, key, value)
     
-    def set_llm_api_key(self, model: str, api_key: str):
+    def set_llm_api_key(self, provider: str, api_key: str):
         """
-        Set the API key for a specific LLM model.
+        Set the API key for a specific LLM provider.
+        
+        Args:
+            provider (str): The LLM provider name (e.g., 'OPENAI', 'ANTHROPIC')
+            api_key (str): The API key value
         """
-        self.set(model, api_key)
+        key_name = f"{provider}_API_KEY"
+        self.set(key_name, api_key)
     
-    def get_llm_api_key(self, model: str) -> str:
+    def get_llm_api_key(self, provider: str) -> str:
         """
-        Get the API key for a specific LLM model.
+        Get the API key for a specific LLM provider.
+        
+        Args:
+            provider (str): The LLM provider name (e.g., 'OPENAI', 'ANTHROPIC')
+            
+        Returns:
+            str: The API key value for the provider
         """
-        return self.get(model)
+        key_name = f"{provider}_API_KEY"
+        return self.get(key_name)
+    
     
     def add_workspace(self, workspace_name: str, workspace: Workspace):
         """
