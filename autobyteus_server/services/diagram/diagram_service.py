@@ -2,10 +2,13 @@ from abc import ABC, abstractmethod
 import subprocess
 import tempfile
 import os
+import logging
 from typing import Optional
 from autobyteus_server.config import config
 from autobyteus.utils.singleton import ABCSingletonMeta
 from autobyteus_server.utils.downloader import download_with_progress
+
+logger = logging.getLogger(__name__)
 
 
 class DiagramService(metaclass=ABCSingletonMeta):
@@ -30,18 +33,25 @@ class PlantUMLService(DiagramService):
 
         self.plantuml_jar_path = plantuml_jar_path or config.get("PLANTUML_JAR_PATH")
         if not os.path.exists(self.plantuml_jar_path):
+            logger.info(f"PlantUML jar not found at {self.plantuml_jar_path}")
             try:
+                logger.info("Attempting to download PlantUML jar...")
                 download_with_progress(
                     url=config.get("PLANTUML_JAR_DOWNLOAD_URL"),
                     path=self.plantuml_jar_path,
                     message="Downloading PlantUML",
                 )
             except Exception as e:
+                error_msg = f"Failed to download PlantUML: {str(e)}. Please place it in the resources directory: {config.get('RESOURCES_DIR')}"
+                logger.error(error_msg)
+
                 raise RuntimeError(
                     f"Failed to download PlantUML: {str(e)}. "
                     f"plantuml.jar not found at {self.plantuml_jar_path}. "
                     f"Please place it in the resources directory: {config.get('RESOURCES_DIR')}"
                 )
+        else:
+            logger.debug(f"Using existing PlantUML jar at {self.plantuml_jar_path}")
 
     def generate_diagram(self, content: str) -> bytes:
         """Generate a diagram using PlantUML.
