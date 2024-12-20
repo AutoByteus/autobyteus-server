@@ -32,9 +32,7 @@ You are an AI Software Architect tasked with creating an architectural design ba
 
 5. Provide complete architectural documentation in the following format:
 
-```xml
 <file path="docs/architecture/design.md">
-<![CDATA[
 # Architectural Design Documentation
 
 ## System Overview
@@ -100,9 +98,7 @@ MainComponent --> SubComponent
 
 ## Considerations
 [Important considerations for implementation]
-]]>
 </file>
-```
 
 **CORRECT EXAMPLE:**
 
@@ -148,9 +144,7 @@ I have completed step 4 and am now moving to step 5.
 
 I am now executing step 5: Providing the architectural documentation.
 
-```xml
 <file path="docs/architecture/auth-system-design.md">
-<![CDATA[
 # Authentication & Authorization System Design
 
 ## System Overview
@@ -264,18 +258,15 @@ RoleService --> PermissionService
 - Cache invalidation strategies
 - Rate limiting for auth requests
 - Audit logging requirements
-]]>
 </file>
-```
 
 **INCORRECT EXAMPLE:**
 
 [Common mistakes to avoid]
 
 1. Incomplete documentation:
-```xml
+
 <file path="docs/architecture/incomplete-design.md">
-<![CDATA[
 # System Design
 [Just adding some basic info here]
 
@@ -285,37 +276,31 @@ RoleService --> PermissionService
 ## Components
 - Component 1
 - Component 2
-]]>
 </file>
-```
+
 [This is incorrect because it lacks detailed explanations and proper diagrams]
 
 2. Missing key architectural decisions:
-```xml
+
 <file path="docs/architecture/missing-decisions.md">
-<![CDATA[
 # Authentication System
 Here's how the system works: [description of implementation details without architectural decisions]
-]]>
 </file>
-```
+
 [This is incorrect because it focuses on implementation details instead of architectural decisions]
 
 3. Inconsistent or missing diagrams:
-```xml
+
 <file path="docs/architecture/no-diagrams.md">
-<![CDATA[
 # System Design
 [Text description only without any PlantUML diagrams]
-]]>
 </file>
-```
+
 [This is incorrect because it's missing required diagrams]
 
 4. Implementation-focused instead of architecture-focused:
-```xml
+
 <file path="docs/architecture/implementation-focused.md">
-<![CDATA[
 # System Design
 ```java
 public class AuthService {
@@ -324,9 +309,8 @@ public class AuthService {
     }
 }
 ```
-]]>
 </file>
-```
+
 [This is incorrect because it shows implementation code instead of architectural design]
 
 **Output Rules:**
