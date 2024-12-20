@@ -1,3 +1,4 @@
+
 import asyncio
 import logging
 from queue import Queue, Empty
@@ -8,6 +9,7 @@ from autobyteus.llm.base_llm import BaseLLM
 from autobyteus.events.event_types import EventType
 from autobyteus_server.workflow.runtime.exceptions import StreamClosedError
 from autobyteus_server.workflow.types.step_response import StepResponseData
+from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,8 @@ class AgentStreamingConversation:
         self.workspace_id = workspace_id
         self.step_id = step_id
         self.conversation_id = conversation_id
+        self.step_name = step_name
+        self.persistence_proxy = PersistenceProxy()
         self.is_active = True
         self._response_queue = Queue()
         
@@ -41,14 +45,42 @@ class AgentStreamingConversation:
         self._agent.subscribe(EventType.ASSISTANT_RESPONSE, self._on_assistant_response, self._agent.agent_id)
 
     def _on_assistant_response(self, *args, **kwargs):
-        """Handles responses from the agent."""
-        response = kwargs.get('response')
-        is_complete = kwargs.get('is_complete', False)
-                
-        if response:
+        """
+        Handles responses from the agent.
+        Streams intermediate chunks and saves only complete messages to persistence.
+        """
+        try:
+            response = kwargs.get('response')
+            is_complete = kwargs.get('is_complete', False)
+                    
+            if not response:
+                return
+
+            if is_complete:
+                # Only save complete messages to persistence, don't stream them
+                logger.debug(f"Saving complete response for conversation {self.conversation_id}")
+                self.persistence_proxy.store_message(
+                    step_name=self.step_name,
+                    role='assistant',
+                    message=response,
+                    original_message=None,
+                    context_paths=None,
+                    conversation_id=self.conversation_id
+                )
+            else:
+                # Stream only intermediate chunks
+                response_data = StepResponseData(
+                    message=response,
+                    is_complete=False
+                )
+                self.put_response(response_data)
+
+        except Exception as e:
+            logger.error(f"Error in _on_assistant_response: {str(e)}")
             response_data = StepResponseData(
-                message=response,
-                is_complete=is_complete
+                message=str(e),
+                is_complete=True,
+                error=True
             )
             self.put_response(response_data)
 
@@ -113,9 +145,6 @@ class AgentStreamingConversation:
                     continue
                     
                 yield chunk
-                
-                if chunk.is_complete:
-                    break
                     
             except Exception as e:
                 raise StreamClosedError(f"Stream operation failed: {str(e)}") from e
