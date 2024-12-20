@@ -1,3 +1,4 @@
+
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from autobyteus.utils.singleton import SingletonMeta
@@ -14,7 +15,12 @@ class TranscriptionService(metaclass=SingletonMeta):
             return
         
         # Initialize device and dtype
-        self.device, self.torch_dtype = self._setup_device_and_dtype()
+        try:
+            self.device, self.torch_dtype = self._setup_device_and_dtype()
+        except EnvironmentError as e:
+            logger.error(f"Service could not be initialized: {e}")
+            return
+        
         model_id = "openai/whisper-large-v3-turbo"  # Using the large turbo model
 
         try:
@@ -50,7 +56,7 @@ class TranscriptionService(metaclass=SingletonMeta):
     def _setup_device_and_dtype(self):
         """
         Determine the appropriate device and dtype based on system capabilities.
-        Returns tuple of (device, dtype)
+        Returns tuple of (device, dtype) or raises an error if neither CUDA nor MPS is available.
         """
         # Check for CUDA first
         if torch.cuda.is_available():
@@ -66,10 +72,11 @@ class TranscriptionService(metaclass=SingletonMeta):
             logger.info("MPS is available - using Apple Silicon GPU")
             return "mps", torch.float32  # MPS currently works best with float32
         
-        # Fall back to CPU
+        # Raise an error if only CPU is available
         else:
-            logger.info("No GPU detected - using CPU")
-            return "cpu", torch.float32
+            error_message = "No suitable GPU detected. Service requires CUDA or MPS."
+            logger.error(error_message)
+            raise EnvironmentError(error_message)
 
     def _get_pipeline_device(self):
         """
@@ -80,6 +87,7 @@ class TranscriptionService(metaclass=SingletonMeta):
         elif self.device == "mps":
             return "mps"
         else:
+            # Should not reach here, as we prevent CPU-only initialization
             return -1
 
     def transcribe(self, audio_data: bytes) -> str:
@@ -104,6 +112,10 @@ class TranscriptionService(metaclass=SingletonMeta):
             - If audio data is captured from a microphone, ensure that the recording uses the same sampling rate as specified in this class (self.sampling_rate).
             - This method is intended to be called from a dedicated thread per session, so additional synchronization is not required.
         """
+        if not hasattr(self, '_initialized') or not self._initialized:
+            logger.error(f"Attempted transcription with uninitialized service.")
+            return ""
+        
         start_time = time.perf_counter()
         start_datetime = datetime.now().isoformat()
         logger.info(f"Starting transcription at: {start_datetime}")
