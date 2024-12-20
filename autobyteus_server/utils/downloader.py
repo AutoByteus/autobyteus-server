@@ -25,5 +25,3 @@ def download_with_progress(url: str, path: str, message: str):
         for data in response.iter_content(block_size):
             file.write(data)
             bar.update(len(data))
-
-    print(f"{message} completed and saved to {path}")
