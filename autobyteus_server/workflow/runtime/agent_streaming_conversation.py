@@ -51,9 +51,15 @@ class AgentStreamingConversation:
         """
         try:
             response = kwargs.get('response')
+            agent_id = kwargs.get('agent_id')
             is_complete = kwargs.get('is_complete', False)
-                    
+            
             if not response:
+                return
+
+            # Verify the response comes from our agent
+            if not agent_id or agent_id != self._agent.agent_id:
+                logger.warning(f"Received response from unknown agent {agent_id}")
                 return
 
             if is_complete:
