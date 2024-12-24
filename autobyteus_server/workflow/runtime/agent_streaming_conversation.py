@@ -1,6 +1,7 @@
 
 import asyncio
 import logging
+import uuid
 from queue import Queue, Empty
 from typing import Optional, List
 from autobyteus.agent.async_agent import AsyncAgent
@@ -34,15 +35,34 @@ class AgentStreamingConversation:
         self.is_active = True
         self._response_queue = Queue()
         
+        # Generate agent_id
+        agent_id = self._generate_agent_id(step_name)
+        
         # Create and initialize agent
         self._agent = AsyncAgent(
             role=step_name,
             llm=llm,
             tools=tools or [],
             use_xml_parser=True,
+            agent_id=agent_id,
             initial_user_message=initial_message
         )
         self._agent.subscribe(EventType.ASSISTANT_RESPONSE, self._on_assistant_response, self._agent.agent_id)
+
+    @staticmethod
+    def _generate_agent_id(step_name: str) -> str:
+        """
+        Generate a unique agent ID combining step name and UUID.
+        
+        Args:
+            step_name: The name of the step/role
+            
+        Returns:
+            str: Combined agent ID in format "{sanitized_step_name}_{uuid}"
+        """
+        sanitized_name = step_name.lower().replace(' ', '_')
+        unique_id = str(uuid.uuid4())
+        return f"{sanitized_name}_{unique_id}"
 
     def _on_assistant_response(self, *args, **kwargs):
         """
@@ -51,15 +71,9 @@ class AgentStreamingConversation:
         """
         try:
             response = kwargs.get('response')
-            agent_id = kwargs.get('agent_id')
             is_complete = kwargs.get('is_complete', False)
             
             if not response:
-                return
-
-            # Verify the response comes from our agent
-            if not agent_id or agent_id != self._agent.agent_id:
-                logger.warning(f"Received response from unknown agent {agent_id}")
                 return
 
             if is_complete:
