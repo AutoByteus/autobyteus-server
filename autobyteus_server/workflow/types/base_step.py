@@ -1,3 +1,4 @@
+
 from typing import TYPE_CHECKING, List, Optional, Dict, Any, Tuple
 from abc import ABC
 from autobyteus.prompt.prompt_template import PromptTemplate
@@ -62,21 +63,21 @@ class BaseStep(ABC, EventEmitter):
         return prompt
 
     async def process_requirement(
-        self, 
-        requirement: str, 
-        context_file_paths: List[Dict[str, str]],  
+        self,
+        requirement: str,
+        context_file_paths: List[Dict[str, str]],
         llm_model: Optional[str],
         conversation_id: Optional[str] = None
     ) -> str:
         """
         Process a requirement either as a new conversation or as part of an existing one.
-        
+
         Args:
             requirement (str): The requirement to process
             context_file_paths (List[Dict[str, str]]): List of context file paths
             llm_model (Optional[str]): The LLM model to use
             conversation_id (Optional[str]): Existing conversation ID if continuing a conversation
-            
+
         Returns:
             str: The conversation ID
         """
@@ -86,7 +87,7 @@ class BaseStep(ABC, EventEmitter):
             # Start of a new conversation
             initial_prompt = self.construct_initial_prompt(requirement, context, llm_model)
             user_message = UserMessage(content=initial_prompt, file_paths=image_file_paths)
-            
+
             new_conversation = self.persistence_proxy.store_message(
                 step_name=self.name,
                 role='user',
@@ -108,7 +109,8 @@ class BaseStep(ABC, EventEmitter):
         else:
             # Continue existing conversation
             prompt = self.construct_subsequent_prompt(requirement, context)
-            self.agent_conversation_manager.send_message(conversation_id, prompt)
+            user_message = UserMessage(content=prompt, file_paths=image_file_paths)
+            self.agent_conversation_manager.send_message(conversation_id, user_message)
 
             self.persistence_proxy.store_message(
                 step_name=self.name,

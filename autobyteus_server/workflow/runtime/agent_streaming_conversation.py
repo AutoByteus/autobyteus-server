@@ -19,9 +19,9 @@ class AgentStreamingConversation:
     A streaming conversation that manages its own agent and message flow.
     Handles the lifecycle of a single conversation and its associated agent.
     """
-    def __init__(self, 
-                 workspace_id: str, 
-                 step_id: str, 
+    def __init__(self,
+                 workspace_id: str,
+                 step_id: str,
                  conversation_id: str,
                  step_name: str,
                  llm: BaseLLM,
@@ -34,10 +34,10 @@ class AgentStreamingConversation:
         self.persistence_proxy = PersistenceProxy()
         self.is_active = True
         self._response_queue = Queue()
-        
+
         # Generate agent_id
         agent_id = self._generate_agent_id(step_name)
-        
+
         # Create and initialize agent
         self._agent = AsyncAgent(
             role=step_name,
@@ -53,10 +53,10 @@ class AgentStreamingConversation:
     def _generate_agent_id(step_name: str) -> str:
         """
         Generate a unique agent ID combining step name and UUID.
-        
+
         Args:
             step_name: The name of the step/role
-            
+
         Returns:
             str: Combined agent ID in format "{sanitized_step_name}_{uuid}"
         """
@@ -72,7 +72,7 @@ class AgentStreamingConversation:
         try:
             response = kwargs.get('response')
             is_complete = kwargs.get('is_complete', False)
-            
+
             if not response:
                 return
 
@@ -116,19 +116,18 @@ class AgentStreamingConversation:
         except Empty:
             return None
 
-    async def send_message(self, message: str) -> None:
+    async def send_message(self, message: UserMessage) -> None:
         """Sends a message to the conversation's agent."""
         if not self.is_active:
             raise StreamClosedError("Cannot send message to inactive conversation")
-            
-        user_message = UserMessage(content=message)
-        await self._agent.receive_user_message(user_message)
+
+        await self._agent.receive_user_message(message)
 
     async def start(self) -> None:
         """Starts the conversation's agent."""
         if not self.is_active:
             raise StreamClosedError("Cannot start inactive conversation")
-            
+
         logger.info(f"Starting conversation {self.conversation_id}")
         self._agent.start()
 
@@ -136,7 +135,7 @@ class AgentStreamingConversation:
         """Stops the conversation's agent."""
         if not self.is_active:
             return
-            
+
         logger.info(f"Stopping conversation {self.conversation_id}")
         self._agent.stop()
         self.close()
@@ -145,7 +144,7 @@ class AgentStreamingConversation:
         """Closes the streaming conversation."""
         if not self.is_active:
             return
-            
+
         logger.info(f"Closing conversation {self.conversation_id}")
         self.is_active = False
         self._response_queue.put(None)  # Signal end of stream
@@ -160,11 +159,11 @@ class AgentStreamingConversation:
                 chunk = await asyncio.get_event_loop().run_in_executor(
                     None, self.get_response
                 )
-                
+
                 if chunk is None:
                     continue
-                    
+
                 yield chunk
-                    
+
             except Exception as e:
                 raise StreamClosedError(f"Stream operation failed: {str(e)}") from e

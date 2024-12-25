@@ -1,3 +1,4 @@
+
 import logging
 from typing import Dict, Optional, List
 from autobyteus.utils.singleton import SingletonMeta
@@ -14,7 +15,7 @@ class StepAgentConversationManager(metaclass=SingletonMeta):
     Manages agent conversations for workflow steps.
     Handles the lifecycle of step-specific agent conversations and ensures proper resource management.
     """
-    
+
     def __init__(self):
         self._conversations: Dict[str, AgentStreamingConversation] = {}
         self._runtime = AgentRuntime()
@@ -49,9 +50,9 @@ class StepAgentConversationManager(metaclass=SingletonMeta):
         """
         if conversation_id in self._conversations:
             raise RuntimeError(f"Conversation with ID {conversation_id} already exists")
-            
+
         llm = LLMFactory.create_llm(llm_model)
-        
+
         conversation = AgentStreamingConversation(
             conversation_id=conversation_id,
             step_name=step_name,
@@ -61,20 +62,20 @@ class StepAgentConversationManager(metaclass=SingletonMeta):
             initial_message=initial_message,
             tools=tools
         )
-        
+
         # Start the conversation in the runtime's event loop
         _ = self._runtime.execute_coroutine(conversation.start())
-        
+
         self._conversations[conversation_id] = conversation
         return conversation
 
-    def send_message(self, conversation_id: str, message: str) -> None:
+    def send_message(self, conversation_id: str, message: UserMessage) -> None:
         """
         Sends a message to the specified conversation.
 
         Args:
             conversation_id: ID of the target conversation
-            message: Message content to send
+            message: UserMessage object to send
 
         Raises:
             RuntimeError: If no conversation found with given ID
@@ -82,7 +83,7 @@ class StepAgentConversationManager(metaclass=SingletonMeta):
         conversation = self._conversations.get(conversation_id)
         if not conversation:
             raise RuntimeError(f"No conversation found with ID: {conversation_id}")
-            
+
         # Execute send_message in runtime's event loop
         self._runtime.execute_coroutine(conversation.send_message(message))
 
