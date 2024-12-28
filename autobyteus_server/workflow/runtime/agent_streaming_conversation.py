@@ -42,8 +42,6 @@ class AgentStreamingConversation:
         self._agent = AsyncAgent(
             role=step_name,
             llm=llm,
-            tools=tools or [],
-            use_xml_parser=True,
             agent_id=agent_id,
             initial_user_message=initial_message
         )
