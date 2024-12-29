@@ -14,13 +14,23 @@ class TranscriptionService(metaclass=SingletonMeta):
         if hasattr(self, '_initialized') and self._initialized:
             return
         
+        self._initialized = False
+        self.is_enabled = False
+        
         # Initialize device and dtype
         try:
             self.device, self.torch_dtype = self._setup_device_and_dtype()
-        except EnvironmentError as e:
+            if self.device is None or self.torch_dtype is None:
+                logger.warning("No GPU detected. TranscriptionService will be disabled.")
+                return
+            self.is_enabled = True
+        except Exception as e:
             logger.error(f"Service could not be initialized: {e}")
             return
         
+        if not self.is_enabled:
+            return
+
         model_id = "openai/whisper-large-v3-turbo"  # Using the large turbo model
 
         try:
@@ -51,12 +61,13 @@ class TranscriptionService(metaclass=SingletonMeta):
             logger.info(f"TranscriptionService initialized successfully using device: {self.device}, dtype: {self.torch_dtype}")
         except Exception as e:
             logger.error(f"Failed to initialize TranscriptionService: {e}")
+            self.is_enabled = False
             raise
 
     def _setup_device_and_dtype(self):
         """
         Determine the appropriate device and dtype based on system capabilities.
-        Returns tuple of (device, dtype) or raises an error if neither CUDA nor MPS is available.
+        Returns tuple of (device, dtype) or (None, None) if no GPU is available.
         """
         # Check for CUDA first
         if torch.cuda.is_available():
@@ -72,11 +83,9 @@ class TranscriptionService(metaclass=SingletonMeta):
             logger.info("MPS is available - using Apple Silicon GPU")
             return "mps", torch.float32  # MPS currently works best with float32
         
-        # Raise an error if only CPU is available
-        else:
-            error_message = "No suitable GPU detected. Service requires CUDA or MPS."
-            logger.error(error_message)
-            raise EnvironmentError(error_message)
+        # Return None values if no GPU is available
+        logger.warning("No GPU (CUDA or MPS) detected. Service will be disabled.")
+        return None, None
 
     def _get_pipeline_device(self):
         """
@@ -86,34 +95,25 @@ class TranscriptionService(metaclass=SingletonMeta):
             return 0
         elif self.device == "mps":
             return "mps"
-        else:
-            # Should not reach here, as we prevent CPU-only initialization
-            return -1
+        return -1
 
     def transcribe(self, audio_data: bytes) -> str:
         """
         Transcribe audio bytes to text using the initialized pipeline.
+        Returns empty string if service is disabled.
         
         Parameters:
-            audio_data (bytes): The audio data to transcribe. Must be in a recognizable format such as WAV, MP3, or other supported byte formats.
+            audio_data (bytes): The audio data to transcribe.
         
         Returns:
-            str: The transcribed text from the audio data.
-        
-        Logs:
-            - Start time of the transcription process.
-            - Duration of the pipeline execution.
-            - Total time taken for the transcription.
-            - Length of the transcribed text.
-            - The transcribed text itself.
-            - Errors encountered during transcription.
-        
-        Notes:
-            - If audio data is captured from a microphone, ensure that the recording uses the same sampling rate as specified in this class (self.sampling_rate).
-            - This method is intended to be called from a dedicated thread per session, so additional synchronization is not required.
+            str: The transcribed text from the audio data, or empty string if service is disabled.
         """
-        if not hasattr(self, '_initialized') or not self._initialized:
-            logger.error(f"Attempted transcription with uninitialized service.")
+        if not self.is_enabled:
+            logger.warning("Transcription attempted but service is disabled (no GPU available)")
+            return ""
+            
+        if not self._initialized:
+            logger.error("Attempted transcription with uninitialized service")
             return ""
         
         start_time = time.perf_counter()
