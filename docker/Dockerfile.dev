@@ -1,14 +1,13 @@
 FROM autobyteus-base:latest
 
-USER vncuser
-WORKDIR /home/vncuser/workspace
-
 # Copy supervisor configuration and entrypoint script
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY entrypoint.sh /entrypoint.sh
 
-RUN sudo dos2unix /entrypoint.sh && \
-    sudo chmod +x /entrypoint.sh
+RUN dos2unix /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+WORKDIR /home/vncuser/workspace
 
 EXPOSE 5900 9223 8000
 
