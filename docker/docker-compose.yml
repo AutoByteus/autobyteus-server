@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
+    ports:
+      - "5900:5900"
+      - "9223:9223"
+      - "8000:8000"
+    environment:
+      - DISPLAY=:99
+    restart: unless-stopped
