@@ -1,4 +1,6 @@
 uvicorn[standard]
+fastapi
+strawberry-graphql
 watchfiles==0.22.0
 python-dotenv==1.0.1
 RapidFuzz==3.10.1
