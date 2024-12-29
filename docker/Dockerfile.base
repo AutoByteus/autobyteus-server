@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     socat \
     git \
+    xclip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
