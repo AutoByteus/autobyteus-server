@@ -1,3 +1,4 @@
+
 from abc import ABC, abstractmethod
 import subprocess
 import tempfile
@@ -23,6 +24,8 @@ class DiagramService(metaclass=ABCSingletonMeta):
 class PlantUMLService(DiagramService):
     """PlantUML implementation of diagram service."""
 
+    DEFAULT_DOWNLOAD_URL = "https://downloads.sourceforge.net/project/plantuml/plantuml.jar"
+
     def __init__(self, plantuml_jar_path: Optional[str] = None):
         """Initialize the PlantUML service.
 
@@ -30,14 +33,14 @@ class PlantUMLService(DiagramService):
             plantuml_jar_path: Optional path to plantuml.jar. If not provided,
                               will use the path from config.
         """
-
         self.plantuml_jar_path = plantuml_jar_path or config.get("PLANTUML_JAR_PATH")
         if not os.path.exists(self.plantuml_jar_path):
             logger.info(f"PlantUML jar not found at {self.plantuml_jar_path}")
             try:
                 logger.info("Attempting to download PlantUML jar...")
+                download_url = config.get("PLANTUML_JAR_DOWNLOAD_URL", self.DEFAULT_DOWNLOAD_URL)
                 download_with_progress(
-                    url=config.get("PLANTUML_JAR_DOWNLOAD_URL"),
+                    url=download_url,
                     path=self.plantuml_jar_path,
                     message="Downloading PlantUML",
                 )
