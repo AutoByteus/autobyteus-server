@@ -1,7 +1,10 @@
+
 version: '3.8'
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     cap_add:
       - SYS_ADMIN
     security_opt:
@@ -12,4 +15,9 @@ services:
       - "8000:8000"
     environment:
       - DISPLAY=:99
+    volumes:
+      # Mount source code using relative paths
+      - ../../brui_core:/home/vncuser/workspace/brui_core
+      - ../../autobyteus:/home/vncuser/workspace/autobyteus
+      - ../../autobyteus-server:/home/vncuser/workspace/autobyteus-server
     restart: unless-stopped

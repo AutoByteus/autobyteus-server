@@ -1,32 +1,45 @@
+# AutoByteus Development Environment
 
-# Headless Browser Environment with VNC Access
-
-This project provides a Docker-based headless browser environment with VNC access, allowing you to interact with a full Chrome browser instance remotely.
+This project provides a Docker-based development environment for AutoByteus, featuring a headless browser environment with VNC access, allowing you to interact with a full Chrome browser instance remotely.
 
 ## Prerequisites
 
 - Docker and Docker Compose installed on your system
 - A VNC viewer application installed on your client machine
 
+## Architecture
+
+The environment consists of two main components:
+1. Base image (`Dockerfile.base`): Contains all system dependencies and Python packages
+2. Development image (`Dockerfile.dev`): Configures the development environment with mounted volumes
+
 ## Getting Started
 
-1. Clone this repository to your local machine
-2. Navigate to the project directory
-3. Build and start the container:
+1. Build the base image first:
+```bash
+docker build -t autobyteus-base:latest -f Dockerfile.base .
+```
 
+2. Start the development environment:
 ```bash
 docker-compose up -d
 ```
 
-The container will start and expose port 5900 for VNC access.
+## Project Structure
 
-## Connecting to the Environment
+The environment mounts the following directories:
+- `/home/ryan-ai/SSD/autobyteus_workspace/brui_core`
+- `/home/ryan-ai/SSD/autobyteus_workspace/autobyteus`
+- `/home/ryan-ai/SSD/autobyteus_workspace/autobyteus-server`
 
-The VNC password is: `mysecretpassword`
+## VNC Access
 
-### TigerVNC (Recommended)
+The container exposes port 5900 for VNC access.
+Default VNC password: `mysecretpassword`
 
-TigerVNC is a high-performance, robust, and feature-rich VNC client available for all major platforms.
+### Recommended VNC Client: TigerVNC
+
+TigerVNC offers high performance and robust features.
 
 #### Installation
 
@@ -34,143 +47,118 @@ TigerVNC is a high-performance, robust, and feature-rich VNC client available fo
 1. Download TigerVNC from the [official website](https://tigervnc.org/downloads/)
 2. Run the installer
 3. Launch TigerVNC Viewer
-4. Enter `localhost:5900` in the VNC Server field
-5. Click Connect and enter the password
+4. Connect to `localhost:5900`
 
 **macOS:**
 ```bash
 brew install tiger-vnc
-```
-Then launch `vncviewer` and connect to `localhost:5900`
-
-**Linux:**
-
-Ubuntu/Debian:
-```bash
-sudo apt-get install tigervnc-viewer
-```
-
-Fedora:
-```bash
-sudo dnf install tigervnc
-```
-
-Arch Linux:
-```bash
-sudo pacman -S tigervnc
-```
-
-To connect using TigerVNC:
-```bash
 vncviewer localhost:5900
 ```
 
-TigerVNC Features:
-- Better performance than traditional VNC clients
-- Support for SSH tunneling
-- Advanced encryption options
-- Various compression levels
-- Custom keyboard mapping
-- Multiple monitor support
+**Linux:**
+```bash
+# Ubuntu/Debian
+sudo apt-get install tigervnc-viewer
+
+# Fedora
+sudo dnf install tigervnc
+
+# Arch Linux
+sudo pacman -S tigervnc
+
+# Connect
+vncviewer localhost:5900
+```
 
 ### Alternative VNC Clients
 
 #### Windows
-
-- [RealVNC Viewer](https://www.realvnc.com/en/connect/download/viewer/)
-- [TightVNC](https://www.tightvnc.com/download.php)
+- RealVNC Viewer
+- TightVNC
 
 #### macOS
-
-1. Open Finder
-2. Press Cmd+K or select Go > Connect to Server
-3. Enter: `vnc://localhost:5900`
-4. Enter the password when prompted
-
-Alternatively, you can use [RealVNC Viewer](https://www.realvnc.com/en/connect/download/viewer/)
+- Built-in VNC viewer: `vnc://localhost:5900`
+- RealVNC Viewer
 
 #### Linux
-
-Most Linux distributions come with built-in VNC viewers. You can use:
-
-- Remmina (GNOME)
-```bash
-remmina -c vnc://localhost:5900
-```
-
-- Vinagre
-```bash
-vinagre localhost:5900
-```
+- Remmina: `remmina -c vnc://localhost:5900`
+- Vinagre: `vinagre localhost:5900`
 
 ## Environment Details
 
 - Ubuntu 22.04 base system
 - XFCE4 desktop environment
-- Google Chrome browser installed
+- Google Chrome browser
+- Python 3.8+
 - Screen resolution: 1280x1024
+
+## Exposed Ports
+- 5900: VNC access
+- 9223: Chrome remote debugging
+- 8000: FastAPI server
 
 ## Troubleshooting
 
-### Connection Refused
+### Connection Issues
 
-If you cannot connect to the VNC server:
-
-1. Verify the container is running:
+1. Check container status:
 ```bash
 docker ps
-```
-
-2. Check the container logs:
-```bash
 docker-compose logs
 ```
 
-3. Ensure port 5900 is not in use by another application:
+2. Verify port availability:
 ```bash
 netstat -an | grep 5900
 ```
 
 ### Black Screen
-
-If you see a black screen after connecting:
-
-1. Restart the container:
 ```bash
 docker-compose restart
+docker-compose logs
 ```
 
-2. Check the supervisor logs:
+### Development Issues
+
+1. Check mounted volumes:
 ```bash
-docker-compose exec headless-browser cat /var/log/supervisor/supervisord.log
+docker-compose exec app ls -la /home/vncuser/workspace
 ```
 
-### Poor Performance
+2. Verify Python environment:
+```bash
+docker-compose exec app pip list
+```
 
-1. Reduce the color depth in your VNC viewer settings
-2. Consider using a compressed connection option if available in your VNC viewer
-3. For TigerVNC, try the following options:
-   - Use the `-quality` parameter to adjust image quality (0-9)
-   - Enable compression with `-compress` parameter
-   - Use `-encoding` parameter to specify different encodings (tight, zrle, hextile)
-4. Ensure you have a stable network connection
+3. Check FastAPI logs:
+```bash
+docker-compose exec app cat /var/log/supervisor/fastapi.log
+```
 
-## Security Considerations
+## Security Notes
 
-- The default VNC password is set to `mysecretpassword`. It's recommended to change this in production environments.
-- VNC traffic is not encrypted by default. For production use, consider setting up an SSH tunnel or VPN.
-- When using TigerVNC, you can set up SSH tunneling for secure connections:
+- Change the default VNC password for production use
+- VNC traffic is unencrypted by default
+- Use SSH tunneling for secure remote access:
 ```bash
 ssh -L 5900:localhost:5900 user@remote-host
 ```
-- The container runs with bridge networking mode for isolation.
 
-## Network Configuration
+## Performance Tips
 
-- The container uses Google DNS servers (8.8.8.8 and 8.8.4.4)
-- Bridge network mode is enabled for proper network isolation
-- Port 5900 is exposed for VNC access
+1. TigerVNC options:
+   - Quality adjustment: `-quality 0-9`
+   - Enable compression: `-compress`
+   - Encoding options: `-encoding tight|zrle|hextile`
+
+2. Resource optimization:
+   - Mount pip cache for faster package installation
+   - Use BuildKit for efficient Docker builds
 
 ## License
 
 This project is open-source and available under the MIT license.
+
+## Authors
+
+Ryan Zheng (ryan.zheng.work@gmail.com)

@@ -1,7 +1,15 @@
 #!/bin/bash
-set -ex  # Added -x for debugging
+set -ex
 
-# Enhanced debugging function
+# Install local packages
+echo "Installing local packages..."
+cd /home/vncuser/workspace/brui_core
+pip install .
+
+cd /home/vncuser/workspace/autobyteus
+pip install .
+
+# Debug info function
 debug_info() {
     echo "=== Debugging Info ==="
     echo "D-Bus Directory Contents:"
