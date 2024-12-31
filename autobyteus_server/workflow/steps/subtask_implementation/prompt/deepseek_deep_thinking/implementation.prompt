@@ -1,0 +1,156 @@
+Analyze the following context given in the [Context] section and complete the specified task given in the [Task] section.
+
+CRITICAL RULES:
+1. You MUST preserve and use the complete file paths as provided in the context, including root folder names and intermediate directories. Never truncate or modify the given file paths.
+2. All code written within `<file>` tags MUST maintain proper indentation according to the language's conventions.
+3. The content of each `<file>` must include the complete file content. Do NOT include placeholders or incomplete code sections such as comments indicating missing code (e.g., `// ... other actions can be added here as needed`). Ensure all code is fully implemented and complete.
+
+Present the final solution following a natural implementation flow. Commands and file changes should be ordered in the sequence they need to be executed, regardless of their type. Use the following format for the solution:
+
+<bash command="your_command_here" description="Brief description of why this command is necessary" />
+
+<file path="path/to/your/file">
+complete_file_content
+</file>
+
+Ensure that:
+- Bash commands and file changes are interleaved as needed in the natural sequence.
+- Each `<bash>` tag includes a `command` attribute with the command to be executed and a `description` attribute explaining why it is necessary.
+- Each `<file>` tag includes a `path` attribute with the full file path and the complete file content.
+- All code maintains proper indentation according to language conventions.
+- The content of each `<file>` must be complete and fully implemented without placeholders or comments indicating missing code sections.
+
+Example Solutions:
+
+Example 1 (Setting up a new Vue.js component with required dependencies):
+
+<bash command="npm install @vue/composition-api" description="Install Vue Composition API dependency" />
+
+<file path="src/types/todo.ts">
+export interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+</file>
+
+<bash command="npm install axios" description="Install HTTP client for API calls" />
+
+<file path="src/services/api.js">
+import axios from 'axios';
+
+const apiClient = axios.create({
+  baseURL: process.env.API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+export const userService = {
+  async getUser(id) {
+    return await apiClient.get(`/users/${id}`);
+  }
+};
+</file>
+
+<bash command="echo 'API_URL=https://api.example.com' >> .env" description="Configure API endpoint" />
+
+<file path="src/components/TodoList.vue">
+<template>
+  <div class="todo-list">
+    <h1>Todo List</h1>
+    <div v-if="loading">Loading...</div>
+    <div v-else-if="error">Error loading todos</div>
+    <div v-else>
+      <ul>
+        <li v-for="todo in todos" :key="todo.id">
+          <input type="checkbox" v-model="todo.completed">
+          <span v-text="todo.text"></span>
+        </li>
+      </ul>
+      <div class="new-todo">
+        <input v-model="newTodoText" placeholder="Add new todo">
+        <button @click="addTodo">Add</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref, onMounted } from 'vue';
+import type { Todo } from '@/types/todo';
+
+export default defineComponent({
+  name: 'TodoList',
+  setup() {
+    const todos = ref<Todo[]>([]);
+    const loading = ref(true);
+    const error = ref('');
+    const newTodoText = ref('');
+
+    const loadTodos = async () => {
+      try {
+        // Simulated data for example
+        todos.value = [
+          { id: 1, text: 'Learn Vue 3', completed: true },
+          { id: 2, text: 'Build an app', completed: false }
+        ];
+      } catch (e) {
+        error.value = 'Failed to load todos';
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    const addTodo = () => {
+      if (newTodoText.value.trim()) {
+        todos.value.push({
+          id: Date.now(),
+          text: newTodoText.value,
+          completed: false
+        });
+        newTodoText.value = '';
+      }
+    };
+
+    onMounted(loadTodos);
+
+    return {
+      todos,
+      loading,
+      error,
+      newTodoText,
+      addTodo
+    };
+  }
+});
+</script>
+
+<style scoped>
+.todo-list {
+  padding: 20px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.new-todo {
+  margin-top: 20px;
+}
+</style>
+</file>
+
+[Context]
+{{context}}
+
+[Task]
+{{requirement}}
