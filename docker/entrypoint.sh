@@ -9,6 +9,8 @@ pip install .
 cd /home/vncuser/workspace/autobyteus
 pip install .
 
+chown -R vncuser:vncuser /home/vncuser/workspace
+
 # Debug info function
 debug_info() {
     echo "=== Debugging Info ==="
