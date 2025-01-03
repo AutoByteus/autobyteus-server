@@ -47,22 +47,5 @@ done
 
 debug_info
 
-# Detect system architecture and prepare the browser command
-ARCH=$(uname -m)
-echo "Detected architecture: $ARCH"
-if [ "$ARCH" = "aarch64" ]; then
-    echo "Using Chromium for ARM64"
-    BROWSER_COMMAND="/usr/bin/chromium-browser --no-first-run --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage --no-sandbox --remote-debugging-port=9222"
-elif [ "$ARCH" = "x86_64" ]; then
-    echo "Using Google Chrome for AMD64"
-    BROWSER_COMMAND="/usr/bin/google-chrome-stable --no-first-run --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage --no-sandbox --remote-debugging-port=9222"
-else
-    echo "Unsupported architecture: $ARCH"
-    exit 1
-fi
-
-# Update supervisord configuration dynamically
-sed -i "s|BROWSER_COMMAND_PLACEHOLDER|$BROWSER_COMMAND|" /etc/supervisor/conf.d/supervisord.conf
-
 # Start supervisord
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
