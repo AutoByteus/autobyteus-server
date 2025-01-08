@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from autobyteus_server.workflow.runtime.agent_runtime import AgentRuntime
+from autobyteus_server.agent_runtime.agent_runtime import AgentRuntime
 
 @pytest.fixture
 def cleanup_agent_runtime():

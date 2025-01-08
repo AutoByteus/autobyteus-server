@@ -1,3 +1,4 @@
+
 import strawberry
 from typing import List, Optional
 from datetime import datetime
@@ -7,10 +8,12 @@ class Message:
     """GraphQL type mirroring the domain Message model"""
     message_id: Optional[str]
     role: str
-    message: str  # Changed from content to message
+    message: str
     timestamp: str
-    context_paths: Optional[List[str]]  # Included context_paths
-    original_message: Optional[str]      # Changed from original_content to original_message
+    context_paths: Optional[List[str]]
+    original_message: Optional[str]
+    token_count: Optional[int]
+    cost: Optional[float]
 
 @strawberry.type
 class StepConversation:

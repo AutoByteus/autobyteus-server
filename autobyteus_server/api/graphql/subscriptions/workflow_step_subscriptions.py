@@ -4,10 +4,10 @@ from typing import AsyncGenerator
 from autobyteus_server.api.graphql.types.step_response import StepResponse
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.api.graphql.converters import to_graphql_step_response
-from autobyteus_server.workflow.runtime.step_agent_conversation_manager import StepAgentConversationManager
+from autobyteus_server.workflow.runtime.workflow_agent_conversation_manager import WorkflowAgentConversationManager
 
 workspace_manager = WorkspaceManager()
-streaming_manager = StepAgentConversationManager()
+streaming_manager = WorkflowAgentConversationManager()
 
 @strawberry.type
 class Subscription:

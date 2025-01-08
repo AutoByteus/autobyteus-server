@@ -1,3 +1,4 @@
+
 import pytest
 from datetime import datetime
 import uuid
@@ -152,7 +153,7 @@ def test_pagination_beyond_available_pages(conversation_repo):
     assert str(uuid_obj) == conversation.step_conversation_id
 
     # Act
-    result = conversation_repo.get_conversations_by_step_name(step_name, page=999, page_size=10)
+    result = conversation_repo.get_conversations_by_step_conversation_id(step_name, page=999, page_size=10)
 
     # Assert
     assert result["total_conversations"] == 1

@@ -1,3 +1,4 @@
+
 from datetime import datetime
 from typing import List
 
@@ -25,7 +26,9 @@ class MongoDBConverter:
             timestamp=mongo_message.get('timestamp'),
             message_id=str(mongo_message.get('_id', '')),
             original_message=mongo_message.get('original_message'),
-            context_paths=mongo_message.get('context_paths', [])
+            context_paths=mongo_message.get('context_paths', []),
+            token_count=mongo_message.get('token_count'),
+            cost=mongo_message.get('cost')
         )
 
     @staticmethod
@@ -67,8 +70,11 @@ class MongoDBConverter:
                 "message": msg.message,
                 "timestamp": msg.timestamp,
                 "original_message": msg.original_message,
-                "context_paths": msg.context_paths
+                "context_paths": msg.context_paths,
+                "token_count": msg.token_count,
+                "cost": msg.cost
             } for msg in domain_conv.messages]
         )
-        mongo_conv._id = ObjectId(domain_conv.step_conversation_id)
+        if domain_conv.step_conversation_id:
+            mongo_conv._id = ObjectId(domain_conv.step_conversation_id)
         return mongo_conv

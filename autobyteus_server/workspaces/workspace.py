@@ -1,3 +1,4 @@
+
 """
 Represents a workspace containing project configurations, file exploration, and automated workflows.
 
@@ -14,6 +15,8 @@ from autobyteus_server.workspaces.setting.project_types import ProjectType
 from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
 from autobyteus_server.workspaces.workspace_tools.command_executor import CommandExecutionResult, CommandExecutor
 from autobyteus_server.codeverse.search.hackathon_search_service import HackathonSearchService
+from autobyteus_server.ai_terminal.ai_terminal import AITerminal
+
 class Workspace:
     """
     Represents a workspace containing project configurations, file exploration, and automated workflows.
@@ -48,6 +51,7 @@ class Workspace:
         self.file_explorer: FileExplorer = file_explorer
         self._workflow: AutomatedCodingWorkflow = workflow
         self._command_executor: CommandExecutor = None
+        self._ai_terminal: Optional[AITerminal] = None
         self._file_name_index: Optional[Dict[str, str]] = None  # Map from file name to file path
         self._build_file_name_index()
         self.hackathon_search_service = HackathonSearchService()  # Initialize HackathonSearchService
@@ -73,7 +77,6 @@ class Workspace:
         if self._file_name_index is None:
             self._build_file_name_index()
         return self._file_name_index
-
 
     @property
     def project_type(self) -> ProjectType:
@@ -159,6 +162,17 @@ class Workspace:
             self._command_executor = CommandExecutor(self.root_path)
         return self._command_executor
 
+    def get_ai_terminal(self) -> AITerminal:
+        """
+        Get the AI Terminal instance for this workspace.
+
+        Returns:
+            AITerminal: The AI Terminal instance associated with this workspace.
+        """
+        if self._ai_terminal is None:
+            self._ai_terminal = AITerminal(self)
+        return self._ai_terminal
+
     async def execute_command(self, command: str) -> CommandExecutionResult:
         """
         Execute a command in this workspace.
@@ -171,3 +185,18 @@ class Workspace:
         """
         executor = self.get_command_executor()
         return await executor.execute_command(command)
+
+    def close(self):
+        """
+        Close and cleanup workspace resources.
+        """
+        if self._ai_terminal:
+            self._ai_terminal.close()
+        if self._command_executor:
+            self._command_executor.close()
+
+    def __del__(self):
+        """
+        Destructor to ensure resources are cleaned up.
+        """
+        self.close()

@@ -1,3 +1,4 @@
+
 import logging
 from repository_mongodb import BaseRepository
 from bson import ObjectId
@@ -28,6 +29,8 @@ class StepConversationRepository(BaseRepository[StepConversation]):
         conversation_id: ObjectId,
         role: str,
         message: str,
+        token_count: Optional[int] = None,
+        cost: Optional[float] = None,
         original_message: Optional[str] = None,
         context_paths: Optional[List[str]] = None
     ) -> StepConversation:
@@ -38,13 +41,24 @@ class StepConversationRepository(BaseRepository[StepConversation]):
             conversation_id (ObjectId): MongoDB _id of the conversation
             role (str): Role of the message sender
             message (str): Message content
+            token_count (Optional[int]): The number of tokens used in the message
+            cost (Optional[float]): The cost associated with the token usage
             original_message (Optional[str]): Original message if applicable
             context_paths (Optional[List[str]]): List of context file paths
         """
         try:
             conversation = self.get_conversation_by_id(conversation_id)
-            conversation.add_message(role=role, message=message, original_message=original_message, context_paths=context_paths)
-            
+            conversation.add_message(
+                role=role,
+                message=message,
+                original_message=original_message,
+                context_paths=context_paths
+            )
+            # Update the token/cost for the just-added message (the last one in the list)
+            last_message = conversation.messages[-1]
+            last_message["token_count"] = token_count
+            last_message["cost"] = cost
+
             # Update the entire conversation document
             self.collection.replace_one(
                 {"_id": conversation_id},
@@ -58,6 +72,57 @@ class StepConversationRepository(BaseRepository[StepConversation]):
             raise
         except Exception as e:
             logger.error(f"Error adding message to conversation: {str(e)}")
+            raise
+
+    def update_token_usage(
+        self,
+        conversation_id: ObjectId,
+        message_id: str,
+        token_count: int,
+        cost: float
+    ) -> StepConversation:
+        """
+        Update the token count and cost fields for a specific message in the conversation.
+        
+        Args:
+            conversation_id (ObjectId): MongoDB _id of the conversation
+            message_id (str): The message ID to update
+            token_count (int): Updated token count
+            cost (float): Updated cost
+        
+        Returns:
+            StepConversation: The conversation after the update
+
+        Raises:
+            ConversationNotFoundError: If the conversation or the message is not found
+        """
+        try:
+            conversation = self.get_conversation_by_id(conversation_id)
+            message_found = False
+
+            for msg in conversation.messages:
+                # Compare with string to handle domain message_id <-> ObjectId mismatch
+                if "_id" in msg and str(msg["_id"]) == message_id:
+                    msg["token_count"] = token_count
+                    msg["cost"] = cost
+                    message_found = True
+                    break
+
+            if not message_found:
+                logger.error(f"Message with ID {message_id} not found in conversation {conversation_id}")
+                raise ConversationNotFoundError(f"Message with ID {message_id} not found in conversation {conversation_id}")
+
+            self.collection.replace_one(
+                {"_id": conversation_id},
+                conversation.to_dict(),
+                session=self.session
+            )
+            logger.info(f"Updated token usage for message {message_id} in conversation {conversation_id}")
+            return conversation
+        except ConversationNotFoundError:
+            raise
+        except Exception as e:
+            logger.error(f"Error updating token usage for message {message_id}: {str(e)}")
             raise
 
     def get_conversation_by_id(

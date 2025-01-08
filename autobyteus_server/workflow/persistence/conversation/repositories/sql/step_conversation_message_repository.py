@@ -1,3 +1,4 @@
+
 from repository_sqlalchemy import BaseRepository
 from typing import Dict, Any, List, Optional
 import json
@@ -7,9 +8,18 @@ from autobyteus_server.workflow.persistence.conversation.models.sql.conversation
 logger = logging.getLogger(__name__)
 
 class StepConversationMessageRepository(BaseRepository[StepConversationMessage]):
-    def create_message(self, step_conversation_id: int, role: str, message: str, original_message: Optional[str] = None, context_paths: Optional[List[str]] = None) -> StepConversationMessage:
+    def create_message(
+        self, 
+        step_conversation_id: int, 
+        role: str, 
+        message: str,
+        token_count: Optional[int] = None,
+        cost: Optional[float] = None,
+        original_message: Optional[str] = None, 
+        context_paths: Optional[List[str]] = None
+    ) -> StepConversationMessage:
         """
-        Create a new step conversation message.
+        Create a new step conversation message with optional token count and cost.
         """
         try:
             context_paths_json = json.dumps(context_paths) if context_paths else None
@@ -18,7 +28,9 @@ class StepConversationMessageRepository(BaseRepository[StepConversationMessage])
                 role=role,
                 message=message,
                 original_message=original_message,
-                context_paths=context_paths_json
+                context_paths=context_paths_json,
+                token_count=token_count,
+                cost=cost
             )
             return self.create(new_message)
         except Exception as e:
@@ -68,4 +80,21 @@ class StepConversationMessageRepository(BaseRepository[StepConversationMessage])
                 return False
         except Exception as e:
             logger.error(f"Error deleting message: {str(e)}")
+            raise
+
+    def update_token_usage(self, message_id: int, token_count: int, cost: float) -> Optional[StepConversationMessage]:
+        """
+        Update token count and cost for a specific message.
+        """
+        try:
+            message = self.session.query(self.model).filter_by(id=message_id).first()
+            if message:
+                message.token_count = token_count
+                message.cost = cost
+                logger.info(f"Updated token usage for message {message_id}")
+                return message
+            logger.warning(f"Message with id {message_id} not found")
+            return None
+        except Exception as e:
+            logger.error(f"Error updating token usage for message {message_id}: {str(e)}")
             raise

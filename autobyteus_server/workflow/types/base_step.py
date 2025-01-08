@@ -6,9 +6,9 @@ from autobyteus_server.workflow.utils.unique_id_generator import UniqueIDGenerat
 from autobyteus.llm.utils.llm_config import LLMConfig
 from autobyteus.events.event_emitter import EventEmitter
 from autobyteus_server.workflow.utils.prompt_template_manager import PromptTemplateManager
-from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
+from autobyteus_server.workflow.persistence.conversation.provider.persistence_proxy import PersistenceProxy
 from autobyteus.conversation.user_message import UserMessage
-from autobyteus_server.workflow.runtime.step_agent_conversation_manager import StepAgentConversationManager
+from autobyteus_server.workflow.runtime.workflow_agent_conversation_manager import WorkflowAgentConversationManager
 
 if TYPE_CHECKING:
     from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
@@ -29,7 +29,7 @@ class BaseStep(ABC, EventEmitter):
         self.prompt_dir = prompt_dir
         self.persistence_proxy = PersistenceProxy()
         self.tools = []
-        self.agent_conversation_manager = StepAgentConversationManager()
+        self.agent_conversation_manager = WorkflowAgentConversationManager()
 
     def get_prompt_template(self, llm_model: str) -> Optional[PromptTemplate]:
         return self.prompt_template_manager.get_template(self.name, llm_model, self.prompt_dir)
@@ -81,24 +81,19 @@ class BaseStep(ABC, EventEmitter):
         Returns:
             str: The conversation ID
         """
-        context, image_file_paths = self._construct_context(context_file_paths)
+        context, image_file_paths, text_file_paths = self._construct_context(context_file_paths)
 
         if not conversation_id:
             # Start of a new conversation
             initial_prompt = self.construct_initial_prompt(requirement, context, llm_model)
-            user_message = UserMessage(content=initial_prompt, file_paths=image_file_paths)
-
-            new_conversation = self.persistence_proxy.store_message(
-                step_name=self.name,
-                role='user',
-                message=initial_prompt,
-                original_message=requirement,
-                context_paths=[file['path'] for file in context_file_paths]
+            user_message = UserMessage(
+                content=initial_prompt,
+                file_paths=image_file_paths,
+                original_requirement=requirement,
+                context_file_paths=text_file_paths
             )
-            conversation_id = new_conversation.step_conversation_id
 
-            self.agent_conversation_manager.create_conversation(
-                conversation_id=conversation_id,
+            agent_conversation = self.agent_conversation_manager.create_conversation(
                 step_name=self.name,
                 workspace_id=self.workflow.workspace.workspace_id,
                 step_id=self.id,
@@ -106,27 +101,37 @@ class BaseStep(ABC, EventEmitter):
                 initial_message=user_message,
                 tools=self.tools
             )
+            conversation_id = agent_conversation.conversation_id
+
         else:
             # Continue existing conversation
             prompt = self.construct_subsequent_prompt(requirement, context)
-            user_message = UserMessage(content=prompt, file_paths=image_file_paths)
-            self.agent_conversation_manager.send_message(conversation_id, user_message)
-
-            self.persistence_proxy.store_message(
-                step_name=self.name,
-                role='user',
-                message=prompt,
-                original_message=requirement,
-                context_paths=[file['path'] for file in context_file_paths],
-                conversation_id=conversation_id
+            user_message = UserMessage(
+                content=prompt,
+                file_paths=image_file_paths,
+                original_requirement=requirement,
+                context_file_paths=text_file_paths
             )
+            self.agent_conversation_manager.send_message(conversation_id, user_message)
 
         return conversation_id
 
-    def _construct_context(self, context_file_paths: List[Dict[str, str]]) -> Tuple[str, List[str]]:
-        """Constructs context string and list of image paths from provided file paths."""
+    def _construct_context(self, context_file_paths: List[Dict[str, str]]) -> Tuple[str, List[str], List[str]]:
+        """
+        Constructs context string, list of image paths, and list of text file paths from provided file paths.
+
+        Args:
+            context_file_paths (List[Dict[str, str]]): List of context file paths
+
+        Returns:
+            Tuple[str, List[str], List[str]]: A tuple containing:
+                - context: The constructed context string
+                - image_file_paths: List of image file paths
+                - text_file_paths: List of text file paths
+        """
         context = ""
         image_file_paths = []
+        text_file_paths = []
         root_path = self.workflow.workspace.root_path
 
         for file in context_file_paths:
@@ -140,10 +145,11 @@ class BaseStep(ABC, EventEmitter):
                 with open(full_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                     context += f"File: {path}\n{content}\n\n"
+                text_file_paths.append(full_path)
             else:
                 raise ValueError(f"Unsupported file type: {file_type} for file: {path}")
 
-        return context, image_file_paths
+        return context, image_file_paths, text_file_paths
 
     def close_conversation(self, conversation_id: str) -> None:
         """Closes a conversation and cleans up associated resources."""

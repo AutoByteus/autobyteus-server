@@ -9,7 +9,7 @@ from repository_sqlalchemy.session_management import get_engine
 from repository_sqlalchemy import Base, transaction
 from dotenv import load_dotenv
 import sys
-from autobyteus_server.workflow.runtime.agent_runtime import AgentRuntime
+from autobyteus_server.agent_runtime.agent_runtime import AgentRuntime
 
 # Define the path for the SQLite test database
 TEST_DB_DIR = os.path.join(os.path.dirname(__file__), 'data')

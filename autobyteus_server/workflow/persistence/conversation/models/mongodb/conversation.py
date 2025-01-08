@@ -1,3 +1,4 @@
+
 from repository_mongodb import BaseModel
 from bson import ObjectId
 from datetime import datetime
@@ -13,13 +14,18 @@ class Message:
         message: str,
         timestamp: datetime = None,
         original_message: Optional[str] = None,
-        context_paths: Optional[List[str]] = None
+        context_paths: Optional[List[str]] = None,
+        token_count: Optional[int] = None,
+        cost: Optional[float] = None
     ):
         self.role = role
         self.message = message
         self.timestamp = timestamp or datetime.utcnow()
         self.original_message = original_message
         self.context_paths = context_paths or []
+        # New fields for usage tracking
+        self.token_count = token_count
+        self.cost = cost
 
     def to_dict(self) -> dict:
         """Convert message to dictionary representation."""
@@ -28,7 +34,9 @@ class Message:
             "message": self.message,
             "timestamp": self.timestamp,
             "original_message": self.original_message,
-            "context_paths": self.context_paths
+            "context_paths": self.context_paths,
+            "token_count": self.token_count,
+            "cost": self.cost
         }
 
     @classmethod
@@ -46,7 +54,9 @@ class Message:
             message=data["message"],
             timestamp=timestamp,
             original_message=data.get("original_message"),
-            context_paths=data.get("context_paths", [])
+            context_paths=data.get("context_paths", []),
+            token_count=data.get("token_count"),
+            cost=data.get("cost")
         )
 
 
@@ -93,7 +103,12 @@ class StepConversation(BaseModel):
         Returns:
             Message: The newly created message
         """
-        new_message = Message(role=role, message=message, original_message=original_message, context_paths=context_paths)
+        new_message = Message(
+            role=role,
+            message=message,
+            original_message=original_message,
+            context_paths=context_paths
+        )
         message_dict = new_message.to_dict()
         self.messages.append(message_dict)
         return new_message

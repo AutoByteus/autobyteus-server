@@ -1,8 +1,9 @@
+
 import pytest
 from bson import ObjectId
 from datetime import datetime
 from autobyteus_server.workflow.persistence.conversation.models.mongodb.conversation import StepConversation, Message
-from autobyteus_server.workflow.persistence.conversation.repositories.mongodb.step_conversation_repository import StepConversationRepository
+from autobyteus_server.workflow.persistence.conversation.repositories.mongodb.step_conversation_repository import ConversationNotFoundError, StepConversationRepository
 from repository_mongodb.transaction_management import transaction
 import json
 
@@ -151,6 +152,8 @@ def test_add_message_to_conversation(conversation_repo):
     message_content = "Hello, this is a test message."
     original_message = "Original test message."
     context_paths = ["path/to/context1", "path/to/context2"]
+    token_count = 50
+    cost = 0.05
 
     # Act
     updated_conversation = conversation_repo.add_message(
@@ -158,7 +161,9 @@ def test_add_message_to_conversation(conversation_repo):
         role=role,
         message=message_content,
         original_message=original_message,
-        context_paths=context_paths
+        context_paths=context_paths,
+        token_count=token_count,
+        cost=cost
     )
 
     # Assert
@@ -169,6 +174,8 @@ def test_add_message_to_conversation(conversation_repo):
     assert last_message["message"] == message_content
     assert last_message["original_message"] == original_message
     assert last_message["context_paths"] == context_paths
+    assert last_message["token_count"] == token_count
+    assert last_message["cost"] == cost
     assert isinstance(last_message["timestamp"], datetime)
 
 def test_add_message_to_nonexistent_conversation(conversation_repo):
@@ -177,16 +184,21 @@ def test_add_message_to_nonexistent_conversation(conversation_repo):
     nonexistent_id = ObjectId()
     role = "user"
     message_content = "This message should not be added."
+    token_count = 30
+    cost = 0.03
 
     # Act
-    result = conversation_repo.add_message(
-        conversation_id=nonexistent_id,
-        role=role,
-        message=message_content
-    )
+    with pytest.raises(ConversationNotFoundError):
+        conversation_repo.add_message(
+            conversation_id=nonexistent_id,
+            role=role,
+            message=message_content,
+            token_count=token_count,
+            cost=cost
+        )
 
     # Assert
-    assert result is None
+    # Exception is expected, so no further assertions
 
 def test_get_conversation_with_pagination(conversation_repo):
     """Test retrieving a conversation with message pagination."""
@@ -201,7 +213,9 @@ def test_get_conversation_with_pagination(conversation_repo):
         conversation_repo.add_message(
             conversation_id=conversation_id,
             role="user",
-            message=f"Message {i+1}"
+            message=f"Message {i+1}",
+            token_count=20 + i,
+            cost=0.02 * (i+1)
         )
 
     # Act
@@ -213,6 +227,9 @@ def test_get_conversation_with_pagination(conversation_repo):
     expected_messages = [f"Message 6", f"Message 7", f"Message 8"]
     actual_messages = [msg["message"] for msg in retrieved_conversation.messages]
     assert actual_messages == expected_messages
+    for i, msg in enumerate(retrieved_conversation.messages, start=6):
+        assert msg["token_count"] == 20 + i - 1
+        assert msg["cost"] == 0.02 * i
 
 def test_concurrent_conversation_creation(conversation_repo):
     """Test creating multiple conversations concurrently."""
@@ -253,8 +270,8 @@ def test_delete_conversation(conversation_repo):
 
     # Assert
     assert result.deleted_count == 1
-    retrieved = conversation_repo.get_conversation_by_id(conversation_id)
-    assert retrieved is None
+    with pytest.raises(ConversationNotFoundError):
+        conversation_repo.get_conversation_by_id(conversation_id)
 
 def test_update_conversation_step_name(conversation_repo):
     """Test updating the step name of an existing conversation."""
@@ -284,9 +301,9 @@ def test_add_multiple_messages(conversation_repo):
     conversation = conversation_repo.create_conversation(step_name)
     conversation_id = conversation._id
     messages = [
-        {"role": "user", "message": "First message"},
-        {"role": "assistant", "message": "Second message"},
-        {"role": "user", "message": "Third message"}
+        {"role": "user", "message": "First message", "token_count": 10, "cost": 0.01},
+        {"role": "assistant", "message": "Second message", "token_count": 15, "cost": 0.015},
+        {"role": "user", "message": "Third message", "token_count": 20, "cost": 0.02}
     ]
 
     # Act
@@ -294,7 +311,9 @@ def test_add_multiple_messages(conversation_repo):
         conversation_repo.add_message(
             conversation_id=conversation_id,
             role=msg["role"],
-            message=msg["message"]
+            message=msg["message"],
+            token_count=msg["token_count"],
+            cost=msg["cost"]
         )
     retrieved_conversation = conversation_repo.get_conversation_by_id(conversation_id)
 
@@ -305,6 +324,8 @@ def test_add_multiple_messages(conversation_repo):
         retrieved_msg = retrieved_conversation.messages[i]
         assert retrieved_msg["role"] == msg["role"]
         assert retrieved_msg["message"] == msg["message"]
+        assert retrieved_msg["token_count"] == msg["token_count"]
+        assert retrieved_msg["cost"] == msg["cost"]
 
 def test_message_timestamp(conversation_repo):
     """Test that message timestamps are correctly recorded."""
@@ -318,7 +339,9 @@ def test_message_timestamp(conversation_repo):
     conversation_repo.add_message(
         conversation_id=conversation_id,
         role="user",
-        message="Timestamp test message"
+        message="Timestamp test message",
+        token_count=25,
+        cost=0.025
     )
     after_time = datetime.utcnow()
     retrieved_conversation = conversation_repo.get_conversation_by_id(conversation_id)
@@ -330,7 +353,7 @@ def test_message_timestamp(conversation_repo):
     assert "timestamp" in message
     assert isinstance(message["timestamp"], datetime), f"Expected timestamp to be datetime, got {type(message['timestamp'])}"
     assert before_time <= message["timestamp"] <= after_time, f"Timestamp {message['timestamp']} not within {before_time} and {after_time}"
-    
+
 def test_context_paths_in_message(conversation_repo):
     """Test that context paths are correctly stored in messages."""
     # Arrange
@@ -344,13 +367,17 @@ def test_context_paths_in_message(conversation_repo):
         conversation_id=conversation_id,
         role="user",
         message="Message with context paths",
-        context_paths=context_paths
+        context_paths=context_paths,
+        token_count=40,
+        cost=0.04
     )
     retrieved_conversation = conversation_repo.get_conversation_by_id(conversation_id)
     message = retrieved_conversation.messages[-1]
 
     # Assert
     assert message["context_paths"] == context_paths
+    assert message["token_count"] == 40
+    assert message["cost"] == 0.04
 
 def test_original_message_field(conversation_repo):
     """Test that the original_message field is correctly stored."""
@@ -365,10 +392,69 @@ def test_original_message_field(conversation_repo):
         conversation_id=conversation_id,
         role="user",
         message="Reply to original message.",
-        original_message=original_message
+        original_message=original_message,
+        token_count=35,
+        cost=0.035
     )
     retrieved_conversation = conversation_repo.get_conversation_by_id(conversation_id)
     message = retrieved_conversation.messages[-1]
 
     # Assert
     assert message["original_message"] == original_message
+    assert message["token_count"] == 35
+    assert message["cost"] == 0.035
+
+def test_update_token_usage_successfully(conversation_repo):
+    """Test successful update of token usage using update_token_usage method."""
+    # Arrange
+    step_name = "update_token_usage_conversation"
+    conversation = conversation_repo.create_conversation(step_name)
+    conversation_id = conversation._id
+    role = "user"
+    message_content = "Initial message."
+    token_count = 50
+    cost = 0.05
+
+    message = conversation_repo.add_message(
+        conversation_id=conversation_id,
+        role=role,
+        message=message_content,
+        token_count=token_count,
+        cost=cost
+    )
+
+    new_token_count = 100
+    new_cost = 0.10
+
+    # Act
+    updated_conversation = conversation_repo.update_token_usage(
+        conversation_id=conversation_id,
+        message_id=message.id,
+        token_count=new_token_count,
+        cost=new_cost
+    )
+
+    # Assert
+    assert updated_conversation is not None
+    updated_message = next((msg for msg in updated_conversation.messages if msg["id"] == message.id), None)
+    assert updated_message is not None
+    assert updated_message["token_count"] == new_token_count
+    assert updated_message["cost"] == new_cost
+
+def test_update_token_usage_nonexistent_message(conversation_repo):
+    """Test update_token_usage behavior with non-existent message ID."""
+    # Arrange
+    step_name = "update_nonexistent_message_conversation"
+    conversation = conversation_repo.create_conversation(step_name)
+    conversation_id = conversation._id
+
+    # Act
+    updated_conversation = conversation_repo.update_token_usage(
+        conversation_id=conversation_id,
+        message_id=999,
+        token_count=100,
+        cost=0.10
+    )
+
+    # Assert
+    assert updated_conversation is None

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, DateTime, Integer, ForeignKey
+
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -30,5 +31,4 @@ class StepConversation(Base):
             step_name=data["step_name"],
             created_at=data["created_at"]
         )
-        # Messages can be added separately
         return conversation

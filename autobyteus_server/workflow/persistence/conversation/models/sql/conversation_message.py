@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Text
+
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Text, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from repository_sqlalchemy import Base
@@ -14,6 +15,10 @@ class StepConversationMessage(Base):
     context_paths = Column(Text, nullable=True)  # JSON serialized list
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
 
+    # New fields for usage/cost
+    token_count = Column(Integer, nullable=True)
+    cost = Column(Float, nullable=True)
+
     conversation = relationship("StepConversation", back_populates="messages")
 
     def to_dict(self):
@@ -24,7 +29,9 @@ class StepConversationMessage(Base):
             "message": self.message,
             "original_message": self.original_message,
             "context_paths": self.context_paths,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
+            "token_count": self.token_count,
+            "cost": self.cost
         }
 
     @classmethod
@@ -35,5 +42,7 @@ class StepConversationMessage(Base):
             message=data["message"],
             original_message=data.get("original_message"),
             context_paths=data.get("context_paths"),
-            timestamp=data["timestamp"]
+            timestamp=data["timestamp"],
+            token_count=data.get("token_count"),
+            cost=data.get("cost")
         )

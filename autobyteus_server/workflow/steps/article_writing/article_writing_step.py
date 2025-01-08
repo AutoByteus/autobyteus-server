@@ -3,14 +3,14 @@ import asyncio
 from typing import List, Optional, Dict, Tuple
 import uuid
 from autobyteus_server.workflow.types.base_step import BaseStep
-from autobyteus.agent.agent import StandaloneAgent
+from autobyteus.agent.agent import Agent
 from autobyteus.llm.base_llm import BaseLLM
 from autobyteus.llm.llm_factory import LLMFactory
 from autobyteus.events.event_types import EventType
 from autobyteus.conversation.user_message import UserMessage
 from autobyteus_server.workflow.persistence.conversation.domain.models import Message as PersistenceMessage
 from autobyteus_server.workflow.persistence.conversation.domain.models import StepConversation
-from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
+from autobyteus_server.workflow.persistence.conversation.provider.persistence_proxy import PersistenceProxy
 
 class ArticleWritingStep(BaseStep):
     name = "article_writing"
@@ -20,7 +20,7 @@ class ArticleWritingStep(BaseStep):
         prompt_dir = os.path.join(current_dir, "prompt")
         super().__init__(workflow, prompt_dir)
         self.tools = []  # Add more tools as needed
-        self.agents: Dict[str, StandaloneAgent] = {}  # Changed to handle multiple agents
+        self.agents: Dict[str, Agent] = {}  # Changed to handle multiple agents
         self.response_queues: Dict[str, asyncio.Queue] = {}  # Queues per conversation
 
     def init_response_queue(self, conversation_id: str):
@@ -125,9 +125,9 @@ class ArticleWritingStep(BaseStep):
 
         return context, image_file_paths
 
-    def _create_agent(self, llm: BaseLLM, initial_user_message: UserMessage, conversation_id: str) -> StandaloneAgent:
+    def _create_agent(self, llm: BaseLLM, initial_user_message: UserMessage, conversation_id: str) -> Agent:
         agent_id = f"article_writing_{uuid.uuid4()}"
-        return StandaloneAgent(
+        return Agent(
             role=self.name,
             llm=llm,
             tools=self.tools,

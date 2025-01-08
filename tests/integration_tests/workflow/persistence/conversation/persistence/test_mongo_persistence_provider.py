@@ -1,5 +1,6 @@
+
 import pytest
-from autobyteus_server.workflow.persistence.conversation.persistence.mongo_persistence_provider import MongoPersistenceProvider
+from autobyteus_server.workflow.persistence.conversation.provider.mongo_persistence_provider import MongoPersistenceProvider
 from autobyteus_server.workflow.persistence.conversation.domain.models import StepConversation, Message
 from datetime import datetime
 
@@ -188,12 +189,12 @@ def test_multiple_messages_in_conversation(mongo_persistence_provider, sample_co
     role1 = "user"
     message1 = "First message"
     original_message1 = "Original first message"
-    context_paths1 = ["/path/to/first"]
+    context_paths1 = ["/path/to/context1", "/path/to/context2"]
 
     role2 = "assistant"
     message2 = "Second message"
     original_message2 = "Original second message"
-    context_paths2 = ["/path/to/second"]
+    context_paths2 = ["/path/to/context3"]
 
     # Store first message
     step_conversation_id = sample_conversation.step_conversation_id
@@ -236,3 +237,115 @@ def test_multiple_messages_in_conversation(mongo_persistence_provider, sample_co
     assert msg2.original_message == original_message2
     assert msg2.context_paths == context_paths2
     assert isinstance(msg2.timestamp, datetime)
+
+def test_update_last_user_message_usage_success(mongo_persistence_provider, sample_conversation):
+    """Test successfully updating the token count and cost for the last user message."""
+    step_name = sample_conversation.step_name
+    role = "user"
+    message = "User message to update"
+    token_count = 10
+    cost = 0.01
+
+    # Store initial message
+    mongo_persistence_provider.store_message(
+        step_name,
+        role,
+        message,
+        token_count=token_count,
+        cost=cost,
+        step_conversation_id=sample_conversation.step_conversation_id
+    )
+
+    # Update the last user message
+    new_token_count = 20
+    new_cost = 0.02
+    updated_conversation = mongo_persistence_provider.update_last_user_message_usage(
+        step_conversation_id=sample_conversation.step_conversation_id,
+        token_count=new_token_count,
+        cost=new_cost
+    )
+
+    # Verify the update
+    assert len(updated_conversation.messages) == 1
+    msg = updated_conversation.messages[0]
+    assert msg.token_count == new_token_count
+    assert msg.cost == new_cost
+
+def test_update_last_user_message_usage_no_user_message(mongo_persistence_provider):
+    """Test updating token usage when there are no user messages."""
+    step_name = "mongo_no_user_message_step"
+    conv = mongo_persistence_provider.create_conversation(step_name)
+    step_conversation_id = conv.step_conversation_id
+
+    # Store a message with role 'assistant'
+    mongo_persistence_provider.store_message(
+        step_name,
+        "assistant",
+        "Assistant message",
+        step_conversation_id=step_conversation_id
+    )
+
+    # Attempt to update the last user message, which does not exist
+    with pytest.raises(ValueError) as exc_info:
+        mongo_persistence_provider.update_last_user_message_usage(
+            step_conversation_id=step_conversation_id,
+            token_count=15,
+            cost=0.015
+        )
+    assert "No user message found in the conversation to update token usage." in str(exc_info.value)
+
+def test_update_last_user_message_usage_negative_values(mongo_persistence_provider, sample_conversation):
+    """Test updating token usage with negative token count and cost."""
+    step_name = sample_conversation.step_name
+    role = "user"
+    message = "User message with negative values"
+
+    # Store initial message
+    mongo_persistence_provider.store_message(
+        step_name,
+        role,
+        message,
+        step_conversation_id=sample_conversation.step_conversation_id
+    )
+
+    # Attempt to update with negative token_count
+    with pytest.raises(ValueError) as exc_info:
+        mongo_persistence_provider.update_last_user_message_usage(
+            step_conversation_id=sample_conversation.step_conversation_id,
+            token_count=-5,
+            cost=0.01
+        )
+    assert "token_count cannot be negative" in str(exc_info.value)
+
+    # Attempt to update with negative cost
+    with pytest.raises(ValueError) as exc_info:
+        mongo_persistence_provider.update_last_user_message_usage(
+            step_conversation_id=sample_conversation.step_conversation_id,
+            token_count=10,
+            cost=-0.01
+        )
+    assert "cost cannot be negative" in str(exc_info.value)
+
+def test_update_last_user_message_usage_invalid_conversation_id(mongo_persistence_provider):
+    """Test updating token usage with an invalid conversation ID format."""
+    invalid_conversation_id = "invalid_id"
+
+    with pytest.raises(ValueError) as exc_info:
+        mongo_persistence_provider.update_last_user_message_usage(
+            step_conversation_id=invalid_conversation_id,
+            token_count=10,
+            cost=0.01
+        )
+    assert f"Invalid step_conversation_id format: {invalid_conversation_id}" in str(exc_info.value)
+
+def test_update_last_user_message_usage_nonexistent_conversation(mongo_persistence_provider):
+    """Test updating token usage for a non-existent conversation."""
+    nonexistent_conversation_id = "507f1f77bcf86cd799439011"  # Example ObjectId
+
+    with pytest.raises(ConversationNotFoundError) as exc_info:
+        mongo_persistence_provider.update_last_user_message_usage(
+            step_conversation_id=nonexistent_conversation_id,
+            token_count=10,
+            cost=0.01
+        )
+    assert f"Conversation with ID {nonexistent_conversation_id} not found" in str(exc_info.value)

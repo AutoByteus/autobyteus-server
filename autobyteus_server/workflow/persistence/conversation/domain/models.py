@@ -1,3 +1,4 @@
+
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional, TypeVar, Generic
@@ -9,11 +10,13 @@ class Message:
     Provides a persistence-agnostic representation of messages.
     """
     role: str
-    message: str  # Changed from content to message
+    message: str
     timestamp: datetime
     message_id: Optional[str] = None
-    original_message: Optional[str] = None  # Changed from original_content to original_message
-    context_paths: Optional[List[str]] = None  # Included context_paths
+    original_message: Optional[str] = None
+    context_paths: Optional[List[str]] = None
+    token_count: Optional[int] = None
+    cost: Optional[float] = None
 
 @dataclass
 class StepConversation:

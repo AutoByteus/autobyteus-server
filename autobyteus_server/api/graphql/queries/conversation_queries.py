@@ -2,7 +2,7 @@ import strawberry
 from typing import List
 from autobyteus_server.api.graphql.types.conversation_types import ConversationHistory
 from autobyteus_server.api.graphql.converters.conversation_converters import ConversationHistoryConverter
-from autobyteus_server.workflow.persistence.conversation.persistence.persistence_proxy import PersistenceProxy
+from autobyteus_server.workflow.persistence.conversation.provider.persistence_proxy import PersistenceProxy
 
 persistence_proxy = PersistenceProxy()
 
