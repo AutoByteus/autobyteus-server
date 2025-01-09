@@ -62,18 +62,19 @@ class PersistenceProxy(PersistenceProvider):
             logger.error(f"Failed to initialize {provider_type} provider: {str(e)}")
             raise
 
-    def create_conversation(self, step_name: str) -> StepConversation:
+    def create_conversation(self, step_name: str, llm_model: Optional[str] = None) -> StepConversation:
         """
-        Create a new empty conversation for the step.
+        Create a new empty conversation for the step with optional llm_model.
         
         Args:
             step_name: Name of the workflow step
+            llm_model: Optional LLM model for the conversation
             
         Returns:
             StepConversation: Newly created conversation
         """
         try:
-            return self.provider.create_conversation(step_name)
+            return self.provider.create_conversation(step_name, llm_model)
         except Exception as e:
             logger.error(f"Error creating step conversation: {str(e)}")
             raise

@@ -21,10 +21,10 @@ class MongoPersistenceProvider(PersistenceProvider):
         self.converter = MongoDBConverter()
         self.current_conversations = {}  # Stores domain models instead of MongoDB models
 
-    def create_conversation(self, step_name: str) -> StepConversation:
-        """Create a new empty conversation."""
+    def create_conversation(self, step_name: str, llm_model: Optional[str] = None) -> StepConversation:
+        """Create a new empty conversation with optional llm_model."""
         try:
-            mongo_conversation = self.conversation_repository.create_conversation(step_name)
+            mongo_conversation = self.conversation_repository.create_conversation(step_name, llm_model)
             domain_conversation = self.converter.to_domain_conversation(mongo_conversation, [])
             step_conversation_id = domain_conversation.step_conversation_id
             self.current_conversations[step_conversation_id] = domain_conversation

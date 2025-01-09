@@ -1,9 +1,10 @@
-
 import logging
 from bson import ObjectId
 from repository_mongodb import BaseRepository
-from typing import List
+from typing import List, Optional
 from datetime import datetime
+from autobyteus_server.search.converters.mongo_search_query_converter import MongoSearchQueryConverter
+from autobyteus_server.search.search_criteria import SearchCriterion
 from autobyteus_server.token_usage.models.mongodb.token_usage_record import MongoTokenUsageRecord
 
 logger = logging.getLogger(__name__)
@@ -11,22 +12,24 @@ logger = logging.getLogger(__name__)
 class MongoTokenUsageRecordRepository(BaseRepository[MongoTokenUsageRecord]):
     def create_token_usage_record(
         self,
-        conversation_id: str,         # Updated parameter
-        conversation_type: str,       # New parameter
+        conversation_id: str,
+        conversation_type: str,
         role: str,
         token_count: int,
-        cost: float
+        cost: float,
+        llm_model: Optional[str] = None
     ) -> MongoTokenUsageRecord:
         """
         Create and insert a new token usage record.
         """
         try:
             record = MongoTokenUsageRecord(
-                conversation_id=conversation_id,          # Updated field
-                conversation_type=conversation_type,      # Initialize new attribute
+                conversation_id=conversation_id,
+                conversation_type=conversation_type,
                 role=role,
                 token_count=token_count,
-                cost=cost
+                cost=cost,
+                llm_model=llm_model
             )
             result = self.collection.insert_one(record.to_dict(), session=self.session)
             record._id = result.inserted_id
@@ -63,25 +66,39 @@ class MongoTokenUsageRecordRepository(BaseRepository[MongoTokenUsageRecord]):
             logger.error(f"Error calculating total cost in period: {str(e)}")
             raise
 
-    def get_usage_records_by_conversation_type(self, conversation_type: str) -> List[MongoTokenUsageRecord]:
+    def search_records(
+        self,
+        criteria: List[SearchCriterion]
+    ) -> List[MongoTokenUsageRecord]:
+        converter = MongoSearchQueryConverter(
+            collection=self.collection,
+            session=self.session,
+            model_class=self.model
+        )
+        cursor = converter.apply_criteria(criteria)
+        return [self.model.from_dict(doc) for doc in cursor]
+
+    def get_usage_records_in_period(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        llm_model: Optional[str] = None
+    ) -> List[MongoTokenUsageRecord]:
         """
-        Retrieve all usage records by conversation type.
+        Retrieve usage records within a specified time range,
+        optionally filtering by llm_model.
         """
         try:
-            data = self.collection.find({"conversation_type": conversation_type}, session=self.session)
+            query = {
+                "created_at": {
+                    "$gte": start_date,
+                    "$lte": end_date
+                }
+            }
+            if llm_model:
+                query["llm_model"] = llm_model
+            data = self.collection.find(query, session=self.session)
             return [MongoTokenUsageRecord.from_dict(doc) for doc in data]
         except Exception as e:
-            logger.error(f"Error retrieving token usage records for conversation type {conversation_type}: {str(e)}")
-            raise
-
-    def get_all_usage_records(self, page: int, page_size: int) -> List[MongoTokenUsageRecord]:
-        """
-        Retrieve all usage records with pagination.
-        """
-        try:
-            skip_count = (page - 1) * page_size
-            cursor = self.collection.find().skip(skip_count).limit(page_size).sort("created_at", 1)
-            return [MongoTokenUsageRecord.from_dict(doc) for doc in cursor]
-        except Exception as e:
-            logger.error(f"Error retrieving all token usage records: {str(e)}")
+            logger.error(f"Error retrieving token usage records in period: {str(e)}")
             raise

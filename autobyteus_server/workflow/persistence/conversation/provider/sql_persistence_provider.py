@@ -21,10 +21,10 @@ class SqlPersistenceProvider(PersistenceProvider):
         self.converter = SQLConverter()
         self.current_conversations = {}  # Handles multiple conversations
 
-    def create_conversation(self, step_name: str) -> StepConversation:
-        """Create a new empty conversation."""
+    def create_conversation(self, step_name: str, llm_model: Optional[str] = None) -> StepConversation:
+        """Create a new empty conversation with optional llm_model."""
         try:
-            sql_conversation = self.conversation_repository.create_step_conversation(step_name)
+            sql_conversation = self.conversation_repository.create_step_conversation(step_name, llm_model)
             self.current_conversations[sql_conversation.step_conversation_id] = sql_conversation
             return self.converter.to_domain_conversation(sql_conversation, [])
         except Exception as e:

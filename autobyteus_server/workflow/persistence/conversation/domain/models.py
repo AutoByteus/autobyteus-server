@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional, TypeVar, Generic
@@ -28,6 +27,7 @@ class StepConversation:
     step_name: str
     created_at: datetime
     messages: List[Message]
+    llm_model: Optional[str] = None  # Added field for LLM model
 
 T = TypeVar('T')
 

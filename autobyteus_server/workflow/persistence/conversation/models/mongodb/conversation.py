@@ -1,9 +1,7 @@
-
 from repository_mongodb import BaseModel
 from bson import ObjectId
 from datetime import datetime
 from typing import List, Dict, Optional
-
 
 class Message:
     """Embedded message schema for conversations."""
@@ -23,7 +21,6 @@ class Message:
         self.timestamp = timestamp or datetime.utcnow()
         self.original_message = original_message
         self.context_paths = context_paths or []
-        # New fields for usage tracking
         self.token_count = token_count
         self.cost = cost
 
@@ -59,19 +56,20 @@ class Message:
             cost=data.get("cost")
         )
 
-
 class StepConversation(BaseModel):
     __collection_name__ = "step_conversations"
 
     step_name: str
     created_at: datetime
     messages: List[Dict]  # List of Message dictionaries
+    llm_model: Optional[str]  # Added field for LLM model
 
     def __init__(
         self,
         step_name: str,
         created_at: datetime = None,
         messages: List[Dict] = None,
+        llm_model: Optional[str] = None,
         **kwargs
     ):
         """
@@ -81,14 +79,15 @@ class StepConversation(BaseModel):
             step_name (str): Name of the step
             created_at (datetime, optional): Creation timestamp
             messages (List[Dict], optional): List of message dictionaries
+            llm_model (Optional[str]): LLM model used in this conversation
         """
         super().__init__(
             step_name=step_name,
             created_at=created_at or datetime.utcnow(),
             messages=messages or [],
+            llm_model=llm_model,
             **kwargs
         )
-        # Do not initialize _id here; let MongoDB handle it
 
     def add_message(self, role: str, message: str, original_message: Optional[str] = None, context_paths: Optional[List[str]] = None) -> Message:
         """
@@ -132,7 +131,8 @@ class StepConversation(BaseModel):
         data = {
             "step_name": self.step_name,
             "created_at": self.created_at,
-            "messages": self.messages
+            "messages": self.messages,
+            "llm_model": self.llm_model
         }
         if hasattr(self, '_id') and self._id is not None:
             data["_id"] = self._id
@@ -157,7 +157,8 @@ class StepConversation(BaseModel):
             step_name=data.get("step_name"),
             created_at=data.get("created_at"),
             messages=messages_dicts,
-            **{k: v for k, v in data.items() if k not in {"_id", "step_name", "created_at", "messages"}}
+            llm_model=data.get("llm_model"),
+            **{k: v for k, v in data.items() if k not in {"_id", "step_name", "created_at", "messages", "llm_model"}}
         )
         if "_id" in data:
             conversation._id = data["_id"]

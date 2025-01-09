@@ -1,5 +1,4 @@
-
-from typing import List
+from typing import List, Optional
 from autobyteus_server.token_usage.domain.token_usage_record import TokenUsageRecord
 from autobyteus_server.token_usage.models.sql.token_usage_record import TokenUsageRecord as SQLTokenUsageRecord
 import uuid
@@ -15,7 +14,8 @@ class SQLConverter:
             token_count=sql_record.token_count,
             cost=sql_record.cost,
             created_at=sql_record.created_at,
-            token_usage_record_id=sql_record.usage_record_id
+            token_usage_record_id=sql_record.usage_record_id,
+            llm_model=sql_record.llm_model
         )
 
     def to_sql_model(self, domain_record: TokenUsageRecord) -> SQLTokenUsageRecord:
@@ -27,7 +27,8 @@ class SQLConverter:
             role=domain_record.role,
             token_count=domain_record.token_count,
             cost=domain_record.cost,
-            created_at=domain_record.created_at or datetime.utcnow()
+            created_at=domain_record.created_at or datetime.utcnow(),
+            llm_model=domain_record.llm_model
         )
 
     def to_domain_models(self, sql_records: List[SQLTokenUsageRecord]) -> List[TokenUsageRecord]:

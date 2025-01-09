@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from typing import List
 
@@ -48,7 +47,8 @@ class MongoDBConverter:
             step_conversation_id=str(mongo_conv._id),  # Map MongoDB's _id to domain's step_conversation_id
             step_name=mongo_conv.step_name,
             created_at=mongo_conv.created_at,
-            messages=domain_messages
+            messages=domain_messages,
+            llm_model=getattr(mongo_conv, 'llm_model', None)  # Map llm_model if present
         )
     
     @staticmethod
@@ -73,7 +73,8 @@ class MongoDBConverter:
                 "context_paths": msg.context_paths,
                 "token_count": msg.token_count,
                 "cost": msg.cost
-            } for msg in domain_conv.messages]
+            } for msg in domain_conv.messages],
+            llm_model=domain_conv.llm_model  # Include llm_model in MongoDB model
         )
         if domain_conv.step_conversation_id:
             mongo_conv._id = ObjectId(domain_conv.step_conversation_id)

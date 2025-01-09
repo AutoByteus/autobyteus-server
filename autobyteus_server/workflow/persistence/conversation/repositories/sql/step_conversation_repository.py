@@ -8,10 +8,12 @@ from autobyteus_server.workflow.persistence.conversation.models.sql.conversation
 logger = logging.getLogger(__name__)
 
 class StepConversationRepository(BaseRepository[StepConversation]):
-    def create_step_conversation(self, step_name: str) -> StepConversation:
+    def create_step_conversation(self, step_name: str, llm_model: Optional[str] = None) -> StepConversation:
+        """Create a new step conversation with optional llm_model."""
         try:
             conversation = StepConversation(
-                step_name=step_name
+                step_name=step_name,
+                llm_model=llm_model
             )
             return self.create(conversation)
         except Exception as e:

@@ -1,4 +1,3 @@
-
 import logging
 from repository_mongodb import BaseRepository
 from bson import ObjectId
@@ -13,10 +12,10 @@ class ConversationNotFoundError(Exception):
     pass
 
 class StepConversationRepository(BaseRepository[StepConversation]):
-    def create_conversation(self, step_name: str) -> StepConversation:
-        """Create a new conversation."""
+    def create_conversation(self, step_name: str, llm_model: Optional[str] = None) -> StepConversation:
+        """Create a new conversation with optional llm_model."""
         try:
-            conversation = StepConversation(step_name=step_name)
+            conversation = StepConversation(step_name=step_name, llm_model=llm_model)
             result = self.collection.insert_one(conversation.to_dict(), session=self.session)
             conversation._id = result.inserted_id  # Assign the generated _id back to the instance
             return conversation

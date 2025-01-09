@@ -1,4 +1,3 @@
-
 from typing import List
 from autobyteus_server.workflow.persistence.conversation.domain.models import Message, StepConversation
 from autobyteus_server.workflow.persistence.conversation.models.sql.conversation import StepConversation as SqlStepConversation
@@ -29,7 +28,8 @@ class SQLConverter:
             step_conversation_id=sql_conv.step_conversation_id,
             step_name=sql_conv.step_name,
             created_at=sql_conv.created_at,
-            messages=domain_messages
+            messages=domain_messages,
+            llm_model=sql_conv.llm_model  # Map llm_model from SQL model
         )
 
     @staticmethod
@@ -52,5 +52,6 @@ class SQLConverter:
         return SqlStepConversation(
             step_conversation_id=domain_conv.step_conversation_id,
             step_name=domain_conv.step_name,
-            created_at=domain_conv.created_at
+            created_at=domain_conv.created_at,
+            llm_model=domain_conv.llm_model  # Include llm_model in SQL model
         )

@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from typing import List, Optional
 from autobyteus_server.workflow.persistence.conversation.domain.models import StepConversation
@@ -10,12 +9,13 @@ class PersistenceProvider(ABC):
     """
     
     @abstractmethod
-    def create_conversation(self, step_name: str) -> StepConversation:
+    def create_conversation(self, step_name: str, llm_model: Optional[str] = None) -> StepConversation:
         """
-        Create a new conversation for a given workflow step.
+        Create a new conversation for a given workflow step, optionally with an LLM model.
         
         Args:
             step_name (str): The name of the workflow step.
+            llm_model (Optional[str]): The LLM model associated with this conversation.
         
         Returns:
             StepConversation: The newly created conversation.

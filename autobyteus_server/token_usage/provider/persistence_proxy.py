@@ -1,4 +1,3 @@
-
 import os
 import logging
 from typing import List, Optional, Type
@@ -152,35 +151,6 @@ class PersistenceProxy:
             logger.error(f"Failed to create conversation token usage records: {str(e)}")
             raise
     
-    def get_token_usage_records(
-        self,
-        conversation_id: Optional[str] = None,
-        conversation_type: Optional[str] = None
-    ) -> List[TokenUsageRecord]:
-        """
-        Retrieve TokenUsageRecords based on filters.
-        
-        Args:
-            conversation_id (Optional[str]): Filter by conversation ID.
-            conversation_type (Optional[str]): Filter by conversation type.
-        
-        Returns:
-            List[TokenUsageRecord]: A list of TokenUsageRecords matching the filters.
-        
-        Raises:
-            Exception: If there is an error during retrieval.
-        """
-        try:
-            records = self.provider.get_token_usage_records(
-                conversation_id=conversation_id,
-                conversation_type=conversation_type
-            )
-            logger.info(f"Retrieved {len(records)} TokenUsageRecords")
-            return records
-        except Exception as e:
-            logger.error(f"Failed to retrieve TokenUsageRecords: {str(e)}")
-            raise
-    
     def get_total_cost_in_period(self, start_date: datetime, end_date: datetime) -> float:
         """
         Calculate the total cost of tokens used within a specified period.
@@ -203,27 +173,33 @@ class PersistenceProxy:
             logger.error(f"Failed to calculate total cost in period: {str(e)}")
             raise
     
-    def get_total_cost_by_conversation_type(self, conversation_type: str, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> float:
+    def get_usage_records_in_period(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        llm_model: Optional[str] = None
+    ) -> List[TokenUsageRecord]:
         """
-        Calculate the total cost of tokens used for a specific conversation type within an optional period.
+        Retrieve token usage records within a specified time period,
+        optionally filtered by llm_model.
         
         Args:
-            conversation_type (str): The type of conversation (e.g., WORKFLOW, AI_TERMINAL).
-            start_date (Optional[datetime]): The start date of the period.
-            end_date (Optional[datetime]): The end date of the period.
+            start_date (datetime): The start date of the period.
+            end_date (datetime): The end date of the period.
+            llm_model (Optional[str]): Optional filter by LLM model name.
         
         Returns:
-            float: The total cost of tokens used.
+            List[TokenUsageRecord]: A list of TokenUsageRecords matching the criteria.
         
         Raises:
-            Exception: If there is an error during calculation.
+            Exception: If there is an error during retrieval.
         """
         try:
-            total_cost = self.provider.get_total_cost_in_period(start_date, end_date)
-            logger.info(f"Total cost for conversation type '{conversation_type}' from {start_date} to {end_date}: {total_cost}")
-            return total_cost
+            records = self.provider.get_usage_records_in_period(start_date, end_date, llm_model)
+            logger.info(f"Retrieved {len(records)} TokenUsageRecords in period from {start_date} to {end_date}")
+            return records
         except Exception as e:
-            logger.error(f"Failed to calculate total cost for conversation type '{conversation_type}': {str(e)}")
+            logger.error(f"Failed to retrieve TokenUsageRecords in period: {str(e)}")
             raise
     
     def register_provider(self, name: str, provider_class: Type[PersistenceProvider]) -> None:

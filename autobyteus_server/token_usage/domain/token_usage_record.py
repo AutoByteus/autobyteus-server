@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
@@ -17,11 +16,13 @@ class TokenUsageRecord:
         token_count (int): The number of tokens used in the message.
         cost (float): The cost associated with the token usage.
         created_at (datetime): Timestamp when the usage record was created.
+        llm_model (Optional[str]): Name of the LLM model used.
     """
-    conversation_id: str  # Renamed from step_conversation_id to conversation_id
-    conversation_type: str  # New attribute to specify the type of conversation
+    conversation_id: str
+    conversation_type: str
     role: str
     token_count: int
     cost: float
     created_at: datetime
     token_usage_record_id: Optional[str] = None
+    llm_model: Optional[str] = None

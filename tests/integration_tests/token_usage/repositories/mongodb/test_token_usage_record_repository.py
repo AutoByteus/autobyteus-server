@@ -1,4 +1,3 @@
-
 import pytest
 from datetime import datetime, timedelta
 from bson import ObjectId
@@ -28,21 +27,21 @@ def sample_token_usage_data():
         "conversation_type": "agent",
         "role": "user",
         "token_count": 100,
-        "cost": 0.002
+        "cost": 0.002,
+        "llm_model": "sample_model"
     }
 
 def test_create_token_usage_record(token_usage_repo, sample_token_usage_data):
     """Test creation of a new token usage record."""
-    # Act
     record = token_usage_repo.create_token_usage_record(
         conversation_id=sample_token_usage_data["conversation_id"],
         conversation_type=sample_token_usage_data["conversation_type"],
         role=sample_token_usage_data["role"],
         token_count=sample_token_usage_data["token_count"],
-        cost=sample_token_usage_data["cost"]
+        cost=sample_token_usage_data["cost"],
+        llm_model=sample_token_usage_data["llm_model"]
     )
 
-    # Assert
     assert record is not None
     assert isinstance(record, MongoTokenUsageRecord)
     assert record.conversation_id == sample_token_usage_data["conversation_id"]
@@ -54,21 +53,19 @@ def test_create_token_usage_record(token_usage_repo, sample_token_usage_data):
 
 def test_get_usage_records_by_conversation_id(token_usage_repo, sample_token_usage_data):
     """Test retrieval of usage records by conversation ID."""
-    # Arrange
     record = token_usage_repo.create_token_usage_record(
         conversation_id=sample_token_usage_data["conversation_id"],
         conversation_type=sample_token_usage_data["conversation_type"],
         role=sample_token_usage_data["role"],
         token_count=sample_token_usage_data["token_count"],
-        cost=sample_token_usage_data["cost"]
+        cost=sample_token_usage_data["cost"],
+        llm_model=sample_token_usage_data["llm_model"]
     )
 
-    # Act
     records = token_usage_repo.get_usage_records_by_conversation_id(
         conversation_id=sample_token_usage_data["conversation_id"]
     )
 
-    # Assert
     assert len(records) == 1
     assert records[0].conversation_id == sample_token_usage_data["conversation_id"]
     assert records[0].conversation_type == sample_token_usage_data["conversation_type"]
@@ -78,7 +75,6 @@ def test_get_usage_records_by_conversation_id(token_usage_repo, sample_token_usa
 
 def test_get_total_cost_in_period(token_usage_repo):
     """Test calculation of total cost within a specified time period."""
-    # Arrange
     base_time = datetime.utcnow()
     records_data = [
         {
@@ -87,7 +83,7 @@ def test_get_total_cost_in_period(token_usage_repo):
             "role": "user",
             "token_count": 100,
             "cost": 0.002,
-            "created_at": base_time - timedelta(days=1)
+            "llm_model": "model_a"
         },
         {
             "conversation_id": str(ObjectId()),
@@ -95,7 +91,7 @@ def test_get_total_cost_in_period(token_usage_repo):
             "role": "assistant",
             "token_count": 150,
             "cost": 0.003,
-            "created_at": base_time
+            "llm_model": "model_b"
         },
         {
             "conversation_id": str(ObjectId()),
@@ -103,55 +99,53 @@ def test_get_total_cost_in_period(token_usage_repo):
             "role": "user",
             "token_count": 200,
             "cost": 0.004,
-            "created_at": base_time + timedelta(days=1)
+            "llm_model": "model_c"
         }
     ]
 
-    for data in records_data:
-        token_usage_repo.create_token_usage_record(
+    # Create records around base_time
+    for i, data in enumerate(records_data):
+        # Stagger created_at so they all fall within a small window
+        record = token_usage_repo.create_token_usage_record(
             conversation_id=data["conversation_id"],
             conversation_type=data["conversation_type"],
             role=data["role"],
             token_count=data["token_count"],
-            cost=data["cost"]
+            cost=data["cost"],
+            llm_model=data["llm_model"]
+        )
+        # Manually adjust the 'created_at' after creation for test
+        record.created_at = base_time + timedelta(minutes=i)
+        token_usage_repo.collection.update_one(
+            {"_id": record._id},
+            {"$set": {"created_at": record.created_at}}
         )
 
-    # Act
-    start_date = base_time - timedelta(days=2)
-    end_date = base_time + timedelta(days=2)
+    start_date = base_time - timedelta(hours=1)
+    end_date = base_time + timedelta(hours=1, minutes=len(records_data))
     total_cost = token_usage_repo.get_total_cost_in_period(start_date, end_date)
 
-    # Assert
     expected_total = sum(record["cost"] for record in records_data)
     assert total_cost == expected_total
 
 def test_get_usage_records_empty_conversation(token_usage_repo):
     """Test retrieval of usage records for a conversation with no records."""
-    # Act
     records = token_usage_repo.get_usage_records_by_conversation_id(str(ObjectId()))
-
-    # Assert
     assert len(records) == 0
 
 def test_get_total_cost_empty_period(token_usage_repo):
     """Test calculation of total cost for a period with no records."""
-    # Arrange
     start_date = datetime.utcnow() - timedelta(days=1)
     end_date = datetime.utcnow()
-
-    # Act
     total_cost = token_usage_repo.get_total_cost_in_period(start_date, end_date)
-
-    # Assert
     assert total_cost == 0
 
 def test_multiple_records_same_conversation(token_usage_repo, sample_token_usage_data):
     """Test creation and retrieval of multiple records for the same conversation."""
-    # Arrange
     records_data = [
-        {"role": "user", "token_count": 100, "cost": 0.002},
-        {"role": "assistant", "token_count": 150, "cost": 0.003},
-        {"role": "user", "token_count": 200, "cost": 0.004}
+        {"role": "user", "token_count": 100, "cost": 0.002, "llm_model": "model_x"},
+        {"role": "assistant", "token_count": 150, "cost": 0.003, "llm_model": "model_y"},
+        {"role": "user", "token_count": 200, "cost": 0.004, "llm_model": "model_z"}
     ]
 
     for data in records_data:
@@ -160,15 +154,13 @@ def test_multiple_records_same_conversation(token_usage_repo, sample_token_usage
             conversation_type=sample_token_usage_data["conversation_type"],
             role=data["role"],
             token_count=data["token_count"],
-            cost=data["cost"]
+            cost=data["cost"],
+            llm_model=data["llm_model"]
         )
 
-    # Act
     records = token_usage_repo.get_usage_records_by_conversation_id(
         conversation_id=sample_token_usage_data["conversation_id"]
     )
-
-    # Assert
     assert len(records) == len(records_data)
     for record, data in zip(records, records_data):
         assert record.conversation_id == sample_token_usage_data["conversation_id"]

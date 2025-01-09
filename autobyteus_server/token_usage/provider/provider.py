@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import List, Optional
@@ -16,21 +15,20 @@ class PersistenceProvider(ABC):
         conversation_type: str,
         role: str,
         token_count: int,
-        cost: float
+        cost: float,
+        llm_model: Optional[str] = None
     ) -> TokenUsageRecord:
-        pass
-
-    @abstractmethod
-    def get_token_usage_records(
-        self,
-        conversation_id: Optional[str] = None,
-        conversation_type: Optional[str] = None,
-        page: int = 1,
-        page_size: int = 10
-    ) -> List[TokenUsageRecord]:
         pass
 
     @abstractmethod
     def get_total_cost_in_period(self, start_date: datetime, end_date: datetime) -> float:
         pass
 
+    @abstractmethod
+    def get_usage_records_in_period(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        llm_model: Optional[str] = None
+    ) -> List[TokenUsageRecord]:
+        pass

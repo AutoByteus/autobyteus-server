@@ -1,4 +1,3 @@
-
 from datetime import datetime
 import logging
 from typing import Any, List, Optional
@@ -24,7 +23,8 @@ class MongoPersistenceProvider(PersistenceProvider):
         conversation_type: str,
         role: str,
         token_count: int,
-        cost: float
+        cost: float,
+        llm_model: Optional[str] = None
     ) -> TokenUsageRecord:
         """
         Create and store a new token usage record.
@@ -36,7 +36,8 @@ class MongoPersistenceProvider(PersistenceProvider):
                 role=role,
                 token_count=token_count,
                 cost=cost,
-                created_at=None  # Let the model handle the default
+                created_at=None,
+                llm_model=llm_model
             )
             mongo_record = self.converter.to_mongo_model(domain_record)
             created_record = self.record_repository.create_token_usage_record(
@@ -44,34 +45,12 @@ class MongoPersistenceProvider(PersistenceProvider):
                 conversation_type=mongo_record.conversation_type,
                 role=mongo_record.role,
                 token_count=mongo_record.token_count,
-                cost=mongo_record.cost
+                cost=mongo_record.cost,
+                llm_model=mongo_record.llm_model
             )
             return self.converter.to_domain_model(created_record)
         except Exception as e:
             logger.error(f"Failed to create token usage record: {str(e)}")
-            raise
-
-    def get_token_usage_records(
-        self,
-        conversation_id: Optional[str] = None,
-        conversation_type: Optional[str] = None,
-        page: int = 1,
-        page_size: int = 10
-    ) -> List[TokenUsageRecord]:
-        """
-        Retrieve token usage records with optional filtering and pagination.
-        """
-        try:
-            if conversation_id:
-                mongo_records = self.record_repository.get_usage_records_by_conversation_id(conversation_id)
-            elif conversation_type:
-                # Assuming there's a method to get by conversation_type
-                mongo_records = self.record_repository.get_usage_records_by_conversation_type(conversation_type)
-            else:
-                mongo_records = self.record_repository.get_all_usage_records(page, page_size)
-            return self.converter.to_domain_models(mongo_records)
-        except Exception as e:
-            logger.error(f"Failed to retrieve token usage records: {str(e)}")
             raise
 
     def get_total_cost_in_period(self, start_date: datetime, end_date: datetime) -> float:
@@ -82,4 +61,21 @@ class MongoPersistenceProvider(PersistenceProvider):
             return self.record_repository.get_total_cost_in_period(start_date, end_date)
         except Exception as e:
             logger.error(f"Failed to calculate total cost in period: {str(e)}")
+            raise
+
+    def get_usage_records_in_period(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        llm_model: Optional[str] = None
+    ) -> List[TokenUsageRecord]:
+        """
+        Retrieve token usage records within a specified time period,
+        optionally filtered by llm_model.
+        """
+        try:
+            mongo_records = self.record_repository.get_usage_records_in_period(start_date, end_date, llm_model)
+            return self.converter.to_domain_models(mongo_records)
+        except Exception as e:
+            logger.error(f"Failed to retrieve token usage records in period: {str(e)}")
             raise

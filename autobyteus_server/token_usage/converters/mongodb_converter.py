@@ -1,5 +1,4 @@
-
-from typing import List
+from typing import List, Optional
 from autobyteus_server.token_usage.domain.token_usage_record import TokenUsageRecord
 from autobyteus_server.token_usage.models.mongodb.token_usage_record import MongoTokenUsageRecord
 
@@ -12,7 +11,9 @@ class MongoDBConverter:
             role=mongo_record.role,
             token_count=mongo_record.token_count,
             cost=mongo_record.cost,
-            created_at=mongo_record.created_at
+            created_at=mongo_record.created_at,
+            token_usage_record_id=None,
+            llm_model=mongo_record.llm_model
         )
 
     def to_mongo_model(self, domain_record: TokenUsageRecord) -> MongoTokenUsageRecord:
@@ -23,7 +24,8 @@ class MongoDBConverter:
             role=domain_record.role,
             token_count=domain_record.token_count,
             cost=domain_record.cost,
-            created_at=domain_record.created_at
+            created_at=domain_record.created_at,
+            llm_model=domain_record.llm_model
         )
 
     def to_domain_models(self, mongo_records: List[MongoTokenUsageRecord]) -> List[TokenUsageRecord]:

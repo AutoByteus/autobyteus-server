@@ -1,4 +1,3 @@
-
 from datetime import datetime
 import logging
 from typing import List, Optional
@@ -24,7 +23,8 @@ class SqlPersistenceProvider(PersistenceProvider):
         conversation_type: str,
         role: str,
         token_count: int,
-        cost: float
+        cost: float,
+        llm_model: Optional[str] = None
     ) -> TokenUsageRecord:
         """
         Create and store a new token usage record.
@@ -36,7 +36,8 @@ class SqlPersistenceProvider(PersistenceProvider):
                 role=role,
                 token_count=token_count,
                 cost=cost,
-                created_at=None  # Let the model handle the default
+                created_at=None,
+                llm_model=llm_model
             )
             sql_record = self.converter.to_sql_model(domain_record)
             created_record = self.record_repository.create_usage_record(
@@ -44,33 +45,12 @@ class SqlPersistenceProvider(PersistenceProvider):
                 conversation_type=sql_record.conversation_type,
                 role=sql_record.role,
                 token_count=sql_record.token_count,
-                cost=sql_record.cost
+                cost=sql_record.cost,
+                llm_model=sql_record.llm_model
             )
             return self.converter.to_domain_model(created_record)
         except Exception as e:
             logger.error(f"Failed to create token usage record: {str(e)}")
-            raise
-
-    def get_token_usage_records(
-        self,
-        conversation_id: Optional[str] = None,
-        conversation_type: Optional[str] = None,
-        page: int = 1,
-        page_size: int = 10
-    ) -> List[TokenUsageRecord]:
-        """
-        Retrieve token usage records with optional filtering and pagination.
-        """
-        try:
-            if conversation_id:
-                sql_records = self.record_repository.get_usage_records_by_conversation_id(conversation_id)
-            elif conversation_type:
-                sql_records = self.record_repository.get_usage_records_by_conversation_type(conversation_type)
-            else:
-                sql_records = self.record_repository.get_all_usage_records(page, page_size)
-            return self.converter.to_domain_models(sql_records)
-        except Exception as e:
-            logger.error(f"Failed to retrieve token usage records: {str(e)}")
             raise
 
     def get_total_cost_in_period(self, start_date: datetime, end_date: datetime) -> float:
@@ -81,4 +61,21 @@ class SqlPersistenceProvider(PersistenceProvider):
             return self.record_repository.get_total_cost_in_period(start_date, end_date)
         except Exception as e:
             logger.error(f"Failed to calculate total cost in period: {str(e)}")
+            raise
+
+    def get_usage_records_in_period(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        llm_model: Optional[str] = None
+    ) -> List[TokenUsageRecord]:
+        """
+        Retrieve token usage records within a specified time period,
+        optionally filtered by llm_model.
+        """
+        try:
+            sql_records = self.record_repository.get_usage_records_in_period(start_date, end_date, llm_model)
+            return self.converter.to_domain_models(sql_records)
+        except Exception as e:
+            logger.error(f"Failed to retrieve token usage records in period: {str(e)}")
             raise
