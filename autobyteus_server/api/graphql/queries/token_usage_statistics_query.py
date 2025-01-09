@@ -6,7 +6,7 @@ from autobyteus_server.token_usage.provider.statistics_provider import TokenUsag
 from autobyteus_server.api.graphql.types.token_usage_stats_types import UsageStatistics
 
 @strawberry.type
-class TokenUsageQueriesExtension:
+class TokenUsageStatisticsQuery:
     @strawberry.field
     def total_cost_in_period(self, start_time: datetime, end_time: datetime) -> float:
         """

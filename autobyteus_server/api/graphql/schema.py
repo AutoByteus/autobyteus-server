@@ -16,9 +16,9 @@ from autobyteus_server.api.graphql.queries import (
     file_explorer_queries,
     code_search_queries,
     conversation_queries,
-    llm_provider_queries
+    llm_provider_queries,
+    token_usage_statistics_query
 )
-from autobyteus_server.api.graphql.types.llm_model_types import LLMModel
 
 @strawberry.type
 class Query(
@@ -28,6 +28,7 @@ class Query(
     conversation_queries.Query,
     context_search_queries.ContextQuery,
     llm_provider_queries.Query,
+    token_usage_statistics_query.TokenUsageStatisticsQuery,
 ):
     pass
 
@@ -50,5 +51,4 @@ schema = strawberry.Schema(
     query=Query, 
     mutation=Mutation, 
     subscription=Subscription,
-    types=[LLMModel]
 )
