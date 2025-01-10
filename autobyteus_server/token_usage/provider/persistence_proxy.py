@@ -69,7 +69,8 @@ class PersistenceProxy:
         conversation_type: str,
         role: str,
         token_count: int,
-        cost: float
+        cost: float,
+        llm_model: Optional[str] = None
     ) -> TokenUsageRecord:
         """
         Create and store a new TokenUsageRecord.
@@ -80,6 +81,7 @@ class PersistenceProxy:
             role (str): The role of the message sender.
             token_count (int): The number of tokens used.
             cost (float): The cost associated with the tokens.
+            llm_model (Optional[str]): The LLM model used for the conversation.
         
         Returns:
             TokenUsageRecord: The created TokenUsageRecord.
@@ -93,9 +95,13 @@ class PersistenceProxy:
                 conversation_type=conversation_type,
                 role=role,
                 token_count=token_count,
-                cost=cost
+                cost=cost,
+                llm_model=llm_model
             )
-            logger.info(f"Created TokenUsageRecord with ID: {record.token_usage_record_id}")
+            logger.info(
+                f"Created TokenUsageRecord with ID: {record.token_usage_record_id}"
+                + (f" for model: {llm_model}" if llm_model else "")
+            )
             return record
         except Exception as e:
             logger.error(f"Failed to create TokenUsageRecord: {str(e)}")
@@ -105,7 +111,8 @@ class PersistenceProxy:
         self,
         conversation_id: str,
         conversation_type: str,
-        token_usage: TokenUsage
+        token_usage: TokenUsage,
+        llm_model: Optional[str] = None
     ) -> tuple[TokenUsageRecord, TokenUsageRecord]:
         """
         Create token usage records for both prompt and completion tokens in a conversation.
@@ -114,6 +121,7 @@ class PersistenceProxy:
             conversation_id (str): The ID of the conversation
             conversation_type (str): The type of the conversation (e.g., WORKFLOW, AI_TERMINAL)
             token_usage (TokenUsage): Token usage information containing prompt and completion details
+            llm_model (Optional[str]): The LLM model used for the conversation
             
         Returns:
             tuple[TokenUsageRecord, TokenUsageRecord]: Tuple containing (prompt_record, completion_record)
@@ -128,7 +136,8 @@ class PersistenceProxy:
                 conversation_type=conversation_type,
                 role='user',
                 token_count=token_usage.prompt_tokens,
-                cost=token_usage.prompt_cost or 0.0
+                cost=token_usage.prompt_cost or 0.0,
+                llm_model=llm_model
             )
             
             # Create completion token usage record
@@ -137,12 +146,14 @@ class PersistenceProxy:
                 conversation_type=conversation_type,
                 role='assistant',
                 token_count=token_usage.completion_tokens,
-                cost=token_usage.completion_cost or 0.0
+                cost=token_usage.completion_cost or 0.0,
+                llm_model=llm_model
             )
             
             logger.info(
-                f"Created token usage records for conversation {conversation_id}: "
-                f"prompt tokens={token_usage.prompt_tokens}, "
+                f"Created token usage records for conversation {conversation_id}"
+                + (f" using model {llm_model}" if llm_model else "")
+                + f": prompt tokens={token_usage.prompt_tokens}, "
                 f"completion tokens={token_usage.completion_tokens}"
             )
             

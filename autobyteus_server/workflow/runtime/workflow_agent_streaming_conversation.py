@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 import uuid
@@ -76,11 +75,13 @@ class WorkflowAgentStreamingConversation(BaseAgentStreamingConversation):
 
             if is_complete:
                 token_usage: TokenUsage = self._agent.llm.latest_token_usage
+                llm_model = self._agent.llm.model.value
                 
                 self.token_usage_proxy.create_conversation_token_usage_records(
                     conversation_id=self.conversation_id,
                     conversation_type='WORKFLOW',
-                    token_usage=token_usage
+                    token_usage=token_usage,
+                    llm_model=llm_model
                 )
                 
                 self.persistence_proxy.update_last_user_message_usage(
@@ -109,7 +110,7 @@ class WorkflowAgentStreamingConversation(BaseAgentStreamingConversation):
                     total_cost=token_usage.total_cost
                 )
                 
-                logger.debug(f"Saved complete response with token usage for conversation {self.conversation_id}")
+                logger.debug(f"Saved complete response with token usage for conversation {self.conversation_id} using model {llm_model}")
             else:
                 response_data = AgentResponseData(
                     message=response,
