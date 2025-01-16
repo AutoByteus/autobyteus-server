@@ -44,20 +44,5 @@ WORKFLOW_CONFIG: WorkflowTemplateStepsConfig = {
         'testing_step': {
             'step_class': RunTestsStep,
         },
-        'article_writing': {
-            'step_class': ArticleWritingStep,
-        },
-        'question_answering': {
-            'step_class': QuestionAnsweringStep,
-        },
-        'prompt_creation': {
-            'step_class': PromptCreationStep,
-        },
-        'prompt_refine': {
-            'step_class': PromptRefineStep,
-        },
-        'documentation': {
-            'step_class': DocumentationStep,
-        },
     }
 }
