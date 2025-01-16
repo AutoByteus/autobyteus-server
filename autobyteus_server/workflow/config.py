@@ -17,20 +17,20 @@ from autobyteus_server.workflow.steps.question_answering.question_answering_step
 from autobyteus_server.workflow.steps.prompt_creation.prompt_creation_step import PromptCreationStep
 from autobyteus_server.workflow.steps.prompt_refine.prompt_refine_step import PromptRefineStep
 from autobyteus_server.workflow.steps.documentation.documentation_step import DocumentationStep
+from autobyteus_server.workflow.steps.subtask_creation_step.subtask_creation_step import SubtaskCreationStep
+from autobyteus_server.workflow.steps.deployment_step.deployment_step import DeploymentStep
 from autobyteus_server.workflow.types.workflow_template_config import WorkflowTemplateStepsConfig
 
 WORKFLOW_CONFIG: WorkflowTemplateStepsConfig = {
     'steps': {
         'requirement_step': {
-            'step_class': RequirementStep,
-            'steps': {
-                'refine': {
-                    'step_class': RequirementRefineStep
-                }
-            },
+            'step_class': RequirementStep
         },
         'architecture_design': {
             'step_class': ArchitectureDesignStep
+        },
+        'subtask_creation': {
+            'step_class': SubtaskCreationStep,
         },
         'ux_design': {
             'step_class': UXDesignStep
@@ -43,6 +43,9 @@ WORKFLOW_CONFIG: WorkflowTemplateStepsConfig = {
         },
         'testing_step': {
             'step_class': RunTestsStep,
+        },
+        'deployment': {
+            'step_class': DeploymentStep,
         },
     }
 }

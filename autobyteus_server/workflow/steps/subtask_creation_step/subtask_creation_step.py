@@ -4,8 +4,8 @@ from autobyteus_server.workflow.types.base_step import BaseStep
 
 logger = logging.getLogger(__name__)
 
-class SubtasksGenerationStep(BaseStep):
-    name = "subtasks_generation"
+class SubtaskCreationStep(BaseStep):
+    name = "subtask_creation"
 
     def __init__(self, workflow):
         current_dir = os.path.dirname(os.path.abspath(__file__))
