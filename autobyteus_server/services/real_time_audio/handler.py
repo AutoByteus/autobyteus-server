@@ -18,7 +18,6 @@ CHANNELS = 1
 SAMPLE_WIDTH = 2  # 16-bit audio
 SAMPLE_RATE = 16000
 
-
 class TranscriptionRequest(NamedTuple):
     """Structure for holding transcription request data"""
     session_id: str
@@ -151,6 +150,9 @@ class TranscriptionHandler:
         try:
             while True:
                 result = await self.output_queues[session_id].get()
+                # If the transcription result is empty, the chunk may have been silent.
+                if not result.get("text"):
+                    logger.debug(f"Session {session_id}: received empty transcription result (likely silent).")
                 await websocket.send_json(result)
         except Exception as e:
             logger.error(f"Error sending results for session {session_id}: {e}")

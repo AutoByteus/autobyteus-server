@@ -11,3 +11,4 @@ alembic==1.13.3
 watchdog
 accelerate>=0.26.0
 python-multipart
+webrtcvad

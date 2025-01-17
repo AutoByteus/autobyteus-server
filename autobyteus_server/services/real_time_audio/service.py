@@ -1,4 +1,3 @@
-
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from autobyteus.utils.singleton import SingletonMeta
@@ -6,6 +5,8 @@ import logging
 import time
 from datetime import datetime
 import platform
+
+import webrtcvad  # <-- NEW: For voice activity detection
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,9 @@ class TranscriptionService(metaclass=SingletonMeta):
             self.is_enabled = False
             raise
 
+        # NEW: Initialize VAD (aggressiveness mode 2 is a middle ground)
+        self.vad = webrtcvad.Vad(2)
+
     def _setup_device_and_dtype(self):
         """
         Determine the appropriate device and dtype based on system capabilities.
@@ -97,10 +101,31 @@ class TranscriptionService(metaclass=SingletonMeta):
             return "mps"
         return -1
 
+    def _contains_voice(self, audio_data: bytes) -> bool:
+        """
+        Detect if the audio data contains voice by analyzing the raw PCM using WebRTC VAD.
+        Returns True if speech is detected, False otherwise.
+        """
+        # WebRTC VAD requires 16-bit, 16000Hz, mono PCM frames of 10, 20, or 30 ms.
+        # We'll break the audio_data into 30ms frames and check for voice.
+        frame_duration_ms = 30
+        bytes_per_sample = 2  # 16-bit audio
+        frame_size = int(self.sampling_rate * (frame_duration_ms / 1000.0) * bytes_per_sample)
+
+        # Iterate over frames; if any frame is detected as speech, return True
+        idx = 0
+        while idx + frame_size <= len(audio_data):
+            frame = audio_data[idx:idx + frame_size]
+            if self.vad.is_speech(frame, self.sampling_rate):
+                return True
+            idx += frame_size
+
+        return False
+
     def transcribe(self, audio_data: bytes) -> str:
         """
         Transcribe audio bytes to text using the initialized pipeline.
-        Returns empty string if service is disabled.
+        Returns empty string if service is disabled or if no voice is detected.
         
         Parameters:
             audio_data (bytes): The audio data to transcribe.
@@ -114,6 +139,11 @@ class TranscriptionService(metaclass=SingletonMeta):
             
         if not self._initialized:
             logger.error("Attempted transcription with uninitialized service")
+            return ""
+
+        # NEW: Check for voice activity. If no speech detected, skip transcription.
+        if not self._contains_voice(audio_data):
+            logger.info("Skipping transcription: no voice detected in chunk.")
             return ""
         
         start_time = time.perf_counter()
