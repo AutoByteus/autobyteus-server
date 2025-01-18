@@ -1,18 +1,37 @@
 import logging.config
 import os
+from pathlib import Path
+import sys
+
+
+def get_application_root():
+    """Get the application root directory, works in both development and packaged mode"""
+    if getattr(sys, 'frozen', False):
+        return Path(sys._MEIPASS)
+    return Path(__file__).parent.parent.parent
 
 
 def configure_logger():
-    """
-    Configures the root logger to enable simultaneous logging to console and a log file.
+    """Configure logging using the logging configuration file"""
+    app_root = get_application_root()
+    config_path = app_root / 'logging_config.ini'
+    
+    if not os.path.exists(config_path):
+        # Fallback to basic configuration if file not found
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        logging.warning(f"Logging config file not found at {config_path}. Using basic configuration.")
+        return
 
-    This configuration is read from an external .ini file.
-    It sets up two handlers, a ConsoleHandler for console logs and a FileHandler for logs written to 'app.log'.
-    The logging level for both handlers is set to INFO.
-    """
+    # Create logs directory if it doesn't exist
+    logs_dir = app_root / 'logs'
+    logs_dir.mkdir(exist_ok=True)
+
+    # Modify the log file path to be relative to the application root
     logging.config.fileConfig(
-        os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../..", "logging_config.ini"
-        ),
-        disable_existing_loggers=False,
+        config_path,
+        defaults={'log_dir': str(app_root)},
+        disable_existing_loggers=False
     )

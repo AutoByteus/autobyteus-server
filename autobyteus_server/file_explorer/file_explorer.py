@@ -36,8 +36,7 @@ class FileExplorer:
 
         files_ignore_strategies = [
             SpecificFolderIgnoreStrategy(folders_to_ignore=['.git']),
-            GitIgnoreStrategy(root_path=self.workspace_root_path),
-            DotIgnoreStrategy()
+            GitIgnoreStrategy(root_path=self.workspace_root_path)
         ]
         directory_traversal = DirectoryTraversal(strategies=files_ignore_strategies)
 
