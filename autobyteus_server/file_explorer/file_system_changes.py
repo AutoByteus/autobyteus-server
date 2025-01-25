@@ -10,6 +10,7 @@ class ChangeType(str, Enum):
     ADD = "add"
     DELETE = "delete"
     RENAME = "rename"
+    MOVE = "move"  # Added new 'MOVE' type for file/folder moves
 
 
 @dataclass
@@ -30,6 +31,8 @@ class FileSystemChange:
             return DeleteChange.from_dict(data)
         elif change_type == ChangeType.RENAME:
             return RenameChange.from_dict(data)
+        elif change_type == ChangeType.MOVE:
+            return MoveChange.from_dict(data)
         else:
             raise ValueError(f"Unknown ChangeType: {change_type}")
 
@@ -110,6 +113,30 @@ class RenameChange(FileSystemChange):
         parent_id = data["parent_id"]
         previous_id = data.get("previous_id")
         return RenameChange(node=node, parent_id=parent_id, previous_id=previous_id)
+
+
+@dataclass
+class MoveChange(FileSystemChange):
+    type: Literal[ChangeType.MOVE] = ChangeType.MOVE
+    node: TreeNode = field(default_factory=TreeNode)
+    old_parent_id: str = ""
+    new_parent_id: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        base = super().to_dict()
+        base.update({
+            "node": self.node.to_dict(),
+            "old_parent_id": self.old_parent_id,
+            "new_parent_id": self.new_parent_id,
+        })
+        return base
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> 'MoveChange':
+        node = TreeNode.from_dict(data["node"])
+        old_parent_id = data["old_parent_id"]
+        new_parent_id = data["new_parent_id"]
+        return MoveChange(node=node, old_parent_id=old_parent_id, new_parent_id=new_parent_id)
 
 
 @dataclass

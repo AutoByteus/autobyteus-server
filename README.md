@@ -94,7 +94,7 @@ The project uses Alembic for database migrations. After configuring your databas
 
 2. Create a new migration (when making model changes):
    ```bash
-   alembic revision --autogenerate -m "description of changes"
+   alembic revision --autogenerate -m "added llm model for conversation, and token usage"
    ```
 
 3. Apply pending migrations:
@@ -142,15 +142,29 @@ The project uses Alembic for database migrations. After configuring your databas
 
 ## Running the Server
 
-### Development Mode
+There are two ways to start the server:
+
+### 1. Using Python directly
 ```bash
-uvicorn autobyteus_server.app:app --host 0.0.0.0 --port 8000 --reload
+# Development Mode
+python -m autobyteus_server.app --host 127.0.0.1 --port 8000
+
+# Production Mode
+python -m autobyteus_server.app --host 0.0.0.0 --port 8000
 ```
 
-### Production Mode
+### 2. Using Uvicorn
 ```bash
+# Development Mode
+uvicorn autobyteus_server.app:app --host 127.0.0.1 --port 8000 --reload
+
+# Production Mode
 uvicorn autobyteus_server.app:app --host 0.0.0.0 --port 8000
 ```
+
+Choose the method that best suits your needs:
+- Python direct execution is simpler and handles environment setup automatically
+- Uvicorn execution provides more configuration options and hot-reloading in development
 
 ## API Documentation
 

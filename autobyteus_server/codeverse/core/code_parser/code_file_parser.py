@@ -10,9 +10,9 @@ and ClassEntity objects for each class, which in turn contain MethodEntity objec
 """
 
 import ast
+import os
 from autobyteus_server.codeverse.core.code_entities.module_entity import ModuleEntity
 from autobyteus_server.codeverse.core.code_parser.ast_node_visitor import AstNodeVisitor
-from autobyteus_server.file_explorer.file_reader import FileReader
 
 class CodeFileParser:
     """
@@ -34,11 +34,20 @@ class CodeFileParser:
             A ModuleEntity object containing the file's docstring, functions and classes,
             or None if the source_code could not be read or parsed.
         """
-        source_code = FileReader.read_file(filepath)
-        if source_code is None:
+        if not os.path.isfile(filepath) or not filepath.endswith('.py'):
             return None
 
-        module = ast.parse(source_code)
+        try:
+            with open(filepath, 'r', encoding='utf-8') as file:
+                source_code = file.read()
+        except (UnicodeDecodeError, PermissionError):
+            return None
+
+        try:
+            module = ast.parse(source_code)
+        except SyntaxError:
+            return None
+
         visitor = AstNodeVisitor(filepath)
 
         module_entity = ModuleEntity(filepath, ast.get_docstring(module))
@@ -53,4 +62,3 @@ class CodeFileParser:
             module_entity.add_class(class_)
 
         return module_entity
-

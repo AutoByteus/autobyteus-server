@@ -3,13 +3,11 @@ app.py: The main entry point for the AutoByteus server application.
 """
 import sys
 import os
+import argparse
 from pathlib import Path
-from typing import Optional
 from contextlib import asynccontextmanager
-import asyncio
-import platform
-
-# Load environment variables from .env file
+import logging
+import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,17 +18,6 @@ from autobyteus_server.api.rest import router as rest_router
 from autobyteus_server.config.logging_config import configure_logger
 from autobyteus_server.api.websocket.real_time_audio_router import transcription_router
 from autobyteus_server.startup import run_migrations
-import logging
-
-# Configure asyncio policy for subprocess support
-if platform.system() != "Windows":
-    policy = asyncio.DefaultEventLoopPolicy()
-    asyncio.set_event_loop_policy(policy)
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    watcher = asyncio.SafeChildWatcher()
-    watcher.attach_loop(loop)
-    policy.set_child_watcher(watcher)
 
 def get_application_root():
     """Get the application root directory, works in both development and packaged mode"""
@@ -38,12 +25,35 @@ def get_application_root():
         return Path(sys._MEIPASS)
     return Path(__file__).parent.parent
 
+def validate_packaged_environment():
+    """Validate that all required files and directories exist in packaged mode"""
+    app_root = get_application_root()
+    required_files = [
+        '.env',
+        'logging_config.ini',
+        'alembic.ini'
+    ]
+    required_dirs = [
+        'logs',
+        'resources',
+        'alembic'
+    ]
+    
+    missing_files = [f for f in required_files if not (app_root / f).exists()]
+    missing_dirs = [d for d in required_dirs if not (app_root / d).is_dir()]
+    
+    if missing_files or missing_dirs:
+        print("Error: Missing required files or directories:")
+        if missing_files:
+            print("Files:", missing_files)
+        if missing_dirs:
+            print("Directories:", missing_dirs)
+        sys.exit(1)
+
 def load_environment():
     """Load environment variables with fallback for packaged mode"""
     env_path = get_application_root() / '.env'
     load_dotenv(dotenv_path=env_path)
-    
-    # Set default environment variables if not present
     os.environ.setdefault('LOG_LEVEL', 'INFO')
 
 # Configure environment
@@ -75,11 +85,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # Allow all origins for CORS
-origins = "*"
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins="*",
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -93,8 +101,29 @@ graphql_router = GraphQLRouter(
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
     ]
 )
-app.include_router(graphql_router, prefix="/graphql")
 
-# Include REST routers
+# Include all routers
+app.include_router(graphql_router, prefix="/graphql")
 app.include_router(rest_router, prefix="/rest")
 app.include_router(transcription_router)
+
+def run_server(host: str, port: int):
+    """Run the FastAPI server"""
+    if getattr(sys, 'frozen', False):
+        validate_packaged_environment()
+        os.chdir(str(get_application_root()))
+        
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="info"
+    )
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='AutoByteus Server')
+    parser.add_argument('--port', type=int, default=8000, help='Port to run the server on')
+    parser.add_argument('--host', type=str, default='127.0.0.1', help='Host to run the server on')
+    
+    args = parser.parse_args()
+    run_server(args.host, args.port)

@@ -6,12 +6,18 @@ It provides mechanisms to organize, structure, and refactor Python source code i
 best practices and standards specific to Python development.
 """
 import logging
+import os
 from autobyteus.prompt.prompt_template import PromptTemplate
 from autobyteus_server.file_explorer.file_explorer import FileExplorer
-from autobyteus_server.file_explorer.file_reader import FileReader
 from autobyteus_server.file_explorer.tree_node import TreeNode
 from autobyteus_server.workspaces.workspace import Workspace
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.base_project_refactorer import BaseProjectRefactorer
+from autobyteus_server.codeverse.core.code_parser.code_file_parser import CodeFileParser
+from autobyteus_server.codeverse.core.code_entities.module_entity import ModuleEntity
+from autobyteus_server.codeverse.core.code_parser.ast_node_visitor import AstNodeVisitor
+from autobyteus_server.codeverse.core.code_entities.function_entity import FunctionEntity
+from autobyteus_server.codeverse.core.code_entities.class_entity import ClassEntity
+from autobyteus_server.codeverse.core.code_entities.method_entity import MethodEntity
 
 # Logger setup
 logger = logging.getLogger(__name__)
@@ -20,8 +26,6 @@ class PythonProjectRefactorer(BaseProjectRefactorer):
     """
     Class to refactor Python projects.
     """
-    
-    # Removed PromptTemplateVariable definitions
     
     # Define the prompt template string
     template_str = """
@@ -53,6 +57,7 @@ class PythonProjectRefactorer(BaseProjectRefactorer):
             workspace (Workspace): The workspace to be refactored.
         """
         self.workspace: Workspace = workspace
+        self.code_file_parser = CodeFileParser()
         #self.llm_integration = LLMIntegrationRegistry().get(OpenAIModel.GPT_3_5_TURBO)
 
     def refactor(self):
@@ -78,7 +83,12 @@ class PythonProjectRefactorer(BaseProjectRefactorer):
         Returns:
             str: The constructed prompt for the Python file refactoring.
         """
-        source_code = FileReader.read_file(file_path)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                source_code = file.read()
+        except (UnicodeDecodeError, PermissionError):
+            source_code = ""
+
         prompt = self.prompt_template.fill({"file_path": file_path, "source_code": source_code})
         return prompt
 
@@ -103,9 +113,6 @@ class PythonProjectRefactorer(BaseProjectRefactorer):
         """
         Send the content of the file to the LLM model for refactoring and replace the file content 
         with the refactored code.
-
-        Args:
-            file_node (TreeNode): The file node to be refactored.
         """
         prompt = self.construct_prompt(file_node.path)
         refactored_code = self.llm_integration.process_input_messages([prompt])

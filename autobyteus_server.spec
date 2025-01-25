@@ -31,7 +31,6 @@ def collect_step_prompts():
 # Collect tokenizer data files
 mistral_datas = collect_data_files('mistral_common', include_py_files=True)
 anthropic_datas = collect_data_files('anthropic', include_py_files=True)
-rpa_datas = collect_data_files('autobyteus_rpa_llm', include_py_files=True)
 
 # Add brui-core data files with explicit config.toml inclusion
 brui_core_datas = collect_data_files('brui_core', include_py_files=True)
@@ -57,11 +56,6 @@ hidden_imports = [
     
     # Add missing hidden import
     'tiktoken_ext.openai_public',
-    
-    # Add RPA plugin imports
-    'autobyteus_rpa_llm',
-    'autobyteus_rpa_llm.llm.factory.rpa_llm_factory',
-    'pkg_resources.py2_warn',
     
     # Force include brui-core
     'brui_core',
@@ -94,7 +88,6 @@ datas = (
     collect_step_prompts() + 
     mistral_datas + 
     anthropic_datas +
-    rpa_datas +
     brui_core_datas
 )
 
