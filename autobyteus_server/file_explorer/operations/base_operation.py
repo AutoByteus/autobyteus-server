@@ -1,6 +1,9 @@
 import abc
+from typing import TYPE_CHECKING
 from autobyteus_server.file_explorer.file_system_changes import FileSystemChangeEvent
-from autobyteus_server.file_explorer.file_explorer import FileExplorer
+
+if TYPE_CHECKING:
+    from autobyteus_server.file_explorer.file_explorer import FileExplorer
 
 class BaseFileOperation(abc.ABC):
     """
@@ -10,7 +13,7 @@ class BaseFileOperation(abc.ABC):
     and return a FileSystemChangeEvent.
     """
 
-    def __init__(self, file_explorer: FileExplorer):
+    def __init__(self, file_explorer: 'FileExplorer'):
         if not file_explorer or not file_explorer.workspace_root_path:
             raise ValueError("FileExplorer with a valid workspace_root_path is required.")
         self.file_explorer = file_explorer
