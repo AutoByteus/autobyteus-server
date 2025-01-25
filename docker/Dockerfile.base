@@ -1,4 +1,3 @@
-
 # Base image for all architectures
 FROM ubuntu:22.04
 
@@ -93,10 +92,8 @@ ENV XDG_RUNTIME_DIR=/run/user/1000
 COPY requirements-all.txt /tmp/requirements-all.txt
 RUN pip install -r /tmp/requirements-all.txt
 
-# Create workspace directory
-RUN mkdir -p /home/vncuser/workspace/brui_core && \
-    mkdir -p /home/vncuser/workspace/autobyteus && \
-    mkdir -p /home/vncuser/workspace/autobyteus-server && \
+# Create workspace directory for autobyteus-server only
+RUN mkdir -p /home/vncuser/workspace/autobyteus-server && \
     chown -R vncuser:vncuser /home/vncuser/workspace
 
 WORKDIR /home/vncuser/workspace

@@ -1,14 +1,7 @@
 #!/bin/bash
 set -ex
 
-# Install local packages
-echo "Installing local packages..."
-cd /home/vncuser/workspace/brui_core
-pip install .
-
-cd /home/vncuser/workspace/autobyteus
-pip install .
-
+# Set workspace permissions
 chown -R vncuser:vncuser /home/vncuser/workspace
 
 # Debug info function
