@@ -3,6 +3,7 @@ from typing import Optional, List
 from dataclasses import dataclass
 import json
 
+from autobyteus_server.file_explorer.operations.add_file_or_folder_operation import AddFileOrFolderOperation
 from autobyteus_server.file_explorer.tree_node import TreeNode
 from autobyteus_server.file_explorer.directory_traversal import DirectoryTraversal
 from autobyteus_server.file_explorer.traversal_ignore_strategy.git_ignore_strategy import GitIgnoreStrategy
@@ -72,6 +73,24 @@ class FileExplorer:
         Rename file or folder operation, delegates to RenameFileOperation.
         """
         operation = RenameFileOperation(self, target_path, new_name)
+        return operation.execute()
+
+    def add_file_or_folder(self, path: str, is_file: bool) -> FileSystemChangeEvent:
+        """
+        Creates a new file or folder at the given path (relative to the workspace).
+
+        Args:
+            path (str): The relative path where to create the file or folder
+            is_file (bool): True if creating a file, False if creating a folder
+
+        Returns:
+            FileSystemChangeEvent: Event describing the addition
+
+        Raises:
+            ValueError: If the path is outside the workspace
+            RuntimeError: If creation fails
+        """
+        operation = AddFileOrFolderOperation(self, path, is_file)
         return operation.execute()
 
     def read_file_content(self, file_path: str, max_size: int = 1024 * 1024) -> str:
