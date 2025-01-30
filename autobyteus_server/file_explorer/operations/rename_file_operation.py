@@ -59,8 +59,7 @@ class RenameFileOperation(BaseFileOperation):
 
         rename_change = RenameChange(
             node=current_node,
-            parent_id=parent_node.id if parent_node else "",
-            previous_id=None
+            parent_id=parent_node.id if parent_node else ""
         )
 
         return FileSystemChangeEvent(changes=[rename_change])

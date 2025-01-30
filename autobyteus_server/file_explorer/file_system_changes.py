@@ -96,14 +96,12 @@ class RenameChange(FileSystemChange):
     type: Literal[ChangeType.RENAME] = ChangeType.RENAME
     node: TreeNode = field(default_factory=TreeNode)
     parent_id: str = ""
-    previous_id: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
             "node": self.node.to_dict(),
             "parent_id": self.parent_id,
-            "previous_id": self.previous_id,
         })
         return base
 
@@ -111,8 +109,7 @@ class RenameChange(FileSystemChange):
     def from_dict(data: Dict[str, Any]) -> 'RenameChange':
         node = TreeNode.from_dict(data["node"])
         parent_id = data["parent_id"]
-        previous_id = data.get("previous_id")
-        return RenameChange(node=node, parent_id=parent_id, previous_id=previous_id)
+        return RenameChange(node=node, parent_id=parent_id)
 
 
 @dataclass
