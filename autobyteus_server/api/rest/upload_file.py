@@ -1,13 +1,15 @@
-# File: autobyteus_server/api/rest/upload_file.py
-
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends, Request
 from fastapi.responses import JSONResponse
 import os
 import uuid
+import logging
 from typing import List
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 
 router = APIRouter()
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 workspace_manager = WorkspaceManager()
 
@@ -40,12 +42,14 @@ def get_category(mime_type: str) -> str:
 
 @router.post("/upload-file")
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     workspace_id: str = Form(...)
 ):
     # Validate workspace
     workspace = workspace_manager.get_workspace_by_id(workspace_id)
     if not workspace:
+        logger.error(f"Invalid workspace ID: {workspace_id}")
         raise HTTPException(status_code=400, detail=f"Invalid workspace ID: {workspace_id}")
 
     # Define base upload directory based on workspace root path
@@ -55,10 +59,13 @@ async def upload_file(
     if not os.path.exists(BASE_UPLOAD_DIRECTORY):
         try:
             os.makedirs(BASE_UPLOAD_DIRECTORY, exist_ok=True)
+            logger.info(f"Created base upload directory: {BASE_UPLOAD_DIRECTORY}")
         except Exception as e:
+            logger.exception("Failed to create upload directory.")
             raise HTTPException(status_code=500, detail=f"Failed to create upload directory: {str(e)}")
 
     if file.content_type not in ALLOWED_MIME_TYPES:
+        logger.error(f"Unsupported file type: {file.content_type}")
         raise HTTPException(status_code=400, detail="Unsupported file type.")
 
     # Read file content in chunks to enforce size limit
@@ -70,8 +77,10 @@ async def upload_file(
                 break
             content += chunk
             if len(content) > MAX_FILE_SIZE:
+                logger.error("File size exceeds the limit of 10MB.")
                 raise HTTPException(status_code=400, detail="File size exceeds the limit of 10MB.")
     except Exception as e:
+        logger.exception("Error reading file.")
         raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
 
     # Check workspace storage quota
@@ -79,9 +88,12 @@ async def upload_file(
     for root, dirs, files in os.walk(BASE_UPLOAD_DIRECTORY):
         for f in files:
             fp = os.path.join(root, f)
-            total_size += os.path.getsize(fp)
-    
+            try:
+                total_size += os.path.getsize(fp)
+            except Exception as e:
+                logger.warning(f"Could not get size for file {fp}: {str(e)}")
     if total_size + len(content) > MAX_WORKSPACE_STORAGE:
+        logger.error("Workspace storage quota exceeded.")
         raise HTTPException(status_code=400, detail="Workspace storage quota exceeded.")
 
     # Determine file category
@@ -92,7 +104,9 @@ async def upload_file(
     if not os.path.exists(category_directory):
         try:
             os.makedirs(category_directory, exist_ok=True)
+            logger.info(f"Created category directory: {category_directory}")
         except Exception as e:
+            logger.exception("Failed to create category directory.")
             raise HTTPException(status_code=500, detail=f"Failed to create category directory: {str(e)}")
 
     # Generate a unique filename
@@ -103,9 +117,14 @@ async def upload_file(
     try:
         with open(file_path, "wb") as buffer:
             buffer.write(content)
+        logger.info(f"File saved successfully: {file_path}")
     except Exception as e:
+        logger.exception("Failed to save file.")
         raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
 
-    # Return the absolute file path
-    absolute_file_path = os.path.abspath(file_path)
-    return JSONResponse(content={"filePath": absolute_file_path})
+    # Construct URL for accessing the uploaded file using the new files endpoint
+    # The URL pattern is now: {base_url}rest/files/{workspace_id}/{category}/{unique_filename}
+    base_url = str(request.base_url)
+    file_url = f"{base_url}rest/files/{workspace_id}/{category}/{unique_filename}"
+    logger.info(f"Returning file URL: {file_url}")
+    return JSONResponse(content={"fileUrl": file_url})
