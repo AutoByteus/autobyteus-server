@@ -1,4 +1,3 @@
-
 from typing import TYPE_CHECKING, List, Optional, Dict, Any, Tuple
 from abc import ABC
 from autobyteus.prompt.prompt_template import PromptTemplate
@@ -15,6 +14,7 @@ if TYPE_CHECKING:
 
 import os
 import logging
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -116,17 +116,37 @@ class BaseStep(ABC, EventEmitter):
 
         return conversation_id
 
+    def _is_url(self, path: str) -> bool:
+        """
+        Check if a given path is a URL.
+
+        Args:
+            path (str): The path to check
+
+        Returns:
+            bool: True if the path is a URL, False otherwise
+        """
+        try:
+            result = urlparse(path)
+            return all([result.scheme, result.netloc])
+        except Exception:
+            return False
+
     def _construct_context(self, context_file_paths: List[Dict[str, str]]) -> Tuple[str, List[str], List[str]]:
         """
         Constructs context string, list of image paths, and list of text file paths from provided file paths.
+        
+        Note: For image files, the path can be either:
+        1. A relative file path that will be joined with the workspace root path
+        2. A complete URL to the image (e.g., from the /rest/files endpoint)
 
         Args:
-            context_file_paths (List[Dict[str, str]]): List of context file paths
+            context_file_paths (List[Dict[str, str]]): List of context file paths or URLs
 
         Returns:
             Tuple[str, List[str], List[str]]: A tuple containing:
                 - context: The constructed context string
-                - image_file_paths: List of image file paths
+                - image_file_paths: List of image file paths or URLs
                 - text_file_paths: List of text file paths
         """
         context = ""
@@ -137,11 +157,16 @@ class BaseStep(ABC, EventEmitter):
         for file in context_file_paths:
             path = file['path']
             file_type = file['type']
-            full_path = os.path.join(root_path, path)
 
             if file_type == 'image':
-                image_file_paths.append(full_path)
+                # For images, keep URL as is, only join with root_path if it's a relative path
+                if self._is_url(path):
+                    image_file_paths.append(path)
+                else:
+                    full_path = os.path.join(root_path, path)
+                    image_file_paths.append(full_path)
             elif file_type == 'text':
+                full_path = os.path.join(root_path, path)
                 with open(full_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                     context += f"File: {path}\n{content}\n\n"
