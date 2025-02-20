@@ -22,7 +22,7 @@ class TranscriptionService(metaclass=SingletonMeta):
         try:
             self.device, self.torch_dtype = self._setup_device_and_dtype()
             if self.device is None or self.torch_dtype is None:
-                logger.warning("No GPU detected. TranscriptionService will be disabled.")
+                logger.warning("No GPU detected or supported. TranscriptionService will be disabled.")
                 return
             self.is_enabled = True
         except Exception as e:
@@ -71,29 +71,31 @@ class TranscriptionService(metaclass=SingletonMeta):
     def _setup_device_and_dtype(self):
         """
         Determine the appropriate device and dtype based on system capabilities.
-        Returns tuple of (device, dtype) or (None, None) if no GPU is available.
+        Returns tuple of (device, dtype) or (None, None) if no supported GPU is available.
+        This method now only supports CUDA or MPS on Apple Silicon (arm64).
         """
         # Check for CUDA first
         if torch.cuda.is_available():
             logger.info("CUDA is available - using GPU")
             return "cuda:0", torch.float16
         
-        # Check for MPS (Apple Silicon) support
+        # Check for MPS on Apple Silicon (M1/M2) only
         elif (
             hasattr(torch.backends, "mps")
             and torch.backends.mps.is_available()
             and platform.system() == "Darwin"
+            and platform.machine() == "arm64"
         ):
-            logger.info("MPS is available - using Apple Silicon GPU")
+            logger.info("MPS is available and running on Apple Silicon - using MPS")
             return "mps", torch.float32  # MPS currently works best with float32
         
-        # Return None values if no GPU is available
-        logger.warning("No GPU (CUDA or MPS) detected. Service will be disabled.")
+        # Return None if no supported GPU is available
+        logger.warning("No supported GPU (CUDA or supported MPS) detected. TranscriptionService will be disabled.")
         return None, None
 
     def _get_pipeline_device(self):
         """
-        Convert device string to appropriate pipeline device argument
+        Convert device string to appropriate pipeline device argument.
         """
         if self.device == "cuda:0":
             return 0
@@ -134,7 +136,7 @@ class TranscriptionService(metaclass=SingletonMeta):
             str: The transcribed text from the audio data, or empty string if service is disabled.
         """
         if not self.is_enabled:
-            logger.warning("Transcription attempted but service is disabled (no GPU available)")
+            logger.warning("Transcription attempted but service is disabled (no supported GPU available)")
             return ""
             
         if not self._initialized:
