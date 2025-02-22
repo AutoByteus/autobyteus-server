@@ -4,6 +4,8 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 import autobyteus_server.workflow.persistence.conversation.models as models
+import autobyteus_server.prompt_engineering.models as models
+
 from autobyteus_server.config import config as app_config
 
 # this is the Alembic Config object, which provides
