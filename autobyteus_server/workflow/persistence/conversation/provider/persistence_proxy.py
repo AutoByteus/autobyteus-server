@@ -46,7 +46,7 @@ class PersistenceProxy(PersistenceProvider):
         Raises:
             ValueError: If the configured provider is not supported
         """
-        provider_type = os.getenv('PERSISTENCE_PROVIDER', 'mongodb').lower()
+        provider_type = os.getenv('PERSISTENCE_PROVIDER', 'sqlite').lower()
         provider_class = self._registry.get_provider_class(provider_type)
         
         if not provider_class:

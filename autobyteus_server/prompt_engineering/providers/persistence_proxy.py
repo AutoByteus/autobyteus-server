@@ -6,7 +6,7 @@ from autobyteus_server.prompt_engineering.domain.models import Prompt as DomainP
 
 class PromptPersistenceProvider:
     def __init__(self):
-        provider_type = os.getenv('PERSISTENCE_PROVIDER', 'mongodb').lower()
+        provider_type = os.getenv('PERSISTENCE_PROVIDER', 'sqlite').lower()
         if provider_type == 'mongodb':
             self.provider = MongoDBProvider()
         elif provider_type in ['postgresql', 'sqlite']:
