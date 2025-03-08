@@ -6,21 +6,15 @@ import yaml
 from autobyteus_server.config.config_parser import ConfigParser, TOMLConfigParser, ENVConfigParser
 from autobyteus.utils.singleton import SingletonMeta
 from autobyteus_server.workspaces.workspace import Workspace
+from autobyteus_server.utils.app_utils import get_application_root
 
 class Config(metaclass=SingletonMeta):
     """
     Config is a Singleton class that reads and stores configuration data
     from a file using a ConfigParser. The data can be accessed using the 'get' method.
     """
-    @staticmethod
-    def get_application_root():
-        """Get the application root directory, works in both development and packaged mode"""
-        if getattr(sys, 'frozen', False):
-            return Path(sys._MEIPASS)
-        return Path(__file__).parent.parent.parent
-
     def __init__(self, config_file: str = None, parser: ConfigParser = ENVConfigParser()):
-        self.app_root = self.get_application_root()
+        self.app_root = get_application_root()
         
         if not config_file:
             config_file = str(self.app_root / '.env')

@@ -1,6 +1,6 @@
 import os
+import asyncio
 from typing import Optional, List
-from dataclasses import dataclass
 import json
 
 from autobyteus_server.file_explorer.operations.add_file_or_folder_operation import AddFileOrFolderOperation
@@ -8,25 +8,37 @@ from autobyteus_server.file_explorer.tree_node import TreeNode
 from autobyteus_server.file_explorer.directory_traversal import DirectoryTraversal
 from autobyteus_server.file_explorer.traversal_ignore_strategy.git_ignore_strategy import GitIgnoreStrategy
 from autobyteus_server.file_explorer.traversal_ignore_strategy.specific_folder_ignore_strategy import SpecificFolderIgnoreStrategy
+from autobyteus_server.file_explorer.traversal_ignore_strategy.traversal_ignore_strategy import TraversalIgnoreStrategy
 from autobyteus_server.file_explorer.file_system_changes import FileSystemChangeEvent
 
-# The new operations:
 from autobyteus_server.file_explorer.operations.write_file_operation import WriteFileOperation
 from autobyteus_server.file_explorer.operations.remove_file_operation import RemoveFileOperation
 from autobyteus_server.file_explorer.operations.move_file_operation import MoveFileOperation
 from autobyteus_server.file_explorer.operations.rename_file_operation import RenameFileOperation
 
-@dataclass
+from autobyteus_server.file_explorer.file_system_watcher import FileSystemWatcher
+
 class FileExplorer:
     """
-    Class to manage workspace directory tree.
+    Class to manage workspace directory tree and filesystem operations.
+    Simplified to take only a root path and initialize all attributes internally.
     """
-    workspace_root_path: Optional[str] = None
-    root_node: Optional[TreeNode] = None
+    def __init__(self, workspace_root_path: str):
+        """
+        Initialize the FileExplorer with a workspace root path.
 
-    def __post_init__(self):
-        if self.workspace_root_path:
-            self.workspace_root_path = os.path.normpath(self.workspace_root_path)
+        Args:
+            workspace_root_path (str): The root directory path of the workspace.
+        """
+        self.workspace_root_path = os.path.normpath(workspace_root_path)
+        self.root_node: Optional[TreeNode] = None
+        self.ignore_strategies: List[TraversalIgnoreStrategy] = [
+            SpecificFolderIgnoreStrategy(folders_to_ignore=['.git']),
+            GitIgnoreStrategy(root_path=self.workspace_root_path)
+        ]
+        self.loop = asyncio.get_event_loop()
+        #self.file_watcher = FileSystemWatcher(self, self.loop, self.ignore_strategies)
+        #self.file_watcher.start()
 
     def build_workspace_directory_tree(self) -> TreeNode:
         """
@@ -38,12 +50,7 @@ class FileExplorer:
         if not self.workspace_root_path:
             raise ValueError("Workspace root path is not set")
 
-        files_ignore_strategies = [
-            SpecificFolderIgnoreStrategy(folders_to_ignore=['.git']),
-            GitIgnoreStrategy(root_path=self.workspace_root_path)
-        ]
-        directory_traversal = DirectoryTraversal(strategies=files_ignore_strategies)
-
+        directory_traversal = DirectoryTraversal(file_ignore_strategies=self.ignore_strategies)
         self.root_node = directory_traversal.build_tree(self.workspace_root_path)
         return self.root_node
 
@@ -80,15 +87,15 @@ class FileExplorer:
         Creates a new file or folder at the given path (relative to the workspace).
 
         Args:
-            path (str): The relative path where to create the file or folder
-            is_file (bool): True if creating a file, False if creating a folder
+            path (str): The relative path where to create the file or folder.
+            is_file (bool): True if creating a file, False if creating a folder.
 
         Returns:
-            FileSystemChangeEvent: Event describing the addition
+            FileSystemChangeEvent: Event describing the addition.
 
         Raises:
-            ValueError: If the path is outside the workspace
-            RuntimeError: If creation fails
+            ValueError: If the path is outside the workspace.
+            RuntimeError: If creation fails.
         """
         operation = AddFileOrFolderOperation(self, path, is_file)
         return operation.execute()
@@ -132,6 +139,7 @@ class FileExplorer:
     def get_tree(self) -> Optional[TreeNode]:
         """
         Gets the workspace directory tree.
+        
         Returns:
             TreeNode: The root node of the workspace directory tree.
         """

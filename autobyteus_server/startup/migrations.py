@@ -3,13 +3,14 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config as AlembicConfig
 from autobyteus_server.config import config
+from autobyteus_server.utils.app_utils import get_application_root
 
 logger = logging.getLogger(__name__)
 
 def get_alembic_config():
     """Get Alembic configuration"""
     alembic_cfg = AlembicConfig()
-    app_root = config.get_application_root()
+    app_root = get_application_root()
     
     # Set the script location
     alembic_cfg.set_main_option('script_location', str(app_root / 'alembic'))

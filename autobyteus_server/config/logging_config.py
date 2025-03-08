@@ -2,14 +2,7 @@ import logging.config
 import os
 from pathlib import Path
 import sys
-
-
-def get_application_root():
-    """Get the application root directory, works in both development and packaged mode"""
-    if getattr(sys, 'frozen', False):
-        return Path(sys._MEIPASS)
-    return Path(__file__).parent.parent.parent
-
+from autobyteus_server.utils.app_utils import get_application_root
 
 def configure_logger():
     """Configure logging using the logging configuration file"""

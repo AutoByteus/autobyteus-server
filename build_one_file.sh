@@ -52,7 +52,7 @@ else
 fi
 
 # Find specific dependency files using the copy_dependencies_one_file.py script
-echo "Locating dependency files (alembic, resources, playwright.sh, mistral_common data, anthropic tokenizer, etc.)..."
+echo "Locating dependency files (playwright.sh, mistral_common data, anthropic tokenizer, etc.)..."
 DEPENDENCY_OUTPUT=$(python copy_dependencies_one_file.py)
 DEPENDENCY_ARGS=$(echo "$DEPENDENCY_OUTPUT" | grep "NUITKA_DEPENDENCY_ARGS" | cut -d'=' -f2-)
 
@@ -113,11 +113,16 @@ else
   eval "$NUITKA_COMMAND"
   
   echo "Build complete! The executable should be in the $OUTPUT_DIR directory named 'autobyteus_server.bin' or 'autobyteus_server.exe' depending on your OS."
-  echo "Note: All required resources, alembic files, playwright dependencies, mistral_common data, anthropic tokenizer, and configuration files have been packaged inside the executable."
+  echo "Note: The executable contains Playwright dependencies, mistral_common data, and anthropic tokenizer."
+  echo "Make sure to have the following files in the same directory where you run the executable:"
+  echo "  - .env (environment configuration)"
+  echo "  - logging_config.ini (logging configuration)"
+  echo "  - alembic.ini (database migration configuration)"
+  echo "  - resources/ (directory for application resources)"
+  echo "  - alembic/ (directory for database migrations)"
   
   # Calculate and display the total build time in minutes
   duration=$SECONDS
   minutes=$(awk "BEGIN {printf \"%.2f\", $duration/60}")
   echo "Total build time: $minutes minutes"
 fi
-

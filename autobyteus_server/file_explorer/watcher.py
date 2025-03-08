@@ -10,6 +10,7 @@ from watchdog.observers import Observer
 
 from autobyteus_server.file_explorer.file_system_changes import FileSystemChangeEvent, AddChange, DeleteChange, RenameChange
 from autobyteus_server.file_explorer.file_explorer import FileExplorer
+from autobyteus_server.utils.pubsub import pubsub  # Updated import
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class FileSystemWatcher:
         # Serialize the change event to JSON and publish via PubSub
         serialized_event = change_event.to_json()
         asyncio.run_coroutine_threadsafe(
-            pubsub.publish(f"tree_updated:{self.file_explorer.workspace_id}", serialized_event),
+            pubsub.publish(f"file_system_updated:{self.file_explorer.workspace_id}", serialized_event),
             self.loop
         )
 
@@ -97,6 +98,3 @@ class FileSystemWatcher:
         self.observer.stop()
         self.observer.join()
         logger.info(f"Stopped filesystem watcher for workspace {self.file_explorer.workspace_id}")
-
-# Singleton PubSub instance
-from autobyteus_server.api.graphql.subscriptions.file_system_subscription import pubsub

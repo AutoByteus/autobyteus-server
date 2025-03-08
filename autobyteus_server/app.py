@@ -18,12 +18,7 @@ from autobyteus_server.api.rest import router as rest_router
 from autobyteus_server.config.logging_config import configure_logger
 from autobyteus_server.api.websocket.real_time_audio_router import transcription_router
 from autobyteus_server.startup import run_migrations
-
-def get_application_root():
-    """Get the application root directory, works in both development and packaged mode"""
-    if getattr(sys, 'frozen', False):
-        return Path(sys._MEIPASS)
-    return Path(__file__).parent.parent
+from autobyteus_server.utils.app_utils import get_application_root, is_packaged_environment
 
 def validate_packaged_environment():
     """Validate that all required files and directories exist in packaged mode"""
@@ -43,11 +38,11 @@ def validate_packaged_environment():
     missing_dirs = [d for d in required_dirs if not (app_root / d).is_dir()]
     
     if missing_files or missing_dirs:
-        print("Error: Missing required files or directories:")
+        logger.error("Missing required files or directories:")
         if missing_files:
-            print("Files:", missing_files)
+            logger.error(f"Files: {missing_files}")
         if missing_dirs:
-            print("Directories:", missing_dirs)
+            logger.error(f"Directories: {missing_dirs}")
         sys.exit(1)
 
 def load_environment():
@@ -62,6 +57,22 @@ load_environment()
 # Configure logging
 configure_logger()
 logger = logging.getLogger(__name__)
+
+# Log application root information - this will run when the module is imported
+app_root = get_application_root()
+if is_packaged_environment():
+    logger.info("=" * 60)
+    logger.info("RUNNING IN PACKAGED MODE")
+    logger.info(f"APPLICATION ROOT (EXECUTABLE PARENT PATH): {app_root}")
+    logger.info("=" * 60)
+    # Only validate environment when running in packaged mode at import time
+    validate_packaged_environment()
+    os.chdir(str(app_root))
+else:
+    logger.info("=" * 60)
+    logger.info("RUNNING IN DEVELOPMENT MODE")
+    logger.info(f"APPLICATION ROOT PATH: {app_root}")
+    logger.info("=" * 60)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -109,10 +120,8 @@ app.include_router(transcription_router)
 
 def run_server(host: str, port: int):
     """Run the FastAPI server"""
-    if getattr(sys, 'frozen', False):
-        validate_packaged_environment()
-        os.chdir(str(get_application_root()))
-        
+    # The app root logging is now at the module level, so we don't need to repeat it here
+    # We'll just use uvicorn to run the app
     uvicorn.run(
         app,
         host=host,
