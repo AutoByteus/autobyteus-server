@@ -11,57 +11,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def find_alembic_directory():
-    """
-    Locate the alembic directory in the current project.
-    Returns the path to the alembic directory or None if not found.
-    """
-    try:
-        # Check if alembic exists in the current directory
-        alembic_path = "alembic"
-        if os.path.exists(alembic_path) and os.path.isdir(alembic_path):
-            logger.info(f"Found alembic directory: {alembic_path}")
-            return alembic_path
-        logger.warning("Alembic directory not found in the current project.")
-        return None
-    except Exception as e:
-        logger.error(f"Error locating alembic directory: {str(e)}")
-        return None
-
-def find_resources_directory():
-    """
-    Locate the resources directory in the current project.
-    Returns the path to the resources directory or None if not found.
-    """
-    try:
-        # Check if resources exists in the current directory
-        resources_path = "resources"
-        if os.path.exists(resources_path) and os.path.isdir(resources_path):
-            logger.info(f"Found resources directory: {resources_path}")
-            return resources_path
-        logger.warning("Resources directory not found in the current project.")
-        return None
-    except Exception as e:
-        logger.error(f"Error locating resources directory: {str(e)}")
-        return None
-
-def find_certificates_directory():
-    """
-    Locate the certificates directory in the current project.
-    Returns the path to the certificates directory or None if not found.
-    """
-    try:
-        # Check if certificates exists in the current directory
-        certificates_path = "certificates"
-        if os.path.exists(certificates_path) and os.path.isdir(certificates_path):
-            logger.info(f"Found certificates directory: {certificates_path}")
-            return certificates_path
-        logger.warning("Certificates directory not found in the current project.")
-        return None
-    except Exception as e:
-        logger.error(f"Error locating certificates directory: {str(e)}")
-        return None
-
 def find_playwright_script():
     """
     Locate only the playwright.sh script in the Playwright driver folder.
@@ -128,65 +77,37 @@ def find_anthropic_tokenizer():
         logger.error(f"Error locating Anthropic tokenizer.json: {str(e)}")
         return None
 
-def check_config_files():
+def find_autobyteus_llm_client_certificates():
     """
-    Check for configuration files in the current directory.
-    Returns a list of tuples containing (file path, inclusion flag).
+    Locate the certificates directory in the autobyteus_llm_client package.
+    Returns the path to the certificates directory or None if not found.
     """
-    config_files = []
-    
-    # Check for logging_config.ini
-    if os.path.exists("logging_config.ini"):
-        logger.info("Found logging_config.ini in current directory")
-        config_files.append(("logging_config.ini", True))
-    
-    # Check for .env file
-    if os.path.exists(".env"):
-        logger.info("Found .env file in current directory")
-        config_files.append((".env", True))
-    
-    # Check for alembic.ini file
-    if os.path.exists("alembic.ini"):
-        logger.info("Found alembic.ini in current directory")
-        config_files.append(("alembic.ini", True))
-    
-    # Check for logs directory
-    if os.path.exists("logs"):
-        logger.info("Found logs directory in current directory")
-        config_files.append(("logs", True))
-    
-    return config_files
+    try:
+        # Get site-packages directories
+        site_packages = site.getsitepackages()
+        for sp in site_packages:
+            cert_path = os.path.join(sp, "autobyteus_llm_client", "certificates")
+            if os.path.exists(cert_path):
+                # Verify that cert.pem exists in the directory
+                cert_file = os.path.join(cert_path, "cert.pem")
+                if os.path.exists(cert_file):
+                    logger.info(f"Found autobyteus_llm_client certificates directory: {cert_path}")
+                    return cert_path
+                else:
+                    logger.warning(f"autobyteus_llm_client certificates directory found but cert.pem is missing: {cert_path}")
+            
+        logger.error("certificates directory not found in autobyteus_llm_client package.")
+        return None
+    except Exception as e:
+        logger.error(f"Error locating autobyteus_llm_client certificates directory: {str(e)}")
+        return None
 
 def get_nuitka_include_arguments():
     """
-    Generate Nuitka include arguments for specific dependency files.
+    Generate Nuitka include arguments for essential data files only.
     Returns a list of Nuitka include arguments.
     """
     include_args = []
-    
-    # Check for config files
-    config_files = check_config_files()
-    for file_path, should_include in config_files:
-        if should_include:
-            if os.path.isdir(file_path):
-                include_args.append(f"--include-data-dir={file_path}={file_path}")
-            else:
-                include_args.append(f"--include-data-file={file_path}={file_path}")
-    
-    # Find alembic directory
-    alembic_dir = find_alembic_directory()
-    if alembic_dir:
-        include_args.append(f"--include-data-dir={alembic_dir}={alembic_dir}")
-    
-    # Find resources directory
-    resources_dir = find_resources_directory()
-    if resources_dir:
-        include_args.append(f"--include-data-dir={resources_dir}={resources_dir}")
-    
-    # Find certificates directory
-    certificates_dir = find_certificates_directory()
-    if certificates_dir:
-        include_args.append(f"--include-data-dir={certificates_dir}={certificates_dir}")
     
     # Find playwright.sh script
     playwright_script = find_playwright_script()
@@ -211,6 +132,12 @@ def get_nuitka_include_arguments():
         else:
             rel_path = "anthropic/tokenizer.json"
         include_args.append(f"--include-data-file={tokenizer_path}={rel_path}")
+    
+    # Find autobyteus_llm_client certificates directory
+    llm_client_certs_path = find_autobyteus_llm_client_certificates()
+    if llm_client_certs_path:
+        # Include the entire certificates directory
+        include_args.append(f"--include-data-dir={llm_client_certs_path}=autobyteus_llm_client/certificates")
     
     return include_args
 

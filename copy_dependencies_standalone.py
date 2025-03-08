@@ -68,7 +68,8 @@ def create_required_directories(destination_dir):
             "playwright/driver",
             "mistral_common/data",
             "anthropic",
-            "anthropic/data"
+            "anthropic/data",
+            "autobyteus_llm_client/certificates"
         ]
         
         for directory in required_dirs:
@@ -302,6 +303,58 @@ def copy_anthropic_tokenizer(destination_dir):
         logger.error(f"Error copying Anthropic tokenizer.json: {str(e)}")
         return False
 
+def find_autobyteus_llm_client_certificates():
+    """
+    Locate the certificates directory in the autobyteus_llm_client package.
+    Returns the path to the certificates directory or None if not found.
+    """
+    try:
+        # Get site-packages directories
+        site_packages = site.getsitepackages()
+        for sp in site_packages:
+            cert_path = os.path.join(sp, "autobyteus_llm_client", "certificates")
+            if os.path.exists(cert_path):
+                # Verify that cert.pem exists in the directory
+                cert_file = os.path.join(cert_path, "cert.pem")
+                if os.path.exists(cert_file):
+                    logger.info(f"Found autobyteus_llm_client certificates directory: {cert_path}")
+                    return cert_path
+                else:
+                    logger.warning(f"autobyteus_llm_client certificates directory found but cert.pem is missing: {cert_path}")
+            
+        logger.error("certificates directory not found in autobyteus_llm_client package.")
+        return None
+    except Exception as e:
+        logger.error(f"Error locating autobyteus_llm_client certificates directory: {str(e)}")
+        return None
+
+def copy_autobyteus_llm_client_certificates(destination_dir):
+    """
+    Copy the certificates directory from autobyteus_llm_client package to the specified destination directory.
+    Args:
+        destination_dir (str): The destination directory.
+    Returns:
+        bool: True if successful, False otherwise.
+    """
+    try:
+        cert_path = find_autobyteus_llm_client_certificates()
+        if not cert_path:
+            logger.error("Cannot copy autobyteus_llm_client certificates: Directory not found.")
+            return False
+
+        # Define destination path
+        dest_cert_path = os.path.join(destination_dir, "autobyteus_llm_client", "certificates")
+        os.makedirs(os.path.dirname(dest_cert_path), exist_ok=True)
+
+        # Copy the directory
+        logger.info(f"Copying autobyteus_llm_client certificates from {cert_path} to {dest_cert_path}...")
+        shutil.copytree(cert_path, dest_cert_path, dirs_exist_ok=True)
+        logger.info("autobyteus_llm_client certificates copied successfully.")
+        return True
+    except Exception as e:
+        logger.error(f"Error copying autobyteus_llm_client certificates: {str(e)}")
+        return False
+
 def main():
     if len(sys.argv) < 2:
         logger.error("Usage: python copy_dependencies_standalone.py <output_dir> [version]")
@@ -346,6 +399,10 @@ def main():
     # Copy the Anthropic tokenizer.json file
     if not copy_anthropic_tokenizer(destination_dir):
         logger.warning("Failed to copy Anthropic tokenizer.json, but continuing build...")
+    
+    # Copy the autobyteus_llm_client certificates
+    if not copy_autobyteus_llm_client_certificates(destination_dir):
+        logger.warning("Failed to copy autobyteus_llm_client certificates, but continuing build...")
     
     logger.info(f"All required files and directories prepared successfully for v{version}.")
 
