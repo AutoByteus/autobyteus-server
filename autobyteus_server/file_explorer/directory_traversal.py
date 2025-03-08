@@ -22,18 +22,18 @@ class DirectoryTraversal:
         Traverses a specified directory and returns its structure as a TreeNode.
     """
 
-    def __init__(self, strategies: Optional[List[TraversalIgnoreStrategy]] = None, 
+    def __init__(self, file_ignore_strategies: Optional[List[TraversalIgnoreStrategy]] = None, 
                  sort_strategy: Optional[SortStrategy] = None):
         """
         Initialize DirectoryTraversal.
 
         Args:
-            strategies (Optional[List[TraversalIgnoreStrategy]]): A list of strategies to ignore files or folders.
+            file_ignore_strategies (Optional[List[TraversalIgnoreStrategy]]): A list of strategies to ignore files or folders.
                 If none is provided, no file or folder will be ignored.
             sort_strategy (Optional[SortStrategy]): A strategy for sorting directories and files.
                 If none is provided, DefaultSortStrategy is used.
         """
-        self.initial_strategies = strategies or []
+        self.file_ignore_strategies = file_ignore_strategies or []
         self.sort_strategy = sort_strategy or DefaultSortStrategy()
 
     def build_tree(self, folder_path: str) -> TreeNode:
@@ -62,7 +62,7 @@ class DirectoryTraversal:
 
         queue = deque()
         # Each item in the queue is a tuple: (current_node, current_path, current_strategies)
-        queue.append((root_node, folder_path, list(self.initial_strategies)))
+        queue.append((root_node, folder_path, list(self.file_ignore_strategies)))
 
         while queue:
             current_node, current_path, current_strategies = queue.popleft()

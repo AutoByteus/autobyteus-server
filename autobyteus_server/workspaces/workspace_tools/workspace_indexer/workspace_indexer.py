@@ -8,8 +8,6 @@ of a specific workspace, as provided by the `Workspace`.
 """
 
 import os
-from autobyteus_server.codeverse.index.index_service import IndexService
-from autobyteus_server.codeverse.core.code_parser.code_file_parser import CodeFileParser
 from autobyteus_server.workspaces.workspace import Workspace
 from autobyteus_server.workspaces.workspace_tools.base_workspace_tool import BaseWorkspaceTool
 
@@ -27,8 +25,6 @@ class WorkspaceIndexer(BaseWorkspaceTool):
             workspace (Workspace): The workspace to be indexed.
         """
         super().__init__(workspace)
-        self.index_service = IndexService()
-        self.parser = CodeFileParser()
 
     def execute(self) -> None:
         """
@@ -48,9 +44,9 @@ class WorkspaceIndexer(BaseWorkspaceTool):
         Args:
             file_path (str): Absolute path to the source code file.
         """
-        module_entity = self.parser.parse_source_code(file_path)
-        try:
-            self.index_service.index(module_entity)
-        except Exception as e:
-            # Logging can be added here to provide insights into any indexing failures
-            print(f"Failed to index entities from {file_path}. Error: {str(e)}")
+        #module_entity = self.parser.parse_source_code(file_path)
+        #try:
+        #    self.index_service.index(module_entity)
+        #except Exception as e:
+        #    # Logging can be added here to provide insights into any indexing failures
+        #    print(f"Failed to index entities from {file_path}. Error: {str(e)}")

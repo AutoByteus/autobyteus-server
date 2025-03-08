@@ -1,12 +1,10 @@
-import torch
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-from autobyteus.utils.singleton import SingletonMeta
 import logging
 import time
 from datetime import datetime
 import platform
-
-import webrtcvad  # <-- NEW: For voice activity detection
+import os
+from autobyteus.utils.singleton import SingletonMeta
+from autobyteus_server.services.real_time_audio import is_transcription_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +16,36 @@ class TranscriptionService(metaclass=SingletonMeta):
         self._initialized = False
         self.is_enabled = False
         
+        # Check if transcription is enabled via environment variable
+        if not is_transcription_enabled():
+            logger.info("Real-time transcription is disabled via environment variables")
+            return
+            
+        logger.info("Real-time transcription is enabled. Attempting to initialize...")
+        
+        # Conditionally import heavy dependencies only when the feature is enabled
+        try:
+            import torch
+            import webrtcvad
+            from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+            # Store module references for later use
+            self.torch = torch
+            self.webrtcvad = webrtcvad
+            self.transformers_modules = {
+                'AutoModelForSpeechSeq2Seq': AutoModelForSpeechSeq2Seq,
+                'AutoProcessor': AutoProcessor,
+                'pipeline': pipeline
+            }
+        except ImportError as e:
+            logger.warning(f"Required dependencies not installed: {e}. Real-time transcription will be disabled.")
+            logger.info("To enable real-time transcription, install packages: torch, transformers, webrtcvad")
+            return
+        
         # Initialize device and dtype
         try:
             self.device, self.torch_dtype = self._setup_device_and_dtype()
             if self.device is None or self.torch_dtype is None:
-                logger.warning("No GPU detected or supported. TranscriptionService will be disabled.")
+                logger.warning("No GPU detected. TranscriptionService will be disabled.")
                 return
             self.is_enabled = True
         except Exception as e:
@@ -35,7 +58,8 @@ class TranscriptionService(metaclass=SingletonMeta):
         model_id = "openai/whisper-large-v3-turbo"  # Using the large turbo model
 
         try:
-            self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+            # Access modules from stored references
+            self.model = self.transformers_modules['AutoModelForSpeechSeq2Seq'].from_pretrained(
                 model_id,
                 torch_dtype=self.torch_dtype,
                 low_cpu_mem_usage=True,
@@ -44,12 +68,12 @@ class TranscriptionService(metaclass=SingletonMeta):
             self.model.to(self.device)
             self.model.eval()  # Set model to evaluation mode
             
-            self.processor = AutoProcessor.from_pretrained(model_id)
+            self.processor = self.transformers_modules['AutoProcessor'].from_pretrained(model_id)
             
             # Configure pipeline device
             device_arg = self._get_pipeline_device()
             
-            self.pipe = pipeline(
+            self.pipe = self.transformers_modules['pipeline'](
                 "automatic-speech-recognition",
                 model=self.model,
                 tokenizer=self.processor.tokenizer,
@@ -65,29 +89,29 @@ class TranscriptionService(metaclass=SingletonMeta):
             self.is_enabled = False
             raise
 
-        # NEW: Initialize VAD (aggressiveness mode 2 is a middle ground)
-        self.vad = webrtcvad.Vad(2)
+        # Initialize VAD (aggressiveness mode 2 is a middle ground)
+        self.vad = self.webrtcvad.Vad(2)
 
     def _setup_device_and_dtype(self):
         """
         Determine the appropriate device and dtype based on system capabilities.
         Returns tuple of (device, dtype) or (None, None) if no supported GPU is available.
-        This method now only supports CUDA or MPS on Apple Silicon (arm64).
+        This method only supports CUDA or MPS on Apple Silicon (arm64).
         """
         # Check for CUDA first
-        if torch.cuda.is_available():
+        if self.torch.cuda.is_available():
             logger.info("CUDA is available - using GPU")
-            return "cuda:0", torch.float16
+            return "cuda:0", self.torch.float16
         
         # Check for MPS on Apple Silicon (M1/M2) only
         elif (
-            hasattr(torch.backends, "mps")
-            and torch.backends.mps.is_available()
+            hasattr(self.torch.backends, "mps")
+            and self.torch.backends.mps.is_available()
             and platform.system() == "Darwin"
             and platform.machine() == "arm64"
         ):
             logger.info("MPS is available and running on Apple Silicon - using MPS")
-            return "mps", torch.float32  # MPS currently works best with float32
+            return "mps", self.torch.float32  # MPS currently works best with float32
         
         # Return None if no supported GPU is available
         logger.warning("No supported GPU (CUDA or supported MPS) detected. TranscriptionService will be disabled.")
@@ -108,6 +132,9 @@ class TranscriptionService(metaclass=SingletonMeta):
         Detect if the audio data contains voice by analyzing the raw PCM using WebRTC VAD.
         Returns True if speech is detected, False otherwise.
         """
+        if not self.is_enabled:
+            return False
+            
         # WebRTC VAD requires 16-bit, 16000Hz, mono PCM frames of 10, 20, or 30 ms.
         # We'll break the audio_data into 30ms frames and check for voice.
         frame_duration_ms = 30
@@ -136,14 +163,14 @@ class TranscriptionService(metaclass=SingletonMeta):
             str: The transcribed text from the audio data, or empty string if service is disabled.
         """
         if not self.is_enabled:
-            logger.warning("Transcription attempted but service is disabled (no supported GPU available)")
+            logger.warning("Transcription attempted but service is disabled (not configured or no GPU available)")
             return ""
             
         if not self._initialized:
             logger.error("Attempted transcription with uninitialized service")
             return ""
 
-        # NEW: Check for voice activity. If no speech detected, skip transcription.
+        # Check for voice activity. If no speech detected, skip transcription.
         if not self._contains_voice(audio_data):
             logger.info("Skipping transcription: no voice detected in chunk.")
             return ""
@@ -182,5 +209,5 @@ class TranscriptionService(metaclass=SingletonMeta):
             raise
         finally:
             # Clear GPU cache if using CUDA
-            if self.device == "cuda:0":
-                torch.cuda.empty_cache()
+            if self.device == "cuda:0" and hasattr(self, 'torch') and hasattr(self.torch, 'cuda'):
+                self.torch.cuda.empty_cache()

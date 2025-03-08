@@ -11,10 +11,10 @@ import uuid
 import os
 from typing import Dict, Optional
 from autobyteus_server.file_explorer.file_explorer import FileExplorer
+from autobyteus_server.search.hackathon_search_service import HackathonSearchService
 from autobyteus_server.workspaces.setting.project_types import ProjectType
 from autobyteus_server.workflow.automated_coding_workflow import AutomatedCodingWorkflow
 from autobyteus_server.workspaces.workspace_tools.command_executor import CommandExecutionResult, CommandExecutor
-from autobyteus_server.codeverse.search.hackathon_search_service import HackathonSearchService
 from autobyteus_server.ai_terminal.ai_terminal import AITerminal
 
 class Workspace:

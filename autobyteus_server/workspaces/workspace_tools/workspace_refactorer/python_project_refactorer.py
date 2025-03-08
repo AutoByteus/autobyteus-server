@@ -12,12 +12,6 @@ from autobyteus_server.file_explorer.file_explorer import FileExplorer
 from autobyteus_server.file_explorer.tree_node import TreeNode
 from autobyteus_server.workspaces.workspace import Workspace
 from autobyteus_server.workspaces.workspace_tools.workspace_refactorer.base_project_refactorer import BaseProjectRefactorer
-from autobyteus_server.codeverse.core.code_parser.code_file_parser import CodeFileParser
-from autobyteus_server.codeverse.core.code_entities.module_entity import ModuleEntity
-from autobyteus_server.codeverse.core.code_parser.ast_node_visitor import AstNodeVisitor
-from autobyteus_server.codeverse.core.code_entities.function_entity import FunctionEntity
-from autobyteus_server.codeverse.core.code_entities.class_entity import ClassEntity
-from autobyteus_server.codeverse.core.code_entities.method_entity import MethodEntity
 
 # Logger setup
 logger = logging.getLogger(__name__)
@@ -57,8 +51,6 @@ class PythonProjectRefactorer(BaseProjectRefactorer):
             workspace (Workspace): The workspace to be refactored.
         """
         self.workspace: Workspace = workspace
-        self.code_file_parser = CodeFileParser()
-        #self.llm_integration = LLMIntegrationRegistry().get(OpenAIModel.GPT_3_5_TURBO)
 
     def refactor(self):
         """

@@ -12,7 +12,6 @@ import strawberry
 from strawberry.scalars import JSON
 
 from autobyteus_server.api.graphql.types.workspace_info import WorkspaceInfo
-from autobyteus_server.codeverse.search.search_service import SearchService
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 from autobyteus_server.workspaces.workspace_tools_service import (
     WorkspaceToolsService
@@ -21,7 +20,6 @@ from autobyteus_server.workspaces.workspace_tools_service import (
 # Singleton instances
 workspace_manager = WorkspaceManager()
 workspace_tools_service = WorkspaceToolsService()
-search_service = SearchService()  # Instantiate SearchService
 
 logger = logging.getLogger(__name__)
 

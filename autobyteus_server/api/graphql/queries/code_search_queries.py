@@ -8,10 +8,6 @@ import json
 import logging
 import strawberry
 from strawberry.scalars import JSON
-from autobyteus_server.codeverse.search.search_result import SearchResult
-from autobyteus_server.codeverse.search.search_service import SearchService
-
-search_service = SearchService()
 logger = logging.getLogger(__name__)
 
 @strawberry.type
@@ -28,8 +24,9 @@ class Query:
             JSON: The search results.
         """
         try:
-            search_result: SearchResult = search_service.search(query)
-            return search_result.to_json()
+            #search_result: SearchResult = search_service.search(query)
+            #return search_result.to_json()
+            return None
         except Exception as e:
             error_message = f"Error while searching code entities: {str(e)}"
             logger.error(error_message)

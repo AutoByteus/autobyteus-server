@@ -1,9 +1,9 @@
-# File: autobyteus_server/api/graphql/subscriptions/file_system_subscription.py
-
 import asyncio
 import strawberry
 from typing import AsyncGenerator
-from strawberry.subscriptions import AsyncPubSub
+from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
+
+workspace_manager = WorkspaceManager()
 
 @strawberry.type
 class FileSystemSubscription:
@@ -12,16 +12,22 @@ class FileSystemSubscription:
     """
 
     @strawberry.subscription
-    async def tree_updated(self, workspace_id: str) -> AsyncGenerator[None, None]:
+    async def file_system_changed(self, workspace_id: str) -> AsyncGenerator[str, None]:
         """
-        Subscription that notifies when the directory tree is updated.
-
+        Subscription that notifies when the file system is changed.
+        Retrieves the workspace, accesses its FileExplorer's FileWatcher,
+        and yields the latest event (if available) followed by new events.
+        
         Args:
-            workspace_id (str): The ID of the workspace to listen for tree updates.
-
+            workspace_id (str): The ID of the workspace to listen for file system changes.
+        
         Yields:
-            TreeNodeType: The updated tree node information.
+            str: The serialized FileSystemChangeEvent as JSON.
         """
-        channel = f"tree_updated:{workspace_id}"
-        async for event in AsyncPubSub.subscribe(channel):
-            yield event
+        workspace = workspace_manager.get_workspace_by_id(workspace_id)
+        if not workspace:
+            raise Exception("Workspace not found")
+
+        file_watcher = workspace.file_explorer.file_watcher
+        async for change_event in file_watcher.events():
+            yield change_event
