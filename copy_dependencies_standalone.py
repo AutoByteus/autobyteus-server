@@ -69,7 +69,8 @@ def create_required_directories(destination_dir):
             "mistral_common/data",
             "anthropic",
             "anthropic/data",
-            "autobyteus_llm_client/certificates"
+            "autobyteus_llm_client/certificates",
+            "autobyteus_server/workflow/steps"  # Base directory for step prompts
         ]
         
         for directory in required_dirs:
@@ -355,56 +356,75 @@ def copy_autobyteus_llm_client_certificates(destination_dir):
         logger.error(f"Error copying autobyteus_llm_client certificates: {str(e)}")
         return False
 
-def main():
-    if len(sys.argv) < 2:
-        logger.error("Usage: python copy_dependencies_standalone.py <output_dir> [version]")
-        sys.exit(1)
-
-    output_dir = sys.argv[1]
-    version = sys.argv[2] if len(sys.argv) > 2 else "1.0"
-    
-    # The app.dist directory is where we need to copy the dependencies
-    destination_dir = os.path.join(output_dir, "app.dist")
-    
-    if not os.path.exists(destination_dir):
-        logger.error(f"Destination directory {destination_dir} does not exist. Make sure Nuitka build has completed.")
-        sys.exit(1)
-    
-    logger.info(f"Preparing files for AutoByteus Server v{version}...")
-    
-    # Create required files
-    if not create_required_files(destination_dir, version):
-        logger.warning("Failed to create all required files, but continuing build...")
-    
-    # Create required directories
-    if not create_required_directories(destination_dir):
-        logger.warning("Failed to create all required directories, but continuing build...")
-    
-    # Copy alembic files if they exist
-    if not copy_alembic_files(destination_dir):
-        logger.warning("Failed to copy alembic files, but continuing build...")
-    
-    # Copy resources if they exist
-    if not copy_resources(destination_dir):
-        logger.warning("Failed to copy resources, but continuing build...")
-    
-    # Copy the playwright.sh script
-    if not copy_playwright_script(destination_dir):
-        logger.warning("Failed to copy playwright.sh, but continuing build...")
+def find_workflow_step_prompts():
+    """
+    Locate all workflow step prompt directories in the autobyteus_server package.
+    Returns a list of tuples with (source_path, relative_target_path).
+    """
+    step_prompts = []
+    try:
+        # Start from the current directory and search for the autobyteus_server module
+        server_dir = "autobyteus_server"
+        if not os.path.exists(server_dir):
+            logger.warning(f"autobyteus_server directory not found at {server_dir}")
+            return step_prompts
+            
+        # Path to the workflow steps directory
+        steps_dir = os.path.join(server_dir, "workflow", "steps")
+        if not os.path.exists(steps_dir):
+            logger.warning(f"Workflow steps directory not found at {steps_dir}")
+            return step_prompts
         
-    # Copy the mistral_common data folder
-    if not copy_mistral_data(destination_dir):
-        logger.warning("Failed to copy mistral_common data folder, but continuing build...")
-    
-    # Copy the Anthropic tokenizer.json file
-    if not copy_anthropic_tokenizer(destination_dir):
-        logger.warning("Failed to copy Anthropic tokenizer.json, but continuing build...")
-    
-    # Copy the autobyteus_llm_client certificates
-    if not copy_autobyteus_llm_client_certificates(destination_dir):
-        logger.warning("Failed to copy autobyteus_llm_client certificates, but continuing build...")
-    
-    logger.info(f"All required files and directories prepared successfully for v{version}.")
+        # Walk through the steps directory and find all prompt folders
+        for root, dirs, files in os.walk(steps_dir):
+            if "prompt" in dirs:
+                prompt_dir = os.path.join(root, "prompt")
+                # Calculate the relative path for the target
+                rel_path = os.path.relpath(prompt_dir, start=server_dir)
+                target_path = os.path.join("autobyteus_server", rel_path)
+                step_prompts.append((prompt_dir, target_path))
+                logger.info(f"Found workflow step prompt directory: {prompt_dir} -> {target_path}")
+        
+        if not step_prompts:
+            logger.warning("No workflow step prompt directories found.")
+        else:
+            logger.info(f"Found {len(step_prompts)} workflow step prompt directories.")
+        
+        return step_prompts
+    except Exception as e:
+        logger.error(f"Error locating workflow step prompt directories: {str(e)}")
+        return step_prompts
 
-if __name__ == "__main__":
-    main()
+def copy_workflow_step_prompts(destination_dir):
+    """
+    Copy all workflow step prompt directories to the specified destination directory.
+    Args:
+        destination_dir (str): The destination directory.
+    Returns:
+        bool: True if successful, False otherwise.
+    """
+    try:
+        step_prompts = find_workflow_step_prompts()
+        if not step_prompts:
+            logger.error("Cannot copy workflow step prompts: No prompt directories found.")
+            return False
+
+        success = True
+        for source_path, target_path in step_prompts:
+            # Define destination path
+            dest_prompt_path = os.path.join(destination_dir, target_path)
+            
+            # Ensure destination directory exists
+            os.makedirs(os.path.dirname(dest_prompt_path), exist_ok=True)
+            
+            # Copy the directory
+            logger.info(f"Copying workflow step prompts from {source_path} to {dest_prompt_path}...")
+            try:
+                shutil.copytree(source_path, dest_prompt_path, dirs_exist_ok=True)
+                logger.info(f"Workflow step prompts copied successfully for {target_path}.")
+            except Exception as e:
+                logger.error(f"Error copying workflow step prompts for {target_path}: {str(e)}")
+                success = False
+        
+        return success
+    except Exception

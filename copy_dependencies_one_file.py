@@ -102,6 +102,45 @@ def find_autobyteus_llm_client_certificates():
         logger.error(f"Error locating autobyteus_llm_client certificates directory: {str(e)}")
         return None
 
+def find_workflow_step_prompts():
+    """
+    Locate all workflow step prompt directories in the autobyteus_server package.
+    Returns a list of tuples with (source_path, relative_target_path).
+    """
+    step_prompts = []
+    try:
+        # Start from the current directory and search for the autobyteus_server module
+        server_dir = "autobyteus_server"
+        if not os.path.exists(server_dir):
+            logger.warning(f"autobyteus_server directory not found at {server_dir}")
+            return step_prompts
+            
+        # Path to the workflow steps directory
+        steps_dir = os.path.join(server_dir, "workflow", "steps")
+        if not os.path.exists(steps_dir):
+            logger.warning(f"Workflow steps directory not found at {steps_dir}")
+            return step_prompts
+        
+        # Walk through the steps directory and find all prompt folders
+        for root, dirs, files in os.walk(steps_dir):
+            if "prompt" in dirs:
+                prompt_dir = os.path.join(root, "prompt")
+                # Calculate the relative path for the target
+                rel_path = os.path.relpath(prompt_dir, start=server_dir)
+                target_path = os.path.join("autobyteus_server", rel_path)
+                step_prompts.append((prompt_dir, target_path))
+                logger.info(f"Found workflow step prompt directory: {prompt_dir} -> {target_path}")
+        
+        if not step_prompts:
+            logger.warning("No workflow step prompt directories found.")
+        else:
+            logger.info(f"Found {len(step_prompts)} workflow step prompt directories.")
+        
+        return step_prompts
+    except Exception as e:
+        logger.error(f"Error locating workflow step prompt directories: {str(e)}")
+        return step_prompts
+
 def get_nuitka_include_arguments():
     """
     Generate Nuitka include arguments for essential data files only.
@@ -138,6 +177,12 @@ def get_nuitka_include_arguments():
     if llm_client_certs_path:
         # Include the entire certificates directory
         include_args.append(f"--include-data-dir={llm_client_certs_path}=autobyteus_llm_client/certificates")
+    
+    # Find workflow step prompt directories
+    step_prompts = find_workflow_step_prompts()
+    for source_path, target_path in step_prompts:
+        # Include each prompt directory
+        include_args.append(f"--include-data-dir={source_path}={target_path}")
     
     return include_args
 
