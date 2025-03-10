@@ -16,6 +16,9 @@ def is_nuitka_build() -> bool:
     """
     Detect if the application is running from a Nuitka build, especially onefile mode.
     
+    This checks for Nuitka's 'onefile_' pattern in the executable path, which is consistent
+    across different operating systems (Linux, macOS, Windows) when running in onefile mode.
+    
     Returns:
         bool: True if running from a Nuitka build, False otherwise
     """
@@ -25,8 +28,9 @@ def is_nuitka_build() -> bool:
     if _is_nuitka is not None:
         return _is_nuitka
     
-    # Check if executable is in a Nuitka temp directory
-    if '/tmp/onefile_' in sys.executable:
+    # Check if executable is in a Nuitka temp directory by looking for the 'onefile_' pattern
+    # This works across all operating systems supported by Nuitka
+    if 'onefile_' in sys.executable:
         _is_nuitka = True
         return True
     
