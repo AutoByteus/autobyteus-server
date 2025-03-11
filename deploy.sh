@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Simple deployment script for AutoByteus Server
 # Copies configurations from the autobyteus-server folder and the built executable
 
@@ -7,6 +7,45 @@ set -e
 
 # Default values
 DRY_RUN=false
+
+# Detect OS type
+OS_TYPE=$(uname -s)
+IS_MACOS=false
+if [ "$OS_TYPE" = "Darwin" ]; then
+  IS_MACOS=true
+  echo "Detected macOS environment."
+else
+  echo "Detected Linux environment."
+fi
+
+# Function to normalize paths that works on both macOS and Linux
+normalize_path() {
+    local path="$1"
+    
+    # If the directory exists, we can use cd and pwd to get absolute path
+    if [ -d "$path" ]; then
+        local old_pwd=$(pwd)
+        cd "$path" > /dev/null
+        local abs_path=$(pwd)
+        cd "$old_pwd" > /dev/null
+        echo "$abs_path"
+    else
+        # For non-existent directories
+        if [ "$IS_MACOS" = true ]; then
+            # On macOS, if the directory doesn't exist, construct the absolute path
+            if [[ "$path" = /* ]]; then
+                # Path already absolute
+                echo "$path"
+            else
+                # Make relative path absolute
+                echo "$(pwd)/$path"
+            fi
+        else
+            # On Linux, we can use realpath -m
+            realpath -m "$path"
+        fi
+    fi
+}
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -49,7 +88,7 @@ fi
 
 # Normalize paths
 SOURCE_DIR="$(pwd)"
-TARGET_DIR=$(realpath -m "$TARGET_DIR")
+TARGET_DIR=$(normalize_path "$TARGET_DIR")
 
 echo "Source directory: $SOURCE_DIR"
 echo "Target directory: $TARGET_DIR"
@@ -59,9 +98,30 @@ fi
 echo
 
 # Check if executable exists
-EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server"
-if [ ! -f "$EXECUTABLE_SOURCE" ]; then
-    echo "Error: Executable not found at $EXECUTABLE_SOURCE"
+if [ "$IS_MACOS" = true ]; then
+    # On macOS, check for both .bin file and .app bundle
+    EXECUTABLE_SOURCE=""
+    if [ -f "$SOURCE_DIR/dist/autobyteus_server" ]; then
+        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server"
+    elif [ -f "$SOURCE_DIR/dist/autobyteus_server.bin" ]; then
+        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server.bin"
+    elif [ -d "$SOURCE_DIR/dist/autobyteus_server.app" ]; then
+        echo "Found macOS app bundle at $SOURCE_DIR/dist/autobyteus_server.app"
+        echo "Warning: Deploying macOS app bundles is not fully supported in this script."
+        echo "It's recommended to deploy the .bin file instead."
+        EXECUTABLE_SOURCE=""
+    fi
+else
+    # On Linux, check for the standard executable
+    EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server"
+    if [ ! -f "$EXECUTABLE_SOURCE" ]; then
+        # Also check for .bin extension as a fallback
+        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server.bin"
+    fi
+fi
+
+if [ -z "$EXECUTABLE_SOURCE" ] || [ ! -f "$EXECUTABLE_SOURCE" ]; then
+    echo "Error: Executable not found in dist directory"
     echo "Please build it first with ./build_one_file.sh"
     exit 1
 fi
@@ -76,7 +136,12 @@ list_files_in_dir() {
     fi
     
     # List all entries in the directory
-    local entries=$(find "$dir" -type f | sort)
+    if [ "$IS_MACOS" = true ]; then
+        # macOS find has different syntax
+        local entries=$(find "$dir" -type f | sort)
+    else
+        local entries=$(find "$dir" -type f | sort)
+    fi
     
     for entry in $entries; do
         # Remove source directory prefix for cleaner output

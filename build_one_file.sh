@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Exit on error
 set -e
 
@@ -19,6 +19,16 @@ done
 # Start timing the build process
 SECONDS=0
 
+# Detect OS type
+OS_TYPE=$(uname -s)
+IS_MACOS=false
+if [ "$OS_TYPE" = "Darwin" ]; then
+  IS_MACOS=true
+  echo "Detected macOS environment."
+else
+  echo "Detected Linux environment."
+fi
+
 # This script builds a single executable file
 if [ "$DRY_RUN" = true ]; then
   echo "DRY RUN MODE: Will show the Nuitka command without executing it."
@@ -31,16 +41,24 @@ fi
 OUTPUT_DIR="dist"
 mkdir -p $OUTPUT_DIR
 
-# Set up dependencies (even in dry run, as we need the paths)
+# Set up dependencies - only needed for Linux builds
 if [ "$DRY_RUN" = true ]; then
-  echo "[DRY RUN] Would install Conda dependencies for static linking..."
+  if [ "$IS_MACOS" = false ]; then
+    echo "[DRY RUN] Would install Conda dependencies for static linking on Linux..."
+  else
+    echo "[DRY RUN] Skipping Conda dependencies installation (not needed on macOS)..."
+  fi
 else
-  echo "Installing Conda dependencies for static linking..."
-  conda install conda-forge::gcc
-  conda install -c conda-forge libpython-static -y
-  if [ $? -ne 0 ]; then
+  if [ "$IS_MACOS" = false ]; then
+    echo "Installing Conda dependencies for static linking on Linux..."
+    conda install conda-forge::gcc
+    conda install -c conda-forge libpython-static -y
+    if [ $? -ne 0 ]; then
       echo "Error: Failed to install libpython-static. Ensure 'conda-forge' is added as a channel (run 'conda config --add channels conda-forge') and try again."
       exit 1
+    fi
+  else
+    echo "Skipping Conda dependencies installation (not needed on macOS)..."
   fi
 fi
 
@@ -87,6 +105,12 @@ for dep_arg in "${DEPENDENCY_ARGS_ARRAY[@]}"; do
     NUITKA_COMMAND="$NUITKA_COMMAND $dep_arg"
 done
 
+# Add macOS-specific options when running on macOS
+if [ "$IS_MACOS" = true ]; then
+  echo "Adding macOS-specific build options..."
+  NUITKA_COMMAND="$NUITKA_COMMAND --macos-create-app-bundle"
+fi
+
 # Add the remaining options
 NUITKA_COMMAND="$NUITKA_COMMAND \
     --onefile \
@@ -112,7 +136,14 @@ else
   echo "Running command: $NUITKA_COMMAND"
   eval "$NUITKA_COMMAND"
   
-  echo "Build complete! The executable should be in the $OUTPUT_DIR directory named 'autobyteus_server.bin' or 'autobyteus_server.exe' depending on your OS."
+  # Determine the likely executable name based on platform
+  if [ "$IS_MACOS" = true ]; then
+    EXEC_NAME="autobyteus_server.bin or as an .app bundle"
+  else
+    EXEC_NAME="autobyteus_server.bin or autobyteus_server.exe"
+  fi
+  
+  echo "Build complete! The executable should be in the $OUTPUT_DIR directory named '$EXEC_NAME' depending on your OS."
   echo "Note: The executable contains Playwright dependencies, mistral_common data, and anthropic tokenizer."
   echo "Make sure to have the following files in the same directory where you run the executable:"
   echo "  - .env (environment configuration)"

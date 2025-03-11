@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Exit on error
 set -e
 
@@ -18,6 +18,16 @@ for arg in "$@"; do
       ;;
   esac
 done
+
+# Detect OS type
+OS_TYPE=$(uname -s)
+IS_MACOS=false
+if [ "$OS_TYPE" = "Darwin" ]; then
+  IS_MACOS=true
+  echo "Detected macOS environment."
+else
+  echo "Detected Linux environment."
+fi
 
 # Start timing the build process
 SECONDS=0
@@ -43,16 +53,24 @@ else
   mkdir -p $OUTPUT_DIR
 fi
 
-# Set up dependencies
+# Set up dependencies - only needed for Linux builds
 if [ "$DRY_RUN" = true ]; then
-  echo "[DRY RUN] Would install Conda dependencies for static linking..."
+  if [ "$IS_MACOS" = false ]; then
+    echo "[DRY RUN] Would install Conda dependencies for static linking on Linux..."
+  else
+    echo "[DRY RUN] Skipping Conda dependencies installation (not needed on macOS)..."
+  fi
 else
-  echo "Installing Conda dependencies for static linking..."
-  conda install conda-forge::gcc
-  conda install -c conda-forge libpython-static -y
-  if [ $? -ne 0 ]; then
+  if [ "$IS_MACOS" = false ]; then
+    echo "Installing Conda dependencies for static linking on Linux..."
+    conda install conda-forge::gcc
+    conda install -c conda-forge libpython-static -y
+    if [ $? -ne 0 ]; then
       echo "Error: Failed to install libpython-static. Ensure 'conda-forge' is added as a channel (run 'conda config --add channels conda-forge') and try again."
       exit 1
+    fi
+  else
+    echo "Skipping Conda dependencies installation (not needed on macOS)..."
   fi
 fi
 
@@ -98,6 +116,12 @@ NUITKA_COMMAND="python -m nuitka \
 for dep_arg in "${DEPENDENCY_ARGS_ARRAY[@]}"; do
     NUITKA_COMMAND="$NUITKA_COMMAND $dep_arg"
 done
+
+# Add macOS-specific options when running on macOS
+if [ "$IS_MACOS" = true ]; then
+  echo "Adding macOS-specific build options..."
+  NUITKA_COMMAND="$NUITKA_COMMAND --macos-create-app-bundle"
+fi
 
 # Add the remaining options
 NUITKA_COMMAND="$NUITKA_COMMAND \
@@ -168,8 +192,14 @@ if [ "$DRY_RUN" = true ]; then
   echo "[DRY RUN] Build process complete (simulation only)"
   echo "[DRY RUN] To execute the actual build, run without the --dry-run flag"
 else
-  echo "Build complete! The standalone application is in: $OUTPUT_DIR/app.dist"
-  echo "To run the application, execute: $OUTPUT_DIR/app.dist/app"
+  # Determine the correct directory name based on platform
+  if [ "$IS_MACOS" = true ]; then
+    echo "Build complete! The standalone application is in: $OUTPUT_DIR/app.dist (or as an .app bundle)"
+    echo "To run the application, execute the app bundle or: $OUTPUT_DIR/app.dist/app"
+  else
+    echo "Build complete! The standalone application is in: $OUTPUT_DIR/app.dist"
+    echo "To run the application, execute: $OUTPUT_DIR/app.dist/app"
+  fi
   echo "Configuration files, alembic migrations, playwright dependencies, mistral_common data, anthropic tokenizer, and required resources have been included with the executable."
 fi
 
@@ -177,5 +207,3 @@ fi
 duration=$SECONDS
 minutes=$(awk "BEGIN {printf \"%.2f\", $duration/60}")
 echo "Total build time: $minutes minutes"
-
-
