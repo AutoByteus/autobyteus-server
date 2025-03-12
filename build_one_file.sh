@@ -62,16 +62,16 @@ fi
 OUTPUT_DIR="dist"
 mkdir -p $OUTPUT_DIR
 
-# Define platform-specific output file names according to niuzhirui-server conventions
+# Define platform-specific output file names
 if [ "$IS_MACOS" = true ]; then
-  OUTPUT_FILENAME="llm_server_macos-${VERSION}"
-  FINAL_FILENAME="llm_server_macos-${VERSION}"
+  OUTPUT_FILENAME="autobyteus_server_macos-${VERSION}"
+  FINAL_FILENAME="autobyteus_server_macos-${VERSION}"
 elif [ "$IS_WINDOWS" = true ]; then
-  OUTPUT_FILENAME="llm_server_windows-${VERSION}"
-  FINAL_FILENAME="llm_server_windows-${VERSION}.exe"
+  OUTPUT_FILENAME="autobyteus_server_windows-${VERSION}"
+  FINAL_FILENAME="autobyteus_server_windows-${VERSION}.exe"
 else
-  OUTPUT_FILENAME="llm_server_linux-${VERSION}"
-  FINAL_FILENAME="llm_server_linux-${VERSION}"
+  OUTPUT_FILENAME="autobyteus_server_linux-${VERSION}"
+  FINAL_FILENAME="autobyteus_server_linux-${VERSION}"
 fi
 
 echo "Using output filename: $OUTPUT_FILENAME"
@@ -203,7 +203,6 @@ if [ "$DRY_RUN" = true ]; then
   echo "$NUITKA_COMMAND"
   echo "=========================================="
   echo "[DRY RUN] Build command displayed but not executed."
-  echo "[DRY RUN] Would copy built file to niuzhirui-server_dev for download."
 else
   echo "Starting Nuitka build process..."
   echo "Running command: $NUITKA_COMMAND"
@@ -230,34 +229,7 @@ else
     echo "Found built Linux executable: $BUILT_FILE"
   fi
   
-  # Create niuzhirui-server_dev/resources/llm_server directory if it doesn't exist
-  NIUZHIRUI_DIR="../niuzhirui-server_dev/resources/llm_server"
-  mkdir -p "$NIUZHIRUI_DIR"
-  
-  # Copy the built file to niuzhirui-server_dev
-  echo "Copying built file to $NIUZHIRUI_DIR/$FINAL_FILENAME for download..."
-  
-  if [[ "$BUILT_FILE" == *.app ]]; then
-    # For macOS app bundle, create a zip archive
-    echo "Creating zip archive of macOS app bundle..."
-    (cd "$OUTPUT_DIR" && zip -r "${OUTPUT_FILENAME}.zip" "$(basename "$BUILT_FILE")")
-    cp "$OUTPUT_DIR/${OUTPUT_FILENAME}.zip" "$NIUZHIRUI_DIR/$FINAL_FILENAME.zip"
-    echo "Created and copied: $NIUZHIRUI_DIR/$FINAL_FILENAME.zip"
-  else
-    # For regular executables
-    cp "$BUILT_FILE" "$NIUZHIRUI_DIR/$FINAL_FILENAME"
-    echo "Copied: $NIUZHIRUI_DIR/$FINAL_FILENAME"
-  fi
-  
-  # Create config file for the download
-  CONFIG_FILE="$NIUZHIRUI_DIR/$FINAL_FILENAME.config.json"
-  echo "{" > "$CONFIG_FILE"
-  echo "  \"distribution_channel\": \"all\"," >> "$CONFIG_FILE"
-  echo "  \"description\": \"AutoByteus Server $VERSION for $([ "$IS_MACOS" = true ] && echo "macOS" || [ "$IS_WINDOWS" = true ] && echo "Windows" || echo "Linux")\"" >> "$CONFIG_FILE"
-  echo "}" >> "$CONFIG_FILE"
-  echo "Created config file: $CONFIG_FILE"
-  
-  echo "Build complete! The executable has been built and copied to the niuzhirui-server_dev directory."
+  echo "Build complete! The executable has been built."
   echo "Note: The executable contains Playwright dependencies, mistral_common data, and anthropic tokenizer."
   echo "Make sure to have the following files in the same directory where you run the executable:"
   echo "  - .env (environment configuration)"

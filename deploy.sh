@@ -7,6 +7,7 @@ set -e
 
 # Default values
 DRY_RUN=false
+VERSION="1.0.0"  # Default version, can be overridden
 
 # Detect OS type
 OS_TYPE=$(uname -s)
@@ -90,6 +91,11 @@ while [[ $# -gt 0 ]]; do
         DRY_RUN=true
         shift # past argument
         ;;
+        -v|--version)
+        VERSION="$2"
+        shift # past argument
+        shift # past value
+        ;;
         *)    # unknown option or target directory
         # If first positional parameter and not starting with -, treat as target dir
         if [[ $# -eq $OPTIND && ! $key == -* ]]; then
@@ -102,7 +108,7 @@ done
 
 # Banner
 echo "=================================================="
-echo "AutoByteus Server - Deployment"
+echo "AutoByteus Server - Deployment (Version $VERSION)"
 if [ "$DRY_RUN" = true ]; then
     echo "MODE: DRY RUN (no changes will be made)"
 fi
@@ -132,41 +138,75 @@ if [ "$DRY_RUN" = true ]; then
 fi
 echo
 
-# Check if executable exists
+# Define platform-specific file names
 if [ "$IS_MACOS" = true ]; then
-    # On macOS, check for both .bin file and .app bundle
-    EXECUTABLE_SOURCE=""
-    if [ -f "$SOURCE_DIR/dist/autobyteus_server" ]; then
-        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server"
-    elif [ -f "$SOURCE_DIR/dist/autobyteus_server.bin" ]; then
-        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server.bin"
-    elif [ -d "$SOURCE_DIR/dist/autobyteus_server.app" ]; then
-        echo "Found macOS app bundle at $SOURCE_DIR/dist/autobyteus_server.app"
-        echo "Warning: Deploying macOS app bundles is not fully supported in this script."
-        echo "It's recommended to deploy the .bin file instead."
-        EXECUTABLE_SOURCE=""
+    BASE_NAME="autobyteus_server_macos-${VERSION}"
+elif [ "$IS_WINDOWS" = true ]; then
+    BASE_NAME="autobyteus_server_windows-${VERSION}"
+else
+    BASE_NAME="autobyteus_server_linux-${VERSION}"
+fi
+
+# Check if executable exists
+EXECUTABLE_SOURCE=""
+
+# Check platform-specific paths first
+if [ "$IS_MACOS" = true ]; then
+    # Check for macOS specific files
+    if [ -f "$SOURCE_DIR/dist/$BASE_NAME" ]; then
+        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/$BASE_NAME"
+    elif [ -f "$SOURCE_DIR/dist/$BASE_NAME.bin" ]; then
+        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/$BASE_NAME.bin"
+    elif [ -d "$SOURCE_DIR/dist/$BASE_NAME.app" ]; then
+        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/$BASE_NAME.app"
+        echo "Found macOS app bundle: $EXECUTABLE_SOURCE"
     fi
 elif [ "$IS_WINDOWS" = true ]; then
-    # On Windows, check for .exe file
-    EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server.exe"
-    if [ ! -f "$EXECUTABLE_SOURCE" ]; then
-        # Also check without .exe extension as a fallback
-        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server"
+    # Check for Windows specific files
+    if [ -f "$SOURCE_DIR/dist/$BASE_NAME.exe" ]; then
+        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/$BASE_NAME.exe"
     fi
 else
-    # On Linux, check for the standard executable
-    EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server"
-    if [ ! -f "$EXECUTABLE_SOURCE" ]; then
-        # Also check for .bin extension as a fallback
-        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server.bin"
+    # Check for Linux specific files
+    if [ -f "$SOURCE_DIR/dist/$BASE_NAME" ]; then
+        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/$BASE_NAME"
+    elif [ -f "$SOURCE_DIR/dist/$BASE_NAME.bin" ]; then
+        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/$BASE_NAME.bin"
     fi
 fi
 
-if [ -z "$EXECUTABLE_SOURCE" ] || [ ! -f "$EXECUTABLE_SOURCE" ]; then
+# If not found, try generic names
+if [ -z "$EXECUTABLE_SOURCE" ]; then
+    if [ "$IS_MACOS" = true ]; then
+        if [ -f "$SOURCE_DIR/dist/autobyteus_server" ]; then
+            EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server"
+        elif [ -f "$SOURCE_DIR/dist/autobyteus_server.bin" ]; then
+            EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server.bin"
+        elif [ -d "$SOURCE_DIR/dist/autobyteus_server.app" ]; then
+            EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server.app"
+            echo "Found macOS app bundle: $EXECUTABLE_SOURCE"
+        fi
+    elif [ "$IS_WINDOWS" = true ]; then
+        if [ -f "$SOURCE_DIR/dist/autobyteus_server.exe" ]; then
+            EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server.exe"
+        fi
+    else
+        if [ -f "$SOURCE_DIR/dist/autobyteus_server" ]; then
+            EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server"
+        elif [ -f "$SOURCE_DIR/dist/autobyteus_server.bin" ]; then
+            EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server.bin"
+        fi
+    fi
+fi
+
+# Exit if no executable found
+if [ -z "$EXECUTABLE_SOURCE" ]; then
     echo "Error: Executable not found in dist directory"
     echo "Please build it first with ./build_one_file.sh"
     exit 1
 fi
+
+echo "Found executable: $EXECUTABLE_SOURCE"
 
 # Function to recursively list all files in a directory
 list_files_in_dir() {
@@ -299,26 +339,29 @@ copy_directory "$SOURCE_DIR/data" "$TARGET_DIR/data" "data"
 # Copy the executable
 echo
 echo "Copying executable..."
+
 if [ "$DRY_RUN" = true ]; then
-    echo "[DRY RUN] Would copy executable: autobyteus_server"
-    echo "[DRY RUN] Would set executable permissions on: $TARGET_DIR/autobyteus_server"
+    echo "[DRY RUN] Would copy executable from: $EXECUTABLE_SOURCE"
 else
-    # Determine the target executable name
-    EXECUTABLE_TARGET="$TARGET_DIR/autobyteus_server"
-    
-    # On Windows, add .exe extension if the source has it
-    if [ "$IS_WINDOWS" = true ] && [[ "$EXECUTABLE_SOURCE" == *.exe ]]; then
+    # Handle different types of executables
+    if [ "$IS_MACOS" = true ] && [[ "$EXECUTABLE_SOURCE" == *.app ]]; then
+        # For macOS app bundle
+        echo "Copying macOS app bundle..."
+        cp -R "$EXECUTABLE_SOURCE" "$TARGET_DIR/"
+        TARGET_APP=$(basename "$EXECUTABLE_SOURCE")
+        echo "✓ Copied app bundle to: $TARGET_DIR/$TARGET_APP"
+    elif [ "$IS_WINDOWS" = true ]; then
+        # For Windows executable
         EXECUTABLE_TARGET="$TARGET_DIR/autobyteus_server.exe"
-    fi
-    
-    cp "$EXECUTABLE_SOURCE" "$EXECUTABLE_TARGET"
-    
-    # Don't use chmod on Windows as it might not work properly
-    if [ "$IS_WINDOWS" = false ]; then
+        cp "$EXECUTABLE_SOURCE" "$EXECUTABLE_TARGET"
+        echo "✓ Copied executable to: $EXECUTABLE_TARGET"
+    else
+        # For macOS/Linux executable
+        EXECUTABLE_TARGET="$TARGET_DIR/autobyteus_server"
+        cp "$EXECUTABLE_SOURCE" "$EXECUTABLE_TARGET"
         chmod +x "$EXECUTABLE_TARGET"
+        echo "✓ Copied executable to: $EXECUTABLE_TARGET"
     fi
-    
-    echo "✓ Copied executable: autobyteus_server"
 fi
 
 # Summary
@@ -335,8 +378,10 @@ echo
 if [ "$DRY_RUN" = false ]; then
     echo "To run the server:"
     echo "  cd \"$TARGET_DIR\""
-    if [ "$IS_WINDOWS" = true ]; then
-        echo "  ./autobyteus_server.exe"
+    if [ "$IS_MACOS" = true ] && [[ "$EXECUTABLE_SOURCE" == *.app ]]; then
+        echo "  open $(basename "$EXECUTABLE_SOURCE")"
+    elif [ "$IS_WINDOWS" = true ]; then
+        echo "  .\\autobyteus_server.exe"
     else
         echo "  ./autobyteus_server"
     fi

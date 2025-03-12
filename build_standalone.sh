@@ -53,16 +53,16 @@ normalize_path() {
 # Start timing the build process
 SECONDS=0
 
-# Define platform-specific output file names according to niuzhirui-server conventions
+# Define platform-specific output file names
 if [ "$IS_MACOS" = true ]; then
-  BUILD_NAME="llm_server_macos-${VERSION}"
-  FINAL_FILENAME="llm_server_macos-${VERSION}"
+  BUILD_NAME="autobyteus_server_macos-${VERSION}"
+  FINAL_FILENAME="autobyteus_server_macos-${VERSION}"
 elif [ "$IS_WINDOWS" = true ]; then
-  BUILD_NAME="llm_server_windows-${VERSION}"
-  FINAL_FILENAME="llm_server_windows-${VERSION}.exe"
+  BUILD_NAME="autobyteus_server_windows-${VERSION}"
+  FINAL_FILENAME="autobyteus_server_windows-${VERSION}.exe"
 else
-  BUILD_NAME="llm_server_linux-${VERSION}"
-  FINAL_FILENAME="llm_server_linux-${VERSION}"
+  BUILD_NAME="autobyteus_server_linux-${VERSION}"
+  FINAL_FILENAME="autobyteus_server_linux-${VERSION}"
 fi
 
 # This script builds a standalone directory application instead of a single compressed file.
@@ -230,48 +230,6 @@ else
   fi
 fi
 
-# Create a zip file of the application
-if [ "$DRY_RUN" = true ]; then
-  echo "[DRY RUN] Would create zip file of the application..."
-else
-  echo "Creating zip file of the application..."
-  
-  # Create niuzhirui-server_dev/resources/llm_server directory if it doesn't exist
-  NIUZHIRUI_DIR="../niuzhirui-server_dev/resources/llm_server"
-  mkdir -p "$NIUZHIRUI_DIR"
-  
-  ZIP_FILE="$NIUZHIRUI_DIR/$FINAL_FILENAME.zip"
-
-  # Remove previous zip file if it exists
-  if [ -f "$ZIP_FILE" ]; then
-      echo "Removing previous zip file..."
-      rm "$ZIP_FILE"
-  fi
-
-  # Create the zip file
-  echo "Creating zip file at $ZIP_FILE..."
-  cd dist
-  zip -r "$ZIP_FILE" $(basename $OUTPUT_DIR)/app.dist
-  cd ..
-
-  # Verify the zip file was created
-  if [ -f "$ZIP_FILE" ]; then
-      echo "Successfully created $ZIP_FILE"
-      echo "File size: $(du -h $ZIP_FILE | cut -f1)"
-      
-      # Create config file for the download
-      CONFIG_FILE="$ZIP_FILE.config.json"
-      echo "{" > "$CONFIG_FILE"
-      echo "  \"distribution_channel\": \"all\"," >> "$CONFIG_FILE"
-      echo "  \"description\": \"AutoByteus Server $VERSION Standalone for $([ "$IS_MACOS" = true ] && echo "macOS" || [ "$IS_WINDOWS" = true ] && echo "Windows" || echo "Linux")\"" >> "$CONFIG_FILE"
-      echo "}" >> "$CONFIG_FILE"
-      echo "Created config file: $CONFIG_FILE"
-  else
-      echo "Error: Failed to create zip file"
-      exit 1
-  fi
-fi
-
 if [ "$DRY_RUN" = true ]; then
   echo "[DRY RUN] Build process complete (simulation only)"
   echo "[DRY RUN] To execute the actual build, run without the --dry-run flag"
@@ -279,15 +237,12 @@ else
   # Determine the correct directory name based on platform
   if [ "$IS_MACOS" = true ]; then
     echo "Build complete! The standalone application is in: $OUTPUT_DIR/app.dist (or as an .app bundle)"
-    echo "A zip file has been created at $ZIP_FILE for distribution"
     echo "To run the application, execute the app bundle or: $OUTPUT_DIR/app.dist/app"
   elif [ "$IS_WINDOWS" = true ]; then
     echo "Build complete! The standalone application is in: $OUTPUT_DIR/app.dist"
-    echo "A zip file has been created at $ZIP_FILE for distribution"
     echo "To run the application, execute: $OUTPUT_DIR/app.dist/app.exe"
   else
     echo "Build complete! The standalone application is in: $OUTPUT_DIR/app.dist"
-    echo "A zip file has been created at $ZIP_FILE for distribution"
     echo "To run the application, execute: $OUTPUT_DIR/app.dist/app"
   fi
   echo "Configuration files, alembic migrations, playwright dependencies, mistral_common data, anthropic tokenizer, and required resources have been included with the executable."
