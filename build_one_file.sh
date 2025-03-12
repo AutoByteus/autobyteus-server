@@ -111,7 +111,10 @@ echo "Locating dependency files (playwright.sh, mistral_common data, anthropic t
 DEPENDENCY_ARGS_ARRAY=()
 
 if [ "$IS_WINDOWS" = true ]; then
-  # For Windows, use the line-by-line output format
+  # For Windows, use a temporary file approach which is more compatible with Git Bash
+  TEMP_FILE="temp_dependencies.txt"
+  python copy_dependencies_one_file.py > "$TEMP_FILE"
+  
   CAPTURE=false
   while IFS= read -r line; do
     if [[ "$line" == "NUITKA_DEPENDENCY_ARGS_START" ]]; then
@@ -125,7 +128,10 @@ if [ "$IS_WINDOWS" = true ]; then
     if [ "$CAPTURE" = true ]; then
       DEPENDENCY_ARGS_ARRAY+=("$line")
     fi
-  done < <(python copy_dependencies_one_file.py)
+  done < "$TEMP_FILE"
+  
+  # Clean up temporary file
+  rm "$TEMP_FILE"
 else
   # For Linux/macOS, use the JSON format (original approach)
   DEPENDENCY_OUTPUT=$(python copy_dependencies_one_file.py)
