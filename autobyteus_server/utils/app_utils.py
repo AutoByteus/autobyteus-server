@@ -16,7 +16,7 @@ def is_nuitka_build() -> bool:
     """
     Detect if the application is running from a Nuitka build, especially onefile mode.
     
-    This checks for Nuitka's 'onefile_' pattern in the executable path, which is consistent
+    This checks for Nuitka's patterns in the executable path, which can vary
     across different operating systems (Linux, macOS, Windows) when running in onefile mode.
     
     Returns:
@@ -28,11 +28,21 @@ def is_nuitka_build() -> bool:
     if _is_nuitka is not None:
         return _is_nuitka
     
-    # Check if executable is in a Nuitka temp directory by looking for the 'onefile_' pattern
-    # This works across all operating systems supported by Nuitka
-    if 'onefile_' in sys.executable:
-        _is_nuitka = True
-        return True
+    # Get the executable path and convert to lowercase for case-insensitive comparison
+    executable_lower = sys.executable.lower()
+    
+    # Check for different Nuitka patterns
+    nuitka_patterns = [
+        'onefile_',      # Standard Unix/macOS pattern
+        'onefil',        # Windows 8.3 format (could be ONEFIL~1)
+    ]
+    
+    # Check if any pattern is in the executable path
+    for pattern in nuitka_patterns:
+        if pattern in executable_lower:
+            _is_nuitka = True
+            logger.debug(f"Detected Nuitka build from pattern '{pattern}' in executable: {sys.executable}")
+            return True
     
     _is_nuitka = False
     return False
