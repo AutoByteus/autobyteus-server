@@ -3,7 +3,7 @@
 set -e
 
 # Version information
-VERSION="1.0"
+VERSION="1.0.0"
 
 # Parse command line arguments
 DRY_RUN=false
@@ -22,15 +22,48 @@ done
 # Detect OS type
 OS_TYPE=$(uname -s)
 IS_MACOS=false
+IS_WINDOWS=false
+
 if [ "$OS_TYPE" = "Darwin" ]; then
   IS_MACOS=true
   echo "Detected macOS environment."
+elif [[ "$OS_TYPE" == MINGW* ]] || [[ "$OS_TYPE" == MSYS* ]] || [[ "$OS_TYPE" == CYGWIN* ]]; then
+  IS_WINDOWS=true
+  echo "Detected Windows environment."
 else
   echo "Detected Linux environment."
 fi
 
+# Function to normalize paths for Windows Git Bash
+normalize_path() {
+  local path="$1"
+  
+  if [ "$IS_WINDOWS" = true ]; then
+    # For Windows, convert path separators and ensure proper format for Python/Nuitka
+    # First, convert to Windows path format with backslashes
+    path=$(echo "$path" | sed 's/\//\\/g')
+    # Then ensure proper quoting
+    echo "\"$path\""
+  else
+    # For Linux/macOS, return as is but with quotes for safety
+    echo "\"$path\""
+  fi
+}
+
 # Start timing the build process
 SECONDS=0
+
+# Define platform-specific output file names according to niuzhirui-server conventions
+if [ "$IS_MACOS" = true ]; then
+  BUILD_NAME="llm_server_macos-${VERSION}"
+  FINAL_FILENAME="llm_server_macos-${VERSION}"
+elif [ "$IS_WINDOWS" = true ]; then
+  BUILD_NAME="llm_server_windows-${VERSION}"
+  FINAL_FILENAME="llm_server_windows-${VERSION}.exe"
+else
+  BUILD_NAME="llm_server_linux-${VERSION}"
+  FINAL_FILENAME="llm_server_linux-${VERSION}"
+fi
 
 # This script builds a standalone directory application instead of a single compressed file.
 # Benefits:
@@ -40,13 +73,14 @@ SECONDS=0
 # - Easier to update individual components
 
 echo "Building standalone AutoByteus Server v${VERSION} (directory-based)..."
+echo "Using build name: $BUILD_NAME"
 if [ "$DRY_RUN" = true ]; then
   echo "DRY RUN MODE: Will show commands without executing them."
   echo "==============================================================="
 fi
 
 # Create output directory if it doesn't exist
-OUTPUT_DIR="dist/autobyteus-server-v${VERSION}"
+OUTPUT_DIR="dist/$BUILD_NAME"
 if [ "$DRY_RUN" = true ]; then
   echo "[DRY RUN] Would create directory: $OUTPUT_DIR"
 else
@@ -55,13 +89,13 @@ fi
 
 # Set up dependencies - only needed for Linux builds
 if [ "$DRY_RUN" = true ]; then
-  if [ "$IS_MACOS" = false ]; then
+  if [ "$IS_MACOS" = false ] && [ "$IS_WINDOWS" = false ]; then
     echo "[DRY RUN] Would install Conda dependencies for static linking on Linux..."
   else
-    echo "[DRY RUN] Skipping Conda dependencies installation (not needed on macOS)..."
+    echo "[DRY RUN] Skipping Conda dependencies installation (not needed on macOS/Windows)..."
   fi
 else
-  if [ "$IS_MACOS" = false ]; then
+  if [ "$IS_MACOS" = false ] && [ "$IS_WINDOWS" = false ]; then
     echo "Installing Conda dependencies for static linking on Linux..."
     conda install conda-forge::gcc
     conda install -c conda-forge libpython-static -y
@@ -70,7 +104,7 @@ else
       exit 1
     fi
   else
-    echo "Skipping Conda dependencies installation (not needed on macOS)..."
+    echo "Skipping Conda dependencies installation (not needed on macOS/Windows)..."
   fi
 fi
 
@@ -83,11 +117,57 @@ fi
 
 # Find specific dependency files using the copy_dependencies_one_file.py script
 echo "Locating dependency files (alembic, resources, playwright.sh, mistral_common data, anthropic tokenizer, etc.)..."
-DEPENDENCY_OUTPUT=$(python copy_dependencies_one_file.py)
+
+# For Windows Git Bash, we need to run the Python script differently to handle paths correctly
+if [ "$IS_WINDOWS" = true ]; then
+  # Create a temporary script to fix path handling on Windows
+  cat > fix_paths.py << 'EOF'
+import json
+import os
+import sys
+
+# Read the output from the original script
+dependency_output = sys.stdin.read()
+
+# Find the NUITKA_DEPENDENCY_ARGS line
+for line in dependency_output.splitlines():
+    if line.startswith("NUITKA_DEPENDENCY_ARGS="):
+        # Extract the JSON array
+        args_json = line[len("NUITKA_DEPENDENCY_ARGS="):]
+        
+        # Parse the JSON
+        args_array = json.loads(args_json)
+        
+        # Fix each path
+        fixed_args = []
+        for arg in args_array:
+            # Replace all backslashes with forward slashes for Nuitka
+            arg = arg.replace('\\', '/')
+            # Fix paths where separators were completely stripped
+            arg = arg.replace('C:', 'C:/')
+            fixed_args.append(arg)
+        
+        # Output the fixed args
+        print(f"NUITKA_DEPENDENCY_ARGS={json.dumps(fixed_args)}")
+        break
+    else:
+        print(line)
+EOF
+
+  DEPENDENCY_OUTPUT=$(python copy_dependencies_one_file.py | python fix_paths.py)
+else
+  DEPENDENCY_OUTPUT=$(python copy_dependencies_one_file.py)
+fi
+
 DEPENDENCY_ARGS=$(echo "$DEPENDENCY_OUTPUT" | grep "NUITKA_DEPENDENCY_ARGS" | cut -d'=' -f2-)
 
 # Parse the JSON array of dependency arguments
-readarray -t DEPENDENCY_ARGS_ARRAY < <(echo "$DEPENDENCY_ARGS" | python -c "import json, sys; [print(arg) for arg in json.load(sys.stdin)]")
+if [ "$IS_WINDOWS" = true ]; then
+  # On Windows Git Bash, use a different approach to handle the array
+  readarray -t DEPENDENCY_ARGS_ARRAY < <(echo "$DEPENDENCY_ARGS" | python -c "import json, sys; [print(arg.replace('\"', '\\\"')) for arg in json.load(sys.stdin)]")
+else
+  readarray -t DEPENDENCY_ARGS_ARRAY < <(echo "$DEPENDENCY_ARGS" | python -c "import json, sys; [print(arg) for arg in json.load(sys.stdin)]")
+fi
 
 # Build the Nuitka command
 NUITKA_COMMAND="python -m nuitka \
@@ -121,6 +201,12 @@ done
 if [ "$IS_MACOS" = true ]; then
   echo "Adding macOS-specific build options..."
   NUITKA_COMMAND="$NUITKA_COMMAND --macos-create-app-bundle"
+fi
+
+# Add Windows-specific options when running on Windows
+if [ "$IS_WINDOWS" = true ]; then
+  echo "Adding Windows-specific build options..."
+  # Windows doesn't need special flags like macOS, but we might add them in the future
 fi
 
 # Add the remaining options
@@ -164,7 +250,12 @@ if [ "$DRY_RUN" = true ]; then
   echo "[DRY RUN] Would create zip file of the application..."
 else
   echo "Creating zip file of the application..."
-  ZIP_FILE="dist/autobyteus_server.zip"
+  
+  # Create niuzhirui-server_dev/resources/llm_server directory if it doesn't exist
+  NIUZHIRUI_DIR="../niuzhirui-server_dev/resources/llm_server"
+  mkdir -p "$NIUZHIRUI_DIR"
+  
+  ZIP_FILE="$NIUZHIRUI_DIR/$FINAL_FILENAME.zip"
 
   # Remove previous zip file if it exists
   if [ -f "$ZIP_FILE" ]; then
@@ -175,13 +266,21 @@ else
   # Create the zip file
   echo "Creating zip file at $ZIP_FILE..."
   cd dist
-  zip -r autobyteus_server.zip $(basename $OUTPUT_DIR)/app.dist
+  zip -r "$ZIP_FILE" $(basename $OUTPUT_DIR)/app.dist
   cd ..
 
   # Verify the zip file was created
   if [ -f "$ZIP_FILE" ]; then
       echo "Successfully created $ZIP_FILE"
       echo "File size: $(du -h $ZIP_FILE | cut -f1)"
+      
+      # Create config file for the download
+      CONFIG_FILE="$ZIP_FILE.config.json"
+      echo "{" > "$CONFIG_FILE"
+      echo "  \"distribution_channel\": \"all\"," >> "$CONFIG_FILE"
+      echo "  \"description\": \"AutoByteus Server $VERSION Standalone for $([ "$IS_MACOS" = true ] && echo "macOS" || [ "$IS_WINDOWS" = true ] && echo "Windows" || echo "Linux")\"" >> "$CONFIG_FILE"
+      echo "}" >> "$CONFIG_FILE"
+      echo "Created config file: $CONFIG_FILE"
   else
       echo "Error: Failed to create zip file"
       exit 1
@@ -195,9 +294,15 @@ else
   # Determine the correct directory name based on platform
   if [ "$IS_MACOS" = true ]; then
     echo "Build complete! The standalone application is in: $OUTPUT_DIR/app.dist (or as an .app bundle)"
+    echo "A zip file has been created at $ZIP_FILE for distribution"
     echo "To run the application, execute the app bundle or: $OUTPUT_DIR/app.dist/app"
+  elif [ "$IS_WINDOWS" = true ]; then
+    echo "Build complete! The standalone application is in: $OUTPUT_DIR/app.dist"
+    echo "A zip file has been created at $ZIP_FILE for distribution"
+    echo "To run the application, execute: $OUTPUT_DIR/app.dist/app.exe"
   else
     echo "Build complete! The standalone application is in: $OUTPUT_DIR/app.dist"
+    echo "A zip file has been created at $ZIP_FILE for distribution"
     echo "To run the application, execute: $OUTPUT_DIR/app.dist/app"
   fi
   echo "Configuration files, alembic migrations, playwright dependencies, mistral_common data, anthropic tokenizer, and required resources have been included with the executable."

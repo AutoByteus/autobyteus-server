@@ -11,38 +11,73 @@ DRY_RUN=false
 # Detect OS type
 OS_TYPE=$(uname -s)
 IS_MACOS=false
+IS_WINDOWS=false
+
 if [ "$OS_TYPE" = "Darwin" ]; then
   IS_MACOS=true
   echo "Detected macOS environment."
+elif [[ "$OS_TYPE" == MINGW* ]] || [[ "$OS_TYPE" == MSYS* ]] || [[ "$OS_TYPE" == CYGWIN* ]]; then
+  IS_WINDOWS=true
+  echo "Detected Windows environment."
 else
   echo "Detected Linux environment."
 fi
 
-# Function to normalize paths that works on both macOS and Linux
+# Function to normalize paths that works on both macOS, Linux and Windows
 normalize_path() {
     local path="$1"
     
-    # If the directory exists, we can use cd and pwd to get absolute path
-    if [ -d "$path" ]; then
-        local old_pwd=$(pwd)
-        cd "$path" > /dev/null
-        local abs_path=$(pwd)
-        cd "$old_pwd" > /dev/null
-        echo "$abs_path"
-    else
-        # For non-existent directories
-        if [ "$IS_MACOS" = true ]; then
-            # On macOS, if the directory doesn't exist, construct the absolute path
-            if [[ "$path" = /* ]]; then
-                # Path already absolute
-                echo "$path"
-            else
-                # Make relative path absolute
-                echo "$(pwd)/$path"
-            fi
+    if [ "$IS_WINDOWS" = true ]; then
+        # For Windows, handle paths differently
+        # First, check if the path exists
+        if [ -d "$path" ]; then
+            # For existing directories, use Windows-style realpath
+            local old_pwd=$(pwd)
+            cd "$path" > /dev/null
+            local abs_path=$(pwd -W 2>/dev/null || pwd)  # Try Windows format first
+            cd "$old_pwd" > /dev/null
+            echo "$abs_path"
         else
-            # On Linux, we can use realpath -m
-            realpath -m "$path"
+            # For non-existent paths, construct manually
+            if [[ "$path" == /* ]]; then
+                # Convert /c/Users/... to C:/Users/...
+                local drive_letter=$(echo "$path" | cut -c2)
+                if [[ "$drive_letter" =~ [a-zA-Z] ]]; then
+                    local rest_of_path=$(echo "$path" | cut -c4-)
+                    echo "${drive_letter^^}:/$rest_of_path"
+                else
+                    # Not a drive path, just normalize slashes
+                    echo "$path" | sed 's/\//\\/g'
+                fi
+            else
+                # Relative path, make absolute and convert slashes
+                local curr_dir=$(pwd -W 2>/dev/null || pwd)
+                echo "$curr_dir/$path" | sed 's/\//\\/g'
+            fi
+        fi
+    else
+        # For macOS and Linux
+        if [ -d "$path" ]; then
+            local old_pwd=$(pwd)
+            cd "$path" > /dev/null
+            local abs_path=$(pwd)
+            cd "$old_pwd" > /dev/null
+            echo "$abs_path"
+        else
+            # For non-existent directories
+            if [ "$IS_MACOS" = true ]; then
+                # On macOS, if the directory doesn't exist, construct the absolute path
+                if [[ "$path" = /* ]]; then
+                    # Path already absolute
+                    echo "$path"
+                else
+                    # Make relative path absolute
+                    echo "$(pwd)/$path"
+                fi
+            else
+                # On Linux, we can use realpath -m
+                realpath -m "$path"
+            fi
         fi
     fi
 }
@@ -111,6 +146,13 @@ if [ "$IS_MACOS" = true ]; then
         echo "It's recommended to deploy the .bin file instead."
         EXECUTABLE_SOURCE=""
     fi
+elif [ "$IS_WINDOWS" = true ]; then
+    # On Windows, check for .exe file
+    EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server.exe"
+    if [ ! -f "$EXECUTABLE_SOURCE" ]; then
+        # Also check without .exe extension as a fallback
+        EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server"
+    fi
 else
     # On Linux, check for the standard executable
     EXECUTABLE_SOURCE="$SOURCE_DIR/dist/autobyteus_server"
@@ -138,6 +180,9 @@ list_files_in_dir() {
     # List all entries in the directory
     if [ "$IS_MACOS" = true ]; then
         # macOS find has different syntax
+        local entries=$(find "$dir" -type f | sort)
+    elif [ "$IS_WINDOWS" = true ]; then
+        # Windows GitBash
         local entries=$(find "$dir" -type f | sort)
     else
         local entries=$(find "$dir" -type f | sort)
@@ -258,9 +303,22 @@ if [ "$DRY_RUN" = true ]; then
     echo "[DRY RUN] Would copy executable: autobyteus_server"
     echo "[DRY RUN] Would set executable permissions on: $TARGET_DIR/autobyteus_server"
 else
-    cp "$EXECUTABLE_SOURCE" "$TARGET_DIR/autobyteus_server"
-    chmod +x "$TARGET_DIR/autobyteus_server"
-    echo "✓ Copied and set executable permissions: autobyteus_server"
+    # Determine the target executable name
+    EXECUTABLE_TARGET="$TARGET_DIR/autobyteus_server"
+    
+    # On Windows, add .exe extension if the source has it
+    if [ "$IS_WINDOWS" = true ] && [[ "$EXECUTABLE_SOURCE" == *.exe ]]; then
+        EXECUTABLE_TARGET="$TARGET_DIR/autobyteus_server.exe"
+    fi
+    
+    cp "$EXECUTABLE_SOURCE" "$EXECUTABLE_TARGET"
+    
+    # Don't use chmod on Windows as it might not work properly
+    if [ "$IS_WINDOWS" = false ]; then
+        chmod +x "$EXECUTABLE_TARGET"
+    fi
+    
+    echo "✓ Copied executable: autobyteus_server"
 fi
 
 # Summary
@@ -277,6 +335,10 @@ echo
 if [ "$DRY_RUN" = false ]; then
     echo "To run the server:"
     echo "  cd \"$TARGET_DIR\""
-    echo "  ./autobyteus_server"
+    if [ "$IS_WINDOWS" = true ]; then
+        echo "  ./autobyteus_server.exe"
+    else
+        echo "  ./autobyteus_server"
+    fi
 fi
 echo "=================================================="
