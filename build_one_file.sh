@@ -113,22 +113,39 @@ DEPENDENCY_ARGS_ARRAY=()
 if [ "$IS_WINDOWS" = true ]; then
   # For Windows, use a temporary file approach which is more compatible with Git Bash
   TEMP_FILE="temp_dependencies.txt"
+  echo "Running Python script to generate dependencies: python copy_dependencies_one_file.py > $TEMP_FILE"
   python copy_dependencies_one_file.py > "$TEMP_FILE"
   
+  # Debug: Show the content of the temp file
+  echo "Debug: Contents of $TEMP_FILE:"
+  cat "$TEMP_FILE"
+  echo "End of $TEMP_FILE contents"
+  
+  echo "Parsing dependency arguments from $TEMP_FILE..."
   CAPTURE=false
   while IFS= read -r line; do
+    echo "Debug: Read line: $line"
     if [[ "$line" == "NUITKA_DEPENDENCY_ARGS_START" ]]; then
+      echo "Debug: Found start marker"
       CAPTURE=true
       continue
     elif [[ "$line" == "NUITKA_DEPENDENCY_ARGS_END" ]]; then
+      echo "Debug: Found end marker"
       CAPTURE=false
       continue
     fi
     
     if [ "$CAPTURE" = true ]; then
+      echo "Debug: Adding argument: $line"
       DEPENDENCY_ARGS_ARRAY+=("$line")
     fi
   done < "$TEMP_FILE"
+  
+  # Debug: Check if the debug file exists
+  if [ -f "debug_dependency_args.txt" ]; then
+    echo "Debug: Also checking debug_dependency_args.txt file"
+    cat "debug_dependency_args.txt"
+  fi
   
   # Clean up temporary file
   rm "$TEMP_FILE"
@@ -143,6 +160,10 @@ fi
 
 # Debug output to see what was captured
 echo "Found ${#DEPENDENCY_ARGS_ARRAY[@]} dependency arguments."
+if [ ${#DEPENDENCY_ARGS_ARRAY[@]} -gt 0 ]; then
+  echo "Debug: First argument: ${DEPENDENCY_ARGS_ARRAY[0]}"
+  echo "Debug: Last argument: ${DEPENDENCY_ARGS_ARRAY[-1]}"
+fi
 
 # Build the Nuitka command
 NUITKA_COMMAND="python -m nuitka \
