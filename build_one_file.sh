@@ -107,62 +107,40 @@ fi
 # Find specific dependency files using the copy_dependencies_one_file.py script
 echo "Locating dependency files (playwright.sh, mistral_common data, anthropic tokenizer, etc.)..."
 
-# Process dependency output
+# Run the Python script to generate dependencies and write them to a file
+echo "Running Python script to find dependencies..."
+python copy_dependencies_one_file.py
+
+# Initialize dependency array
 DEPENDENCY_ARGS_ARRAY=()
 
-if [ "$IS_WINDOWS" = true ]; then
-  # For Windows, use a temporary file approach which is more compatible with Git Bash
-  TEMP_FILE="temp_dependencies.txt"
-  echo "Running Python script to generate dependencies: python copy_dependencies_one_file.py > $TEMP_FILE"
-  python copy_dependencies_one_file.py > "$TEMP_FILE"
-  
-  # Debug: Show the content of the temp file
-  echo "Debug: Contents of $TEMP_FILE:"
-  cat "$TEMP_FILE"
-  echo "End of $TEMP_FILE contents"
-  
-  echo "Parsing dependency arguments from $TEMP_FILE..."
-  CAPTURE=false
-  while IFS= read -r line; do
-    echo "Debug: Read line: $line"
-    if [[ "$line" == "NUITKA_DEPENDENCY_ARGS_START" ]]; then
-      echo "Debug: Found start marker"
-      CAPTURE=true
-      continue
-    elif [[ "$line" == "NUITKA_DEPENDENCY_ARGS_END" ]]; then
-      echo "Debug: Found end marker"
-      CAPTURE=false
-      continue
-    fi
+# Simple direct file approach - read the dependency arguments from the file
+DEPENDENCY_FILE="nuitka_dependencies.txt"
+if [ -f "$DEPENDENCY_FILE" ]; then
+    echo "Reading dependency arguments from $DEPENDENCY_FILE..."
     
-    if [ "$CAPTURE" = true ]; then
-      echo "Debug: Adding argument: $line"
-      DEPENDENCY_ARGS_ARRAY+=("$line")
-    fi
-  done < "$TEMP_FILE"
-  
-  # Debug: Check if the debug file exists
-  if [ -f "debug_dependency_args.txt" ]; then
-    echo "Debug: Also checking debug_dependency_args.txt file"
-    cat "debug_dependency_args.txt"
-  fi
-  
-  # Clean up temporary file
-  rm "$TEMP_FILE"
+    # Debug: Show the content of the dependency file
+    echo "Debug: Contents of $DEPENDENCY_FILE:"
+    cat "$DEPENDENCY_FILE"
+    echo "End of $DEPENDENCY_FILE contents"
+    
+    # Read the file line by line
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip empty lines
+        if [ -n "$line" ]; then
+            echo "Debug: Adding argument: $line"
+            DEPENDENCY_ARGS_ARRAY+=("$line")
+        fi
+    done < "$DEPENDENCY_FILE"
 else
-  # For Linux/macOS, use the JSON format (original approach)
-  DEPENDENCY_OUTPUT=$(python copy_dependencies_one_file.py)
-  DEPENDENCY_ARGS=$(echo "$DEPENDENCY_OUTPUT" | grep "NUITKA_DEPENDENCY_ARGS" | cut -d'=' -f2-)
-  
-  # Parse the JSON array
-  readarray -t DEPENDENCY_ARGS_ARRAY < <(echo "$DEPENDENCY_ARGS" | python -c "import json, sys; [print(arg) for arg in json.load(sys.stdin)]")
+    echo "Warning: Dependency file $DEPENDENCY_FILE not found."
 fi
 
 # Debug output to see what was captured
 echo "Found ${#DEPENDENCY_ARGS_ARRAY[@]} dependency arguments."
 if [ ${#DEPENDENCY_ARGS_ARRAY[@]} -gt 0 ]; then
-  echo "Debug: First argument: ${DEPENDENCY_ARGS_ARRAY[0]}"
-  echo "Debug: Last argument: ${DEPENDENCY_ARGS_ARRAY[-1]}"
+    echo "Debug: First argument: ${DEPENDENCY_ARGS_ARRAY[0]}"
+    echo "Debug: Last argument: ${DEPENDENCY_ARGS_ARRAY[${#DEPENDENCY_ARGS_ARRAY[@]}-1]}"
 fi
 
 # Build the Nuitka command

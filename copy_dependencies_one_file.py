@@ -125,13 +125,23 @@ if os.path.exists(workflow_base_dir):
     
     logging.info(f"Found {prompt_count} workflow step prompt directories.")
 
-# For Windows compatibility, output each argument on a separate line
-# This is easier to parse reliably in Bash on Windows
-if platform.system() == "Windows":
-    print("NUITKA_DEPENDENCY_ARGS_START")
+# Log the total number of dependency arguments
+logging.info(f"Total dependency arguments found: {len(dependency_args)}")
+if dependency_args:
+    logging.info(f"First argument: {dependency_args[0]}")
+    logging.info(f"Last argument: {dependency_args[-1]}")
+
+# Direct file output - simpler approach
+outfile = "nuitka_dependencies.txt"
+with open(outfile, "w") as f:
     for arg in dependency_args:
-        print(arg)
-    print("NUITKA_DEPENDENCY_ARGS_END")
+        f.write(f"{arg}\n")
+logging.info(f"Wrote {len(dependency_args)} dependency arguments to {outfile}")
+
+# For backwards compatibility, still output to stdout in JSON format
+if platform.system() == "Windows":
+    # Output in Windows format for debugging
+    print(f"Found {len(dependency_args)} dependency arguments and wrote them to {outfile}")
 else:
     # Original JSON output for Linux/macOS
     print(f"NUITKA_DEPENDENCY_ARGS={json.dumps(dependency_args)}")
