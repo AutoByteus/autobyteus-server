@@ -59,7 +59,7 @@ def create_required_directories(destination_dir):
         bool: True if successful, False otherwise.
     """
     try:
-        # Required directories
+        # Required directories - using same structure as autobyteus_rpa_llm_server
         required_dirs = [
             "logs",
             "resources",
@@ -147,25 +147,23 @@ def copy_resources(destination_dir):
         logger.error(f"Error copying resources: {str(e)}")
         return False
 
-def find_playwright_script():
+def find_playwright_driver():
     """
-    Locate only the playwright.sh script in the Playwright driver folder.
-    Returns the path to the playwright.sh file or None if not found.
+    Locate the Playwright driver folder in the Python environment.
+    Returns the path to the driver folder or None if not found.
     """
     try:
         # Get site-packages directories
         site_packages = site.getsitepackages()
         for sp in site_packages:
-            script_path = os.path.join(sp, "playwright", "driver", "playwright.sh")
-            if os.path.exists(script_path):
-                logger.info(f"Found playwright.sh script: {script_path}")
-                # Make sure it's executable
-                os.chmod(script_path, 0o755)
-                return script_path
-        logger.error("playwright.sh script not found in playwright driver folder.")
+            driver_path = os.path.join(sp, "playwright", "driver")
+            if os.path.exists(driver_path):
+                logger.info(f"Found Playwright driver folder: {driver_path}")
+                return driver_path
+        logger.warning("Playwright driver folder not found in site-packages.")
         return None
     except Exception as e:
-        logger.error(f"Error locating playwright.sh script: {str(e)}")
+        logger.warning(f"Error locating Playwright driver folder: {str(e)}")
         return None
 
 def copy_playwright_script(destination_dir):
@@ -177,10 +175,16 @@ def copy_playwright_script(destination_dir):
         bool: True if successful, False otherwise.
     """
     try:
-        script_path = find_playwright_script()
-        if not script_path:
-            logger.error("Cannot copy playwright.sh: Source file not found.")
-            return False
+        driver_path = find_playwright_driver()
+        if not driver_path:
+            logger.warning("Cannot copy playwright.sh: Source folder not found.")
+            return True  # Continue build even if this fails
+
+        # Define source and destination paths
+        source_script = os.path.join(driver_path, "playwright.sh")
+        if not os.path.exists(source_script):
+            logger.warning(f"playwright.sh not found in {driver_path}")
+            return True  # Continue build even if this fails
 
         # Define destination path
         dest_driver_path = os.path.join(destination_dir, "playwright", "driver")
@@ -188,15 +192,15 @@ def copy_playwright_script(destination_dir):
         dest_script = os.path.join(dest_driver_path, "playwright.sh")
 
         # Copy only the script file
-        logger.info(f"Copying playwright.sh from {script_path} to {dest_script}...")
-        shutil.copy2(script_path, dest_script)
+        logger.info(f"Copying playwright.sh from {source_script} to {dest_script}...")
+        shutil.copy2(source_script, dest_script)
         # Make it executable
         os.chmod(dest_script, 0o755)
         logger.info("playwright.sh copied successfully.")
         return True
     except Exception as e:
-        logger.error(f"Error copying playwright.sh: {str(e)}")
-        return False
+        logger.warning(f"Error copying playwright.sh: {str(e)}")
+        return True  # Continue build even if this fails
 
 def find_mistral_data():
     """
@@ -427,4 +431,70 @@ def copy_workflow_step_prompts(destination_dir):
                 success = False
         
         return success
-    except Exception
+    except Exception as e:
+        logger.error(f"Error copying workflow step prompts: {str(e)}")
+        return False
+
+# Main function that executes the copy operations
+def main():
+    """
+    Main function to copy all required dependencies.
+    """
+    if len(sys.argv) < 3:
+        logger.error("Usage: python copy_dependencies_standalone.py <destination_dir> <version>")
+        return 1
+        
+    destination_dir = sys.argv[1]
+    version = sys.argv[2]
+    
+    logger.info(f"Copying dependencies to {destination_dir} for AutoByteus Server v{version}...")
+    
+    # Create required directories
+    if not create_required_directories(destination_dir):
+        logger.error("Failed to create required directories.")
+        return 1
+        
+    # Create required files
+    if not create_required_files(destination_dir, version):
+        logger.error("Failed to create required files.")
+        return 1
+        
+    # Copy Alembic files
+    if not copy_alembic_files(destination_dir):
+        logger.error("Failed to copy Alembic files.")
+        return 1
+        
+    # Copy resources directory
+    if not copy_resources(destination_dir):
+        logger.error("Failed to copy resources directory.")
+        return 1
+        
+    # Copy Playwright script
+    copy_playwright_script(destination_dir)
+    # Don't check return value - continue build even if Playwright is not found
+        
+    # Copy mistral_common data
+    if not copy_mistral_data(destination_dir):
+        logger.error("Failed to copy mistral_common data.")
+        return 1
+        
+    # Copy Anthropic tokenizer
+    if not copy_anthropic_tokenizer(destination_dir):
+        logger.error("Failed to copy Anthropic tokenizer.")
+        return 1
+        
+    # Copy autobyteus_llm_client certificates
+    if not copy_autobyteus_llm_client_certificates(destination_dir):
+        logger.error("Failed to copy autobyteus_llm_client certificates.")
+        return 1
+        
+    # Copy workflow step prompts
+    if not copy_workflow_step_prompts(destination_dir):
+        logger.error("Failed to copy workflow step prompts.")
+        return 1
+        
+    logger.info(f"Successfully copied all dependencies to {destination_dir}.")
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

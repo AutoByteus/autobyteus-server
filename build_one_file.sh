@@ -107,56 +107,36 @@ fi
 # Find specific dependency files using the copy_dependencies_one_file.py script
 echo "Locating dependency files (playwright.sh, mistral_common data, anthropic tokenizer, etc.)..."
 
-# For Windows Git Bash, we need to run the Python script differently to handle paths correctly
+# Process dependency output
+DEPENDENCY_ARGS_ARRAY=()
+
 if [ "$IS_WINDOWS" = true ]; then
-  # Create a temporary script to fix path handling on Windows
-  cat > fix_paths.py << 'EOF'
-import json
-import os
-import sys
-
-# Read the output from the original script
-dependency_output = sys.stdin.read()
-
-# Find the NUITKA_DEPENDENCY_ARGS line
-for line in dependency_output.splitlines():
-    if line.startswith("NUITKA_DEPENDENCY_ARGS="):
-        # Extract the JSON array
-        args_json = line[len("NUITKA_DEPENDENCY_ARGS="):]
-        
-        # Parse the JSON
-        args_array = json.loads(args_json)
-        
-        # Fix each path
-        fixed_args = []
-        for arg in args_array:
-            # Replace all backslashes with forward slashes for Nuitka
-            arg = arg.replace('\\', '/')
-            # Fix paths where separators were completely stripped
-            arg = arg.replace('C:', 'C:/')
-            fixed_args.append(arg)
-        
-        # Output the fixed args
-        print(f"NUITKA_DEPENDENCY_ARGS={json.dumps(fixed_args)}")
-        break
-    else:
-        print(line)
-EOF
-
-  DEPENDENCY_OUTPUT=$(python copy_dependencies_one_file.py | python fix_paths.py)
+  # For Windows, use the line-by-line output format
+  CAPTURE=false
+  while IFS= read -r line; do
+    if [[ "$line" == "NUITKA_DEPENDENCY_ARGS_START" ]]; then
+      CAPTURE=true
+      continue
+    elif [[ "$line" == "NUITKA_DEPENDENCY_ARGS_END" ]]; then
+      CAPTURE=false
+      continue
+    fi
+    
+    if [ "$CAPTURE" = true ]; then
+      DEPENDENCY_ARGS_ARRAY+=("$line")
+    fi
+  done < <(python copy_dependencies_one_file.py)
 else
+  # For Linux/macOS, use the JSON format (original approach)
   DEPENDENCY_OUTPUT=$(python copy_dependencies_one_file.py)
-fi
-
-DEPENDENCY_ARGS=$(echo "$DEPENDENCY_OUTPUT" | grep "NUITKA_DEPENDENCY_ARGS" | cut -d'=' -f2-)
-
-# Parse the JSON array of dependency arguments
-if [ "$IS_WINDOWS" = true ]; then
-  # On Windows Git Bash, use a different approach to handle the array
-  readarray -t DEPENDENCY_ARGS_ARRAY < <(echo "$DEPENDENCY_ARGS" | python -c "import json, sys; [print(arg.replace('\"', '\\\"')) for arg in json.load(sys.stdin)]")
-else
+  DEPENDENCY_ARGS=$(echo "$DEPENDENCY_OUTPUT" | grep "NUITKA_DEPENDENCY_ARGS" | cut -d'=' -f2-)
+  
+  # Parse the JSON array
   readarray -t DEPENDENCY_ARGS_ARRAY < <(echo "$DEPENDENCY_ARGS" | python -c "import json, sys; [print(arg) for arg in json.load(sys.stdin)]")
 fi
+
+# Debug output to see what was captured
+echo "Found ${#DEPENDENCY_ARGS_ARRAY[@]} dependency arguments."
 
 # Build the Nuitka command
 NUITKA_COMMAND="python -m nuitka \

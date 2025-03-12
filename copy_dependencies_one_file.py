@@ -4,6 +4,7 @@ import os
 import platform
 import sys
 from pathlib import Path
+import site
 
 # Configure logging
 logging.basicConfig(
@@ -31,20 +32,27 @@ def normalize_path(path):
 # Find required data and config files
 dependency_args = []
 
-# Check for Playwright driver script
+# Check for Playwright driver script - using same approach as autobyteus_rpa_llm_server
 try:
-    import playwright._impl._driver
-    playwright_driver_dir = os.path.dirname(playwright._impl._driver.__file__)
-    playwright_sh = os.path.join(playwright_driver_dir, "playwright.sh")
+    # Get site-packages directories
+    site_packages = site.getsitepackages()
+    playwright_script = None
     
-    if os.path.exists(playwright_sh):
-        playwright_sh_path = normalize_path(playwright_sh)
-        dependency_args.append(f"--include-data-file={playwright_sh_path}=playwright/_impl/_driver/playwright.sh")
-        logging.info(f"Found playwright.sh: {playwright_sh_path}")
+    for sp in site_packages:
+        script_path = os.path.join(sp, "playwright", "driver", "playwright.sh")
+        if os.path.exists(script_path):
+            playwright_script = script_path
+            break
+    
+    if playwright_script:
+        playwright_script_path = normalize_path(playwright_script)
+        target_path = "playwright/driver/playwright.sh"
+        dependency_args.append(f"--include-data-file={playwright_script_path}={target_path}")
+        logging.info(f"Found playwright.sh script: {playwright_script_path}")
     else:
-        logging.error(f"playwright.sh script not found in playwright driver folder.")
-except ImportError:
-    logging.warning("Playwright module not found, skipping playwright.sh inclusion.")
+        logging.warning("playwright.sh script not found in playwright driver folder.")
+except Exception as e:
+    logging.warning(f"Error while searching for Playwright driver: {str(e)}")
 
 # Check for mistral_common data
 try:
@@ -71,7 +79,14 @@ try:
         dependency_args.append(f"--include-data-file={tokenizer_path}=anthropic/tokenizer.json")
         logging.info(f"Found Anthropic tokenizer.json: {tokenizer_path}")
     else:
-        logging.warning("Anthropic tokenizer.json not found.")
+        # Try an alternative location
+        tokenizer_path = os.path.join(anthropic_dir, "data", "tokenizer.json")
+        if os.path.exists(tokenizer_path):
+            tokenizer_path = normalize_path(tokenizer_path)
+            dependency_args.append(f"--include-data-file={tokenizer_path}=anthropic/data/tokenizer.json")
+            logging.info(f"Found Anthropic tokenizer.json (alternative location): {tokenizer_path}")
+        else:
+            logging.warning("Anthropic tokenizer.json not found.")
 except ImportError:
     logging.warning("Anthropic module not found, skipping tokenizer inclusion.")
 
@@ -110,5 +125,13 @@ if os.path.exists(workflow_base_dir):
     
     logging.info(f"Found {prompt_count} workflow step prompt directories.")
 
-# Output NUITKA_DEPENDENCY_ARGS that can be captured by the build script
-print(f"NUITKA_DEPENDENCY_ARGS={json.dumps(dependency_args)}")
+# For Windows compatibility, output each argument on a separate line
+# This is easier to parse reliably in Bash on Windows
+if platform.system() == "Windows":
+    print("NUITKA_DEPENDENCY_ARGS_START")
+    for arg in dependency_args:
+        print(arg)
+    print("NUITKA_DEPENDENCY_ARGS_END")
+else:
+    # Original JSON output for Linux/macOS
+    print(f"NUITKA_DEPENDENCY_ARGS={json.dumps(dependency_args)}")
