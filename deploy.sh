@@ -140,11 +140,11 @@ echo
 
 # Define platform-specific file names
 if [ "$IS_MACOS" = true ]; then
-    BASE_NAME="autobyteus_server_macos-${VERSION}"
+    BASE_NAME="autobyteus_server-macos-${VERSION}"
 elif [ "$IS_WINDOWS" = true ]; then
-    BASE_NAME="autobyteus_server_windows-${VERSION}"
+    BASE_NAME="autobyteus_server-windows-${VERSION}"
 else
-    BASE_NAME="autobyteus_server_linux-${VERSION}"
+    BASE_NAME="autobyteus_server-linux-${VERSION}"
 fi
 
 # Check if executable exists
