@@ -64,14 +64,14 @@ mkdir -p $OUTPUT_DIR
 
 # Define platform-specific output file names
 if [ "$IS_MACOS" = true ]; then
-  OUTPUT_FILENAME="autobyteus_server_macos-${VERSION}"
-  FINAL_FILENAME="autobyteus_server_macos-${VERSION}"
+  OUTPUT_FILENAME="autobyteus_server-macos-${VERSION}"
+  FINAL_FILENAME="autobyteus_server-macos-${VERSION}"
 elif [ "$IS_WINDOWS" = true ]; then
-  OUTPUT_FILENAME="autobyteus_server_windows-${VERSION}"
-  FINAL_FILENAME="autobyteus_server_windows-${VERSION}.exe"
+  OUTPUT_FILENAME="autobyteus_server-windows-${VERSION}"
+  FINAL_FILENAME="autobyteus_server-windows-${VERSION}.exe"
 else
-  OUTPUT_FILENAME="autobyteus_server_linux-${VERSION}"
-  FINAL_FILENAME="autobyteus_server_linux-${VERSION}"
+  OUTPUT_FILENAME="autobyteus_server-linux-${VERSION}"
+  FINAL_FILENAME="autobyteus_server-linux-${VERSION}"
 fi
 
 echo "Using output filename: $OUTPUT_FILENAME"

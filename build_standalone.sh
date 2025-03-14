@@ -55,14 +55,14 @@ SECONDS=0
 
 # Define platform-specific output file names
 if [ "$IS_MACOS" = true ]; then
-  BUILD_NAME="autobyteus_server_macos-${VERSION}"
-  FINAL_FILENAME="autobyteus_server_macos-${VERSION}"
+  BUILD_NAME="autobyteus_server-macos-${VERSION}"
+  FINAL_FILENAME="autobyteus_server-macos-${VERSION}"
 elif [ "$IS_WINDOWS" = true ]; then
-  BUILD_NAME="autobyteus_server_windows-${VERSION}"
-  FINAL_FILENAME="autobyteus_server_windows-${VERSION}.exe"
+  BUILD_NAME="autobyteus_server-windows-${VERSION}"
+  FINAL_FILENAME="autobyteus_server-windows-${VERSION}.exe"
 else
-  BUILD_NAME="autobyteus_server_linux-${VERSION}"
-  FINAL_FILENAME="autobyteus_server_linux-${VERSION}"
+  BUILD_NAME="autobyteus_server-linux-${VERSION}"
+  FINAL_FILENAME="autobyteus_server-linux-${VERSION}"
 fi
 
 # This script builds a standalone directory application instead of a single compressed file.
