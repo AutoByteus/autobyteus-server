@@ -8,71 +8,55 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 import logging
 import uvicorn
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from autobyteus_server.api.graphql.schema import schema
 from strawberry.fastapi import GraphQLRouter
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from autobyteus_server.api.rest import router as rest_router
-from autobyteus_server.config.logging_config import configure_logger
-from autobyteus_server.api.websocket.real_time_audio_router import transcription_router
+from autobyteus_server.config import app_config_provider
+from autobyteus_server.config.app_config import AppConfigError
 from autobyteus_server.startup import run_migrations
-from autobyteus_server.utils.app_utils import get_application_root, is_packaged_environment
 
-def validate_packaged_environment():
-    """Validate that all required files and directories exist in packaged mode"""
-    app_root = get_application_root()
-    required_files = [
-        '.env',
-        'logging_config.ini',
-        'alembic.ini'
-    ]
-    required_dirs = [
-        'logs',
-        'resources',
-        'alembic'
-    ]
-    
-    missing_files = [f for f in required_files if not (app_root / f).exists()]
-    missing_dirs = [d for d in required_dirs if not (app_root / d).is_dir()]
-    
-    if missing_files or missing_dirs:
-        logger.error("Missing required files or directories:")
-        if missing_files:
-            logger.error(f"Files: {missing_files}")
-        if missing_dirs:
-            logger.error(f"Directories: {missing_dirs}")
-        sys.exit(1)
-
-def load_environment():
-    """Load environment variables with fallback for packaged mode"""
-    env_path = get_application_root() / '.env'
-    load_dotenv(dotenv_path=env_path)
-    os.environ.setdefault('LOG_LEVEL', 'INFO')
-
-# Configure environment
-load_environment()
-
-# Configure logging
-configure_logger()
+# Set up minimal logging before config is initialized
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
-# Log application root information - this will run when the module is imported
-app_root = get_application_root()
-if is_packaged_environment():
-    logger.info("=" * 60)
-    logger.info("RUNNING IN PACKAGED MODE")
-    logger.info(f"APPLICATION ROOT (EXECUTABLE PARENT PATH): {app_root}")
-    logger.info("=" * 60)
-    # Only validate environment when running in packaged mode at import time
-    validate_packaged_environment()
-    os.chdir(str(app_root))
-else:
-    logger.info("=" * 60)
-    logger.info("RUNNING IN DEVELOPMENT MODE")
-    logger.info(f"APPLICATION ROOT PATH: {app_root}")
-    logger.info("=" * 60)
+# Parse command line arguments early to set up data directory
+parser = argparse.ArgumentParser(description='AutoByteus Server')
+parser.add_argument('--port', type=int, default=8000, help='Port to run the server on')
+parser.add_argument('--host', type=str, default='127.0.0.1', help='Host to run the server on')
+parser.add_argument('--data-dir', type=str, help='Custom directory for all application data (configs, logs, database)')
+
+# Parse known args to get the data directory without requiring all args
+known_args, _ = parser.parse_known_args()
+
+# Get AppConfig instance (automatically created if needed)
+config = app_config_provider.config
+
+# Set custom app data directory if specified
+if known_args.data_dir:
+    try:
+        config.set_custom_app_data_dir(known_args.data_dir)
+    except (FileNotFoundError, NotADirectoryError, RuntimeError) as e:
+        logger.error(f"Error setting custom app data directory: {e}")
+        sys.exit(1)
+
+# Perform full initialization
+# This will configure logging and load environment variables
+try:
+    config.initialize()
+except AppConfigError as e:
+    logger.error(f"Failed to initialize AppConfig: {e}")
+    sys.exit(1)
+except Exception as e:
+    logger.error(f"Unexpected error during initialization: {e}")
+    sys.exit(1)
+
+from autobyteus_server.api.graphql.schema import schema
+from autobyteus_server.api.rest import router as rest_router
+from autobyteus_server.api.websocket.real_time_audio_router import transcription_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -120,8 +104,6 @@ app.include_router(transcription_router)
 
 def run_server(host: str, port: int):
     """Run the FastAPI server"""
-    # The app root logging is now at the module level, so we don't need to repeat it here
-    # We'll just use uvicorn to run the app
     uvicorn.run(
         app,
         host=host,
@@ -130,9 +112,7 @@ def run_server(host: str, port: int):
     )
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='AutoByteus Server')
-    parser.add_argument('--port', type=int, default=8000, help='Port to run the server on')
-    parser.add_argument('--host', type=str, default='127.0.0.1', help='Host to run the server on')
-    
+    # We've already parsed the arguments for --data-dir earlier,
+    # now we need to parse all arguments again for the server
     args = parser.parse_args()
     run_server(args.host, args.port)

@@ -324,23 +324,23 @@ echo "Creating/copying directories..."
 # Create logs directory
 create_directory "$TARGET_DIR/logs"
 
-# Create data directory
-create_directory "$TARGET_DIR/data"
+# Create db directory
+create_directory "$TARGET_DIR/db"
 
-# Copy resources directory if it exists
-copy_directory "$SOURCE_DIR/resources" "$TARGET_DIR/resources" "resources"
+# Copy download directory if it exists
+copy_directory "$SOURCE_DIR/download" "$TARGET_DIR/download" "download"
 
 # Copy alembic directory if it exists
 copy_directory "$SOURCE_DIR/alembic" "$TARGET_DIR/alembic" "alembic"
 
-# Copy data directory if it exists
-copy_directory "$SOURCE_DIR/data" "$TARGET_DIR/data" "data"
+# Copy db directory if it exists
+copy_directory "$SOURCE_DIR/db" "$TARGET_DIR/db" "db"
 
 # Copy the executable
 echo
 echo "Copying executable..."
 
-if [ "$DRY_RUN" = true ]; then
+if [ "$DRY RUN" = true ]; then
     echo "[DRY RUN] Would copy executable from: $EXECUTABLE_SOURCE"
 else
     # Handle different types of executables
@@ -367,7 +367,7 @@ fi
 # Summary
 echo
 echo "=================================================="
-if [ "$DRY_RUN" = true ]; then
+if [ "$DRY RUN" = true ]; then
     echo "DRY RUN COMPLETED - No changes were made"
 else
     echo "Deployment completed successfully!"
@@ -375,7 +375,7 @@ fi
 echo "=================================================="
 echo "Target directory: $TARGET_DIR"
 echo
-if [ "$DRY_RUN" = false ]; then
+if [ "$DRY RUN" = false ]; then
     echo "To run the server:"
     echo "  cd \"$TARGET_DIR\""
     if [ "$IS_MACOS" = true ] && [[ "$EXECUTABLE_SOURCE" == *.app ]]; then

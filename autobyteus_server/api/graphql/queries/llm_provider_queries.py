@@ -1,6 +1,6 @@
 import strawberry
 from typing import Optional, List
-from autobyteus_server.config import config
+from autobyteus_server.config import app_config_provider
 from autobyteus.llm.llm_factory import LLMFactory
 
 @strawberry.type
@@ -17,7 +17,7 @@ class Query:
             Optional[str]: The API key if found, None otherwise.
         """
         try:
-            api_key = config.get_llm_api_key(provider)
+            api_key = app_config_provider.config.get_llm_api_key(provider)
             return api_key if api_key else None
         except Exception as e:
             print(f"Error retrieving API key: {str(e)}")

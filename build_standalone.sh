@@ -116,7 +116,7 @@ else
 fi
 
 # Find specific dependency files using the copy_dependencies_one_file.py script
-echo "Locating dependency files (alembic, resources, playwright.sh, mistral_common data, anthropic tokenizer, etc.)..."
+echo "Locating dependency files (alembic, download, playwright.sh, mistral_common data, anthropic tokenizer, etc.)..."
 
 # Run the Python script to generate dependencies and write them to a file
 echo "Running Python script to find dependencies..."
@@ -245,7 +245,7 @@ else
     echo "Build complete! The standalone application is in: $OUTPUT_DIR/app.dist"
     echo "To run the application, execute: $OUTPUT_DIR/app.dist/app"
   fi
-  echo "Configuration files, alembic migrations, playwright dependencies, mistral_common data, anthropic tokenizer, and required resources have been included with the executable."
+  echo "Configuration files, alembic migrations, playwright dependencies, mistral_common data, anthropic tokenizer, and required downloads have been included with the executable."
 fi
 
 # Calculate and display the total build time in minutes

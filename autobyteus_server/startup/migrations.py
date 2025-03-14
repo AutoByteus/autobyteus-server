@@ -2,15 +2,15 @@ import logging
 from pathlib import Path
 from alembic import command
 from alembic.config import Config as AlembicConfig
-from autobyteus_server.config import config
-from autobyteus_server.utils.app_utils import get_application_root
+from autobyteus_server.config import app_config_provider
 
 logger = logging.getLogger(__name__)
 
 def get_alembic_config():
     """Get Alembic configuration"""
     alembic_cfg = AlembicConfig()
-    app_root = get_application_root()
+    config = app_config_provider.config
+    app_root = config.get_app_root_dir()
     
     # Set the script location
     alembic_cfg.set_main_option('script_location', str(app_root / 'alembic'))
@@ -22,10 +22,9 @@ def get_alembic_config():
         # Get the SQLite database path from config
         db_path = config.get('DB_NAME')
         if not db_path:
-            # If DB_NAME is not set, use default path
-            data_dir = app_root / 'data'
-            data_dir.mkdir(exist_ok=True)
-            db_path = str(data_dir / 'production.db')
+            # If DB_NAME is not set, use default path from db_dir
+            db_dir = config.get_db_dir()
+            db_path = str(db_dir / 'production.db')
             
         # Ensure the database directory exists
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)

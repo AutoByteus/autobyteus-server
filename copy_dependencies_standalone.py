@@ -62,7 +62,7 @@ def create_required_directories(destination_dir):
         # Required directories - using same structure as autobyteus_rpa_llm_server
         required_dirs = [
             "logs",
-            "resources",
+            "download",
             "alembic",
             "alembic/versions",
             "playwright/driver",
@@ -117,9 +117,9 @@ def copy_alembic_files(destination_dir):
         logger.error(f"Error copying alembic files: {str(e)}")
         return False
 
-def copy_resources(destination_dir):
+def copy_downloads(destination_dir):
     """
-    Copy resources directory to the destination directory if it exists.
+    Copy download directory to the destination directory if it exists.
     
     Args:
         destination_dir (str): The destination directory.
@@ -127,24 +127,24 @@ def copy_resources(destination_dir):
         bool: True if successful, False otherwise.
     """
     try:
-        # Source resources directory
-        source_resources = "resources"
+        # Source download directory
+        source_download = "download"
         
-        if not os.path.exists(source_resources):
-            logger.warning(f"Resources directory not found at {source_resources}, creating empty directory.")
+        if not os.path.exists(source_download):
+            logger.warning(f"Download directory not found at {source_download}, creating empty directory.")
             return True
             
-        # Destination resources directory
-        dest_resources = os.path.join(destination_dir, "resources")
+        # Destination download directory
+        dest_download = os.path.join(destination_dir, "download")
         
-        # Copy resources directory
-        logger.info(f"Copying resources from {source_resources} to {dest_resources}...")
-        shutil.copytree(source_resources, dest_resources, dirs_exist_ok=True)
+        # Copy download directory
+        logger.info(f"Copying downloads from {source_download} to {dest_download}...")
+        shutil.copytree(source_download, dest_download, dirs_exist_ok=True)
         
-        logger.info("Resources copied successfully.")
+        logger.info("Downloads copied successfully.")
         return True
     except Exception as e:
-        logger.error(f"Error copying resources: {str(e)}")
+        logger.error(f"Error copying downloads: {str(e)}")
         return False
 
 def find_playwright_driver():
@@ -464,9 +464,9 @@ def main():
         logger.error("Failed to copy Alembic files.")
         return 1
         
-    # Copy resources directory
-    if not copy_resources(destination_dir):
-        logger.error("Failed to copy resources directory.")
+    # Copy download directory
+    if not copy_downloads(destination_dir):
+        logger.error("Failed to copy download directory.")
         return 1
         
     # Copy Playwright script

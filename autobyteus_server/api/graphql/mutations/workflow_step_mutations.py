@@ -1,7 +1,6 @@
 import logging
 from typing import List, Optional
 import strawberry
-from autobyteus_server.config import config
 from autobyteus_server.workflow.types.base_step import BaseStep
 from autobyteus_server.workspaces.workspace_manager import WorkspaceManager
 

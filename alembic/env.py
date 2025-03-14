@@ -6,7 +6,7 @@ from alembic import context
 import autobyteus_server.workflow.persistence.conversation.models as models
 import autobyteus_server.prompt_engineering.models as models
 
-from autobyteus_server.config import config as app_config
+from autobyteus_server.config import app_config_provider
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -20,6 +20,8 @@ target_metadata = Base.metadata
 
 def get_database_url():
     """Generate database URL based on configuration."""
+    app_config = app_config_provider.config
+    app_config.initialize()
     db_type = app_config.get('DB_TYPE', 'sqlite')
     
     if db_type == 'sqlite':

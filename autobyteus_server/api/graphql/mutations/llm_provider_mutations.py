@@ -1,5 +1,5 @@
 import strawberry
-from autobyteus_server.config import config
+from autobyteus_server.config import app_config_provider
 from autobyteus.llm.llm_factory import LLMFactory
 
 @strawberry.type
@@ -17,7 +17,7 @@ class Mutation:
         try:
             if not provider or not api_key:
                 raise ValueError("Both provider and api_key must be provided.")
-            config.set_llm_api_key(provider, api_key)
+            app_config_provider.config.set_llm_api_key(provider, api_key)
             return f"API key for provider {provider} has been set successfully."
         except ValueError as ve:
             return f"Error setting API key: {str(ve)}"

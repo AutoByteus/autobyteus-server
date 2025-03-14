@@ -235,7 +235,7 @@ else
   echo "  - .env (environment configuration)"
   echo "  - logging_config.ini (logging configuration)"
   echo "  - alembic.ini (database migration configuration)"
-  echo "  - resources/ (directory for application resources)"
+  echo "  - download/ (directory for application downloads like plantuml.jar)"
   echo "  - alembic/ (directory for database migrations)"
   
   # Calculate and display the total build time in minutes
