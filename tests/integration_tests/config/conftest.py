@@ -4,27 +4,6 @@ import pytest
 import tempfile
 import logging.handlers
 from pathlib import Path
-from repository_sqlalchemy.transaction_management import transaction
-
-# Add marker for skipping transaction
-def pytest_configure(config):
-    config.addinivalue_line(
-        "markers", "skip_transaction: mark test to skip the transaction_rollback fixture"
-    )
-
-@pytest.fixture(scope="function", autouse=True)
-def transaction_rollback(request):
-    """
-    Provides a MongoDB session for testing with automatic rollback.
-    Skip for tests marked with skip_transaction.
-    """
-    if request.node.get_closest_marker('skip_transaction'):
-        # Skip this fixture for tests marked with skip_transaction
-        yield None
-    else:
-        with transaction() as session:
-            yield session
-            session.rollback()
 
 @pytest.fixture
 def mock_packaged_environment(monkeypatch):
@@ -83,7 +62,7 @@ level=INFO
 handlers=fileHandler,consoleHandler
 
 [handler_fileHandler]
-class=FileHandler
+class=logging.FileHandler
 level=INFO
 formatter=myFormatter
 args=("%(log_file_path)s",)
