@@ -4,6 +4,8 @@ from typing import Dict
 from pathlib import Path
 import logging
 import platform
+import tempfile
+import shutil
 from dotenv import load_dotenv, dotenv_values, set_key
 from autobyteus_server.workspaces.workspace import Workspace
 
@@ -36,15 +38,15 @@ class AppConfig:
         
         # Detect platform
         self._is_windows = platform.system() == 'Windows'
+        print(f"Platform detection: Windows={self._is_windows}")
         
         # Initialize the app root directory
         self.app_root_dir = self._get_app_root_dir()
-        
-        if self._is_windows:
-            logger.debug(f"Running on Windows. App root directory: {self.app_root_dir}")
+        print(f"App root directory: {self.app_root_dir}")
         
         # Initialize the data directory - by default, it's the same as app_root_dir
         self.data_dir = self.app_root_dir
+        print(f"Data directory: {self.data_dir}")
         
         # Defer determining the config file until initialization
         self.config_file = None
@@ -67,16 +69,17 @@ class AppConfig:
             AppConfigError: If any error occurs during initialization.
         """
         if self._initialized:
-            logger.warning("initialize() called more than once. Ignoring.")
+            print("initialize() called more than once. Ignoring.")
             return
         
         # Ensure we have a valid config file
         if not self.config_file or not os.path.exists(self.config_file):
             try:
                 self.config_file = str(self.get_config_file_path())
+                print(f"Config file path: {self.config_file}")
             except FileNotFoundError as e:
                 error_msg = f"Configuration file not found: {e}"
-                logger.error(error_msg)
+                print(f"ERROR: {error_msg}")
                 raise AppConfigError(error_msg) from e
         
         # Load environment variables and configuration data
@@ -88,7 +91,7 @@ class AppConfig:
                 self._init_sqlite_path()
             except Exception as e:
                 error_msg = f"Failed to initialize SQLite path: {e}"
-                logger.error(error_msg)
+                print(f"ERROR: {error_msg}")
                 raise AppConfigError(error_msg) from e
         
         # Configure logging unconditionally
@@ -96,7 +99,7 @@ class AppConfig:
             self._configure_logger()
         except Exception as e:
             error_msg = f"Failed to configure logging: {e}"
-            logger.error(error_msg)
+            print(f"ERROR: {error_msg}")
             raise AppConfigError(error_msg) from e
         
         # Mark as initialized
@@ -130,7 +133,7 @@ class AppConfig:
             self._load_environment()
         except Exception as e:
             error_msg = f"Failed to load environment variables: {e}"
-            logger.error(error_msg)
+            print(f"ERROR: {error_msg}")
             raise AppConfigError(error_msg) from e
         
         # Load configuration data into a local dictionary
@@ -138,7 +141,7 @@ class AppConfig:
             self.config_data = dotenv_values(self.config_file)
         except Exception as e:
             error_msg = f"Failed to parse configuration file: {e}"
-            logger.error(error_msg)
+            print(f"ERROR: {error_msg}")
             raise AppConfigError(error_msg) from e
 
     def _get_app_root_dir(self) -> Path:
@@ -162,93 +165,149 @@ class AppConfig:
         db_name = 'test.db' if env == 'test' else 'production.db'
         return str((db_dir / db_name).absolute())
 
-    def _safe_path_string(self, path: Path) -> str:
+    def _create_modified_logging_config(self, log_file_path):
         """
-        Safely convert a Path object to a string representation that won't have issues with escape sequences.
-        This is particularly important on Windows where '\a' might be interpreted as a bell character.
+        Create a modified logging configuration file with the log path hardcoded.
+        This avoids issues with string interpolation of paths.
         
         Args:
-            path (Path): The Path object to convert
+            log_file_path (str): The log file path to hardcode
             
         Returns:
-            str: A safe string representation of the path
+            str: Path to the temporary logging config file
         """
+        print(f"Creating modified logging config with hardcoded path: {log_file_path}")
+        
+        app_root = self.get_app_root_dir()
+        orig_config_path = app_root / 'logging_config.ini'
+        
+        if not os.path.exists(orig_config_path):
+            print(f"Original logging config not found at {orig_config_path}")
+            return None
+        
+        # Create a temporary file for the modified config
+        fd, temp_path = tempfile.mkstemp(suffix='.ini', prefix='logging_config_')
+        os.close(fd)
+        
+        # Since we're hardcoding paths, escape backslashes in the log file path for Python
         if self._is_windows:
-            # On Windows, use os.path.normpath with raw string handling
-            # First convert to absolute path to ensure all parts are resolved
-            abs_path = path.absolute()
-            # Use raw string formatting to preserve backslashes
-            path_str = rf"{abs_path}"
-            # Normalize the path to handle any remaining issues
-            path_str = os.path.normpath(path_str)
-            logger.debug(f"Windows path normalized: {path_str}")
-            return path_str
-        else:
-            # For non-Windows platforms, simple string conversion is fine
-            return str(path)
+            log_file_path = log_file_path.replace('\\', '\\\\')
+        
+        # Read the original config
+        with open(orig_config_path, 'r') as file:
+            content = file.read()
+        
+        # Replace the dynamic path with a hardcoded one
+        # Example: args=("%(log_file_path)s", "midnight", 1, 1) -> args=("C:\\path\\to\\log.log", "midnight", 1, 1)
+        modified_content = content.replace('args=("%(log_file_path)s"', f'args=("{log_file_path}"')
+        
+        # Write the modified config
+        with open(temp_path, 'w') as file:
+            file.write(modified_content)
+        
+        print(f"Created temporary config file at: {temp_path}")
+        return temp_path
 
     def _configure_logger(self):
         """Configure logging using the logging configuration file."""
         import logging.config
         import sys
         
+        print("=== Starting logging configuration ===")
+        
         app_root = self.get_app_root_dir()
         config_path = app_root / 'logging_config.ini'
+        print(f"Looking for logging config at: {config_path}")
         
         if not os.path.exists(config_path):
+            print(f"Logging config not found, using basic configuration")
             logging.basicConfig(
                 level=logging.INFO,
                 format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             )
-            logger.warning(f"Logging config file not found at {config_path}. Using basic configuration.")
             return
         
         logs_dir = self.get_logs_dir()
+        print(f"Logs directory: {logs_dir}")
         
-        # Ensure the logs directory exists for all platforms
-        os.makedirs(str(logs_dir), exist_ok=True)
+        # Create logs directory
+        try:
+            os.makedirs(str(logs_dir), exist_ok=True)
+            print(f"Created/verified logs directory at: {logs_dir}")
+        except Exception as dir_e:
+            print(f"Error creating logs directory: {dir_e}")
         
-        # Handle log file path creation with special handling for Windows
+        # Create log file path - simplest possible approach
         if self._is_windows:
-            # Get safe path string for the logs directory
-            logs_dir_str = self._safe_path_string(logs_dir)
-            # Create log file path using os.path.join for safer Windows handling
+            # On Windows, build path using os.path.join with string components
+            logs_dir_str = str(logs_dir)
             log_file = os.path.join(logs_dir_str, "app.log")
-            logger.debug(f"Windows log file path: {log_file}")
+            print(f"Windows log file path: {log_file}")
         else:
-            # For non-Windows platforms, use Path
+            # On other platforms, Path joining works fine
             log_file = str(logs_dir / 'app.log')
+            print(f"Non-Windows log file path: {log_file}")
+        
+        # Try to directly test if we can write to the log file location
+        try:
+            with open(log_file, 'a') as test_file:
+                test_file.write("Log file test\n")
+            print(f"Successfully wrote to log file: {log_file}")
+        except Exception as file_e:
+            print(f"ERROR writing to log file: {file_e}")
+            # Try a fallback location
+            log_file = os.path.join(os.getcwd(), "autobyteus_app.log")
+            print(f"Using fallback log file: {log_file}")
+            try:
+                with open(log_file, 'a') as test_file:
+                    test_file.write("Log file test\n")
+                print(f"Successfully wrote to fallback log file")
+            except Exception as fallback_e:
+                print(f"ERROR writing to fallback log file: {fallback_e}")
+                # Console-only logging as last resort
+                logging.basicConfig(
+                    level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[logging.StreamHandler(sys.stdout)]
+                )
+                print("Using console-only logging as last resort")
+                return
         
         try:
-            # Log configuration details
-            logger.debug(f"Using log file path: {log_file}")
-            logger.debug(f"Using config file: {config_path}")
+            # Instead of using string interpolation, use a modified config with hardcoded path
+            temp_config = self._create_modified_logging_config(log_file)
             
-            # Create an explicit path mapping for the config
-            # Use the 'r' string prefix approach for Windows paths
-            if self._is_windows:
-                path_mapping = {'log_file_path': rf"{log_file}"}
+            if temp_config:
+                print(f"Using modified logging config from: {temp_config}")
+                logging.config.fileConfig(
+                    temp_config,
+                    disable_existing_loggers=False
+                )
+                # Clean up the temporary file
+                try:
+                    os.unlink(temp_config)
+                except:
+                    print(f"Note: Could not delete temporary config file: {temp_config}")
             else:
-                path_mapping = {'log_file_path': log_file}
+                # Fallback to simple configuration
+                print("Using basic logging configuration")
+                logging.basicConfig(
+                    level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[
+                        logging.FileHandler(log_file),
+                        logging.StreamHandler(sys.stdout)
+                    ]
+                )
             
-            logging.config.fileConfig(
-                config_path,
-                defaults=path_mapping,
-                disable_existing_loggers=False
-            )
-            logger.info(f"Logging configured successfully with log file: {log_file}")
+            print(f"Logging configured successfully with log file: {log_file}")
+            logger.info(f"Logging started with file: {log_file}")
         except Exception as e:
-            logger.warning(f"Error configuring logging: {e}. Using basic configuration.")
+            print(f"ERROR configuring logging: {e}")
+            print("Using basic configuration as fallback")
             
-            # Fallback to basic configuration
+            # Fallback to simple configuration
             try:
-                # On Windows, be extra careful with file path handling
-                if self._is_windows:
-                    # Create a simple fallback log file in the current directory
-                    log_file = os.path.join(os.getcwd(), "autobyteus_app.log")
-                    logger.debug(f"Using fallback log file: {log_file}")
-                
-                # Set up basic logging as a fallback
                 logging.basicConfig(
                     level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -258,8 +317,8 @@ class AppConfig:
                     ]
                 )
             except Exception as fallback_e:
-                logger.error(f"Failed to configure fallback logging: {fallback_e}")
-                # Last resort - console only logging
+                print(f"ERROR with fallback logging: {fallback_e}")
+                # Console-only as last resort
                 logging.basicConfig(
                     level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -275,10 +334,13 @@ class AppConfig:
             Exception: If environment variables cannot be loaded.
         """
         env_path = self.get_config_file_path()
-        # Removed detailed logging here to reduce noise.
+        print(f"Loading environment from: {env_path}")
         if not load_dotenv(dotenv_path=env_path):
-            raise Exception(f"Failed to load environment variables from {env_path}")
+            error_msg = f"Failed to load environment variables from {env_path}"
+            print(f"ERROR: {error_msg}")
+            raise Exception(error_msg)
         os.environ.setdefault('LOG_LEVEL', 'INFO')
+        print("Environment variables loaded successfully")
 
     def is_nuitka_build(self) -> bool:
         """
@@ -294,7 +356,7 @@ class AppConfig:
         for pattern in ['onefile_', 'onefil']:
             if pattern in executable_lower:
                 self._is_nuitka = True
-                logger.debug(f"Detected Nuitka build from pattern '{pattern}' in executable: {sys.executable}")
+                print(f"Detected Nuitka build from pattern '{pattern}' in executable: {sys.executable}")
                 return True
         
         self._is_nuitka = False
@@ -365,12 +427,12 @@ class AppConfig:
         Returns:
             bool: True if successful, False otherwise.
         """
-        logger.warning("load_environment() is deprecated. Use initialize() instead.")
+        print("load_environment() is deprecated. Use initialize() instead.")
         try:
             self._load_environment()
             return True
         except Exception as e:
-            logger.error(f"Failed to load environment: {e}")
+            print(f"Failed to load environment: {e}")
             return False
 
     def set_custom_app_data_dir(self, path: str) -> None:
@@ -394,13 +456,13 @@ class AppConfig:
             raise AppConfigError(f"Path is not a directory: {data_dir}")
         
         self.data_dir = data_dir
-        logger.info(f"Custom app data directory set to: {self.data_dir}")
+        print(f"Custom app data directory set to: {self.data_dir}")
         
         try:
             self.config_file = str(self.get_config_file_path())
-            logger.info(f"Updated config file path to {self.config_file}")
+            print(f"Updated config file path to {self.config_file}")
         except FileNotFoundError as e:
-            logger.warning(f"Config file not found in new data directory: {e}")
+            print(f"Config file not found in new data directory: {e}")
             self.config_file = None
 
     # Configuration access methods
@@ -417,7 +479,7 @@ class AppConfig:
             try:
                 set_key(self.config_file, key, value)
             except Exception as e:
-                logger.warning(f"Could not update config file {self.config_file}: {e}. Changes will only be valid for the current session.")
+                print(f"Could not update config file {self.config_file}: {e}. Changes will only be valid for the current session.")
 
     def set_llm_api_key(self, provider: str, api_key: str):
         """
