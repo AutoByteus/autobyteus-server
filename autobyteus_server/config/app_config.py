@@ -173,16 +173,19 @@ class AppConfig:
         Returns:
             str: A safe string representation of the path
         """
-        # First get the raw string path
-        path_str = str(path)
-        
         if self._is_windows:
-            # On Windows, use raw string representation or normalize with os.path
-            # This ensures that escape sequences like '\a' are treated literally
+            # On Windows, use os.path.normpath with raw string handling
+            # First convert to absolute path to ensure all parts are resolved
+            abs_path = path.absolute()
+            # Use raw string formatting to preserve backslashes
+            path_str = rf"{abs_path}"
+            # Normalize the path to handle any remaining issues
             path_str = os.path.normpath(path_str)
-            logger.debug(f"Windows path normalized from Path object: {path_str}")
-            
-        return path_str
+            logger.debug(f"Windows path normalized: {path_str}")
+            return path_str
+        else:
+            # For non-Windows platforms, simple string conversion is fine
+            return str(path)
 
     def _configure_logger(self):
         """Configure logging using the logging configuration file."""
@@ -202,71 +205,66 @@ class AppConfig:
         
         logs_dir = self.get_logs_dir()
         
-        # For Windows in packaged mode, ensure the directory exists and use safe path construction
-        if self._is_windows and self.is_packaged_environment():
-            # Ensure the logs directory exists
-            os.makedirs(str(logs_dir), exist_ok=True)
-            
-            # Get safe path string for the log file
+        # Ensure the logs directory exists for all platforms
+        os.makedirs(str(logs_dir), exist_ok=True)
+        
+        # Handle log file path creation with special handling for Windows
+        if self._is_windows:
+            # Get safe path string for the logs directory
             logs_dir_str = self._safe_path_string(logs_dir)
-            
-            # Construct path using os.path.join instead of Path operators for safer Windows handling
+            # Create log file path using os.path.join for safer Windows handling
             log_file = os.path.join(logs_dir_str, "app.log")
-            
-            # Debug log for Windows path construction
-            logger.debug(f"Log file path on Windows (before config): {log_file}")
+            logger.debug(f"Windows log file path: {log_file}")
         else:
-            # For non-Windows platforms, we can use the Path API directly
-            logs_dir.mkdir(exist_ok=True)
+            # For non-Windows platforms, use Path
             log_file = str(logs_dir / 'app.log')
         
         try:
-            # For Windows, provide extra debug info about the path
+            # Log configuration details
+            logger.debug(f"Using log file path: {log_file}")
+            logger.debug(f"Using config file: {config_path}")
+            
+            # Create an explicit path mapping for the config
+            # Use the 'r' string prefix approach for Windows paths
             if self._is_windows:
-                logger.debug(f"Setting log_file_path to: {log_file}")
-                logger.debug(f"Using config file: {config_path}")
+                path_mapping = {'log_file_path': rf"{log_file}"}
+            else:
+                path_mapping = {'log_file_path': log_file}
             
             logging.config.fileConfig(
                 config_path,
-                defaults={'log_file_path': log_file},
+                defaults=path_mapping,
                 disable_existing_loggers=False
             )
             logger.info(f"Logging configured successfully with log file: {log_file}")
         except Exception as e:
             logger.warning(f"Error configuring logging: {e}. Using basic configuration.")
             
-            # Ensure the logs directory exists
-            os.makedirs(str(logs_dir), exist_ok=True)
-            
-            # On Windows, use a more direct approach for creating the log file
-            # to avoid any potential escape sequence issues
-            if self._is_windows:
-                try:
-                    log_path_parts = os.path.split(log_file)
-                    log_dir = log_path_parts[0]
-                    log_filename = log_path_parts[1]
-                    
-                    # Ensure the directory exists
-                    os.makedirs(log_dir, exist_ok=True)
-                    
-                    # Construct the full path again
-                    log_file = os.path.join(log_dir, log_filename)
-                    logger.debug(f"Reconstructed log file path: {log_file}")
-                except Exception as path_e:
-                    logger.error(f"Error reconstructing log path: {path_e}")
-                    # Fallback to a simple filename in the current directory
-                    log_file = "autobyteus_app.log"
-                    logger.warning(f"Using fallback log file: {log_file}")
-            
-            # Set up basic logging as a fallback
-            logging.basicConfig(
-                level=logging.INFO,
-                format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                handlers=[
-                    logging.FileHandler(log_file),
-                    logging.StreamHandler(sys.stdout)
-                ]
-            )
+            # Fallback to basic configuration
+            try:
+                # On Windows, be extra careful with file path handling
+                if self._is_windows:
+                    # Create a simple fallback log file in the current directory
+                    log_file = os.path.join(os.getcwd(), "autobyteus_app.log")
+                    logger.debug(f"Using fallback log file: {log_file}")
+                
+                # Set up basic logging as a fallback
+                logging.basicConfig(
+                    level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[
+                        logging.FileHandler(log_file),
+                        logging.StreamHandler(sys.stdout)
+                    ]
+                )
+            except Exception as fallback_e:
+                logger.error(f"Failed to configure fallback logging: {fallback_e}")
+                # Last resort - console only logging
+                logging.basicConfig(
+                    level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[logging.StreamHandler(sys.stdout)]
+                )
             raise
 
     def _load_environment(self):
