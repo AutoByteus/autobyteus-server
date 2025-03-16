@@ -34,6 +34,12 @@ class ServerSettingsService:
             description="URL of the AUTOBYTEUS LLM server"
         )
         
+        # Server Host setting for proper URL generation
+        self._settings_info["AUTOBYTEUS_SERVER_HOST"] = ServerSettingDescription(
+            key="AUTOBYTEUS_SERVER_HOST",
+            description="Host address for external services to access the server (e.g., Docker containers)"
+        )
+        
         # Add more settings here in the future
         
         logger.info(f"Initialized server settings service with {len(self._settings_info)} settings")

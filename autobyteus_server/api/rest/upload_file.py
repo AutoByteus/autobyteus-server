@@ -40,6 +40,42 @@ def get_category(mime_type: str) -> str:
     else:
         return 'others'
 
+def get_base_url(request: Request) -> str:
+    """
+    Get the base URL for file access, prioritizing the AUTOBYTEUS_SERVER_HOST environment variable.
+    
+    Args:
+        request (Request): The FastAPI request object
+        
+    Returns:
+        str: The base URL to use for file access
+    """
+    # Check for SERVER_HOST environment variable
+    server_host = os.environ.get("AUTOBYTEUS_SERVER_HOST")
+    
+    if server_host and server_host.strip():
+        # Use the specified host with the scheme and port from the request
+        scheme = request.url.scheme
+        port = request.url.port
+        
+        # Default port if not specified
+        if not port:
+            port = 443 if scheme == "https" else 80
+            
+        # Skip port in URL if it's the default for the scheme
+        if (scheme == "http" and port == 80) or (scheme == "https" and port == 443):
+            base_url = f"{scheme}://{server_host}/"
+        else:
+            base_url = f"{scheme}://{server_host}:{port}/"
+            
+        logger.info(f"Using configured server host: {server_host}, generated base URL: {base_url}")
+        return base_url
+    else:
+        # Fall back to request base_url if SERVER_HOST is not set
+        base_url = str(request.base_url)
+        logger.info(f"No SERVER_HOST configured, using request base URL: {base_url}")
+        return base_url
+
 @router.post("/upload-file")
 async def upload_file(
     request: Request,
@@ -124,7 +160,7 @@ async def upload_file(
 
     # Construct URL for accessing the uploaded file using the new files endpoint
     # The URL pattern is now: {base_url}rest/files/{workspace_id}/{category}/{unique_filename}
-    base_url = str(request.base_url)
+    base_url = get_base_url(request)
     file_url = f"{base_url}rest/files/{workspace_id}/{category}/{unique_filename}"
     logger.info(f"Returning file URL: {file_url}")
     return JSONResponse(content={"fileUrl": file_url})

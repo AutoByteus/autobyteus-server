@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # Parse command line arguments early to set up data directory
 parser = argparse.ArgumentParser(description='AutoByteus Server')
 parser.add_argument('--port', type=int, default=8000, help='Port to run the server on')
-parser.add_argument('--host', type=str, default='127.0.0.1', help='Host to run the server on')
+parser.add_argument('--host', type=str, default='0.0.0.0', help='Host to run the server on')
 parser.add_argument('--data-dir', type=str, help='Custom directory for all application data (configs, logs, database)')
 
 # Parse known args to get the data directory without requiring all args
