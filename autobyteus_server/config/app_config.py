@@ -4,10 +4,9 @@ from typing import Dict
 from pathlib import Path
 import logging
 import platform
-import tempfile
-import shutil
 from dotenv import load_dotenv, dotenv_values, set_key
 from autobyteus_server.workspaces.workspace import Workspace
+from autobyteus_server.config.logging import WindowsLoggingConfigurator, UnixLoggingConfigurator
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +46,12 @@ class AppConfig:
         # Initialize the data directory - by default, it's the same as app_root_dir
         self.data_dir = self.app_root_dir
         print(f"Data directory: {self.data_dir}")
+        
+        # Create platform-specific logging configurator
+        if self._is_windows:
+            self.logging_configurator = WindowsLoggingConfigurator(self)
+        else:
+            self.logging_configurator = UnixLoggingConfigurator(self)
         
         # Defer determining the config file until initialization
         self.config_file = None
@@ -165,54 +170,8 @@ class AppConfig:
         db_name = 'test.db' if env == 'test' else 'production.db'
         return str((db_dir / db_name).absolute())
 
-    def _create_modified_logging_config(self, log_file_path):
-        """
-        Create a modified logging configuration file with the log path hardcoded.
-        This avoids issues with string interpolation of paths.
-        
-        Args:
-            log_file_path (str): The log file path to hardcode
-            
-        Returns:
-            str: Path to the temporary logging config file
-        """
-        print(f"Creating modified logging config with hardcoded path: {log_file_path}")
-        
-        app_root = self.get_app_root_dir()
-        orig_config_path = app_root / 'logging_config.ini'
-        
-        if not os.path.exists(orig_config_path):
-            print(f"Original logging config not found at {orig_config_path}")
-            return None
-        
-        # Create a temporary file for the modified config
-        fd, temp_path = tempfile.mkstemp(suffix='.ini', prefix='logging_config_')
-        os.close(fd)
-        
-        # Since we're hardcoding paths, escape backslashes in the log file path for Python
-        if self._is_windows:
-            log_file_path = log_file_path.replace('\\', '\\\\')
-        
-        # Read the original config
-        with open(orig_config_path, 'r') as file:
-            content = file.read()
-        
-        # Replace the dynamic path with a hardcoded one
-        # Example: args=("%(log_file_path)s", "midnight", 1, 1) -> args=("C:\\path\\to\\log.log", "midnight", 1, 1)
-        modified_content = content.replace('args=("%(log_file_path)s"', f'args=("{log_file_path}"')
-        
-        # Write the modified config
-        with open(temp_path, 'w') as file:
-            file.write(modified_content)
-        
-        print(f"Created temporary config file at: {temp_path}")
-        return temp_path
-
     def _configure_logger(self):
         """Configure logging using the logging configuration file."""
-        import logging.config
-        import sys
-        
         print("=== Starting logging configuration ===")
         
         app_root = self.get_app_root_dir()
@@ -228,103 +187,12 @@ class AppConfig:
             return
         
         logs_dir = self.get_logs_dir()
-        print(f"Logs directory: {logs_dir}")
         
-        # Create logs directory
-        try:
-            os.makedirs(str(logs_dir), exist_ok=True)
-            print(f"Created/verified logs directory at: {logs_dir}")
-        except Exception as dir_e:
-            print(f"Error creating logs directory: {dir_e}")
+        # Use the platform-specific logging configurator
+        success = self.logging_configurator.configure_logging(config_path, logs_dir)
         
-        # Create log file path - simplest possible approach
-        if self._is_windows:
-            # On Windows, build path using os.path.join with string components
-            logs_dir_str = str(logs_dir)
-            log_file = os.path.join(logs_dir_str, "app.log")
-            print(f"Windows log file path: {log_file}")
-        else:
-            # On other platforms, Path joining works fine
-            log_file = str(logs_dir / 'app.log')
-            print(f"Non-Windows log file path: {log_file}")
-        
-        # Try to directly test if we can write to the log file location
-        try:
-            with open(log_file, 'a') as test_file:
-                test_file.write("Log file test\n")
-            print(f"Successfully wrote to log file: {log_file}")
-        except Exception as file_e:
-            print(f"ERROR writing to log file: {file_e}")
-            # Try a fallback location
-            log_file = os.path.join(os.getcwd(), "autobyteus_app.log")
-            print(f"Using fallback log file: {log_file}")
-            try:
-                with open(log_file, 'a') as test_file:
-                    test_file.write("Log file test\n")
-                print(f"Successfully wrote to fallback log file")
-            except Exception as fallback_e:
-                print(f"ERROR writing to fallback log file: {fallback_e}")
-                # Console-only logging as last resort
-                logging.basicConfig(
-                    level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[logging.StreamHandler(sys.stdout)]
-                )
-                print("Using console-only logging as last resort")
-                return
-        
-        try:
-            # Instead of using string interpolation, use a modified config with hardcoded path
-            temp_config = self._create_modified_logging_config(log_file)
-            
-            if temp_config:
-                print(f"Using modified logging config from: {temp_config}")
-                logging.config.fileConfig(
-                    temp_config,
-                    disable_existing_loggers=False
-                )
-                # Clean up the temporary file
-                try:
-                    os.unlink(temp_config)
-                except:
-                    print(f"Note: Could not delete temporary config file: {temp_config}")
-            else:
-                # Fallback to simple configuration
-                print("Using basic logging configuration")
-                logging.basicConfig(
-                    level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[
-                        logging.FileHandler(log_file),
-                        logging.StreamHandler(sys.stdout)
-                    ]
-                )
-            
-            print(f"Logging configured successfully with log file: {log_file}")
-            logger.info(f"Logging started with file: {log_file}")
-        except Exception as e:
-            print(f"ERROR configuring logging: {e}")
-            print("Using basic configuration as fallback")
-            
-            # Fallback to simple configuration
-            try:
-                logging.basicConfig(
-                    level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[
-                        logging.FileHandler(log_file),
-                        logging.StreamHandler(sys.stdout)
-                    ]
-                )
-            except Exception as fallback_e:
-                print(f"ERROR with fallback logging: {fallback_e}")
-                # Console-only as last resort
-                logging.basicConfig(
-                    level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[logging.StreamHandler(sys.stdout)]
-                )
-            raise
+        if not success:
+            raise AppConfigError("Failed to configure logging")
 
     def _load_environment(self):
         """
