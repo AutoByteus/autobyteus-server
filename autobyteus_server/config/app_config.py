@@ -3,6 +3,7 @@ import sys
 from typing import Dict
 from pathlib import Path
 import logging
+import platform
 from dotenv import load_dotenv, dotenv_values, set_key
 from autobyteus_server.workspaces.workspace import Workspace
 
@@ -33,8 +34,14 @@ class AppConfig:
         # Cache for Nuitka detection
         self._is_nuitka = None
         
+        # Detect platform
+        self._is_windows = platform.system() == 'Windows'
+        
         # Initialize the app root directory
         self.app_root_dir = self._get_app_root_dir()
+        
+        if self._is_windows:
+            logger.debug(f"Running on Windows. App root directory: {self.app_root_dir}")
         
         # Initialize the data directory - by default, it's the same as app_root_dir
         self.data_dir = self.app_root_dir
@@ -155,6 +162,28 @@ class AppConfig:
         db_name = 'test.db' if env == 'test' else 'production.db'
         return str((db_dir / db_name).absolute())
 
+    def _safe_path_string(self, path: Path) -> str:
+        """
+        Safely convert a Path object to a string representation that won't have issues with escape sequences.
+        This is particularly important on Windows where '\a' might be interpreted as a bell character.
+        
+        Args:
+            path (Path): The Path object to convert
+            
+        Returns:
+            str: A safe string representation of the path
+        """
+        # First get the raw string path
+        path_str = str(path)
+        
+        if self._is_windows:
+            # On Windows, use raw string representation or normalize with os.path
+            # This ensures that escape sequences like '\a' are treated literally
+            path_str = os.path.normpath(path_str)
+            logger.debug(f"Windows path normalized from Path object: {path_str}")
+            
+        return path_str
+
     def _configure_logger(self):
         """Configure logging using the logging configuration file."""
         import logging.config
@@ -172,16 +201,64 @@ class AppConfig:
             return
         
         logs_dir = self.get_logs_dir()
-        log_file = str(logs_dir / 'app.log')
+        
+        # For Windows in packaged mode, ensure the directory exists and use safe path construction
+        if self._is_windows and self.is_packaged_environment():
+            # Ensure the logs directory exists
+            os.makedirs(str(logs_dir), exist_ok=True)
+            
+            # Get safe path string for the log file
+            logs_dir_str = self._safe_path_string(logs_dir)
+            
+            # Construct path using os.path.join instead of Path operators for safer Windows handling
+            log_file = os.path.join(logs_dir_str, "app.log")
+            
+            # Debug log for Windows path construction
+            logger.debug(f"Log file path on Windows (before config): {log_file}")
+        else:
+            # For non-Windows platforms, we can use the Path API directly
+            logs_dir.mkdir(exist_ok=True)
+            log_file = str(logs_dir / 'app.log')
         
         try:
+            # For Windows, provide extra debug info about the path
+            if self._is_windows:
+                logger.debug(f"Setting log_file_path to: {log_file}")
+                logger.debug(f"Using config file: {config_path}")
+            
             logging.config.fileConfig(
                 config_path,
                 defaults={'log_file_path': log_file},
                 disable_existing_loggers=False
             )
-            logger.info("Logging configured successfully")
+            logger.info(f"Logging configured successfully with log file: {log_file}")
         except Exception as e:
+            logger.warning(f"Error configuring logging: {e}. Using basic configuration.")
+            
+            # Ensure the logs directory exists
+            os.makedirs(str(logs_dir), exist_ok=True)
+            
+            # On Windows, use a more direct approach for creating the log file
+            # to avoid any potential escape sequence issues
+            if self._is_windows:
+                try:
+                    log_path_parts = os.path.split(log_file)
+                    log_dir = log_path_parts[0]
+                    log_filename = log_path_parts[1]
+                    
+                    # Ensure the directory exists
+                    os.makedirs(log_dir, exist_ok=True)
+                    
+                    # Construct the full path again
+                    log_file = os.path.join(log_dir, log_filename)
+                    logger.debug(f"Reconstructed log file path: {log_file}")
+                except Exception as path_e:
+                    logger.error(f"Error reconstructing log path: {path_e}")
+                    # Fallback to a simple filename in the current directory
+                    log_file = "autobyteus_app.log"
+                    logger.warning(f"Using fallback log file: {log_file}")
+            
+            # Set up basic logging as a fallback
             logging.basicConfig(
                 level=logging.INFO,
                 format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -190,7 +267,6 @@ class AppConfig:
                     logging.StreamHandler(sys.stdout)
                 ]
             )
-            logger.warning(f"Error configuring logging: {e}. Using basic configuration.")
             raise
 
     def _load_environment(self):
