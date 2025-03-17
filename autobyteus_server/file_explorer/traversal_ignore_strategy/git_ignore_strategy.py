@@ -23,7 +23,7 @@ class GitIgnoreStrategy(TraversalIgnoreStrategy):
         self.root_path = pathlib.Path(root_path).resolve()
         gitignore_path = self.root_path / '.gitignore'
         if gitignore_path.is_file():
-            with gitignore_path.open('r') as gitignore_file:
+            with gitignore_path.open('r', encoding='utf-8') as gitignore_file:
                 # Read all non-empty, non-comment lines
                 gitignore_lines = [line.strip() for line in gitignore_file if line.strip() and not line.startswith('#')]
                 self.spec = pathspec.PathSpec.from_lines('gitwildmatch', gitignore_lines)
