@@ -10,5 +10,5 @@ repository-mongodb==0.1.8
 alembic==1.13.3
 watchdog
 python-multipart
-autobyteus==1.0.0
+autobyteus==1.0.1
 toml
