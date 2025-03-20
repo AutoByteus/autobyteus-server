@@ -164,6 +164,7 @@ NUITKA_COMMAND="python -m nuitka \
     --include-package=anthropic \
     --include-package=autobyteus \
     --include-package=mistral_common \
+    --include-package=netifaces \
     --include-package=playwright"
 
 # Add the dependency arguments

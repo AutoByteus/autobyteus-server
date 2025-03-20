@@ -12,3 +12,4 @@ watchdog
 python-multipart
 autobyteus==1.0.1
 toml
+netifaces
