@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, List, Tuple
 from autobyteus_server.config import app_config_provider
+from autobyteus_server.utils.network_utils import get_local_ip
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,16 @@ class ServerSettingsService:
         result = []
         for key, setting_info in self._settings_info.items():
             value = config.get(key, "")
+            
+            # For AUTOBYTEUS_SERVER_HOST, try to detect local IP if not set
+            if key == "AUTOBYTEUS_SERVER_HOST" and not value:
+                local_ip = get_local_ip()
+                if local_ip:
+                    value = local_ip
+                    # Update the config with the detected IP
+                    config.set(key, value)
+                    logger.info(f"Automatically detected and set server host IP: {value}")
+            
             result.append({
                 "key": key,
                 "value": value,
