@@ -58,14 +58,15 @@ class ServerSettingsService:
         for key, setting_info in self._settings_info.items():
             value = config.get(key, "")
             
-            # For AUTOBYTEUS_SERVER_HOST, try to detect local IP if not set
-            if key == "AUTOBYTEUS_SERVER_HOST" and not value:
+            # For AUTOBYTEUS_SERVER_HOST, first try to detect local IP
+            if key == "AUTOBYTEUS_SERVER_HOST":
                 local_ip = get_local_ip()
                 if local_ip:
+                    # Always use the detected IP and update the config
                     value = local_ip
-                    # Update the config with the detected IP
                     config.set(key, value)
-                    logger.info(f"Automatically detected and set server host IP: {value}")
+                    logger.info(f"Detected and set server host IP: {value}")
+                # If local_ip is None, keep using the value from config (environment variable)
             
             result.append({
                 "key": key,
