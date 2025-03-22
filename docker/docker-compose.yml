@@ -1,4 +1,3 @@
-
 version: '3.8'
 services:
   app:
@@ -12,12 +11,9 @@ services:
     ports:
       - "5900:5900"
       - "9223:9223"
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - DISPLAY=:99
     volumes:
-      # Mount source code using relative paths
-      - ../../brui_core:/home/vncuser/workspace/brui_core
-      - ../../autobyteus:/home/vncuser/workspace/autobyteus
-      - ../../autobyteus-server:/home/vncuser/workspace/autobyteus-server
+      # Mount only autobyteus-server source code
     restart: unless-stopped
