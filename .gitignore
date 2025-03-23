@@ -1,5 +1,4 @@
 *.pyc
-.env
 azure.yaml
 ai_settings.yaml
 last_run_ai_settings.yaml
@@ -117,7 +116,6 @@ celerybeat.pid
 
 # Environments
 .direnv/
-.env
 .venv
 env/
 venv*/
