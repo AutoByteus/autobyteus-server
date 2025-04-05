@@ -17,6 +17,11 @@ def normalize_path(path):
     Normalize path for the current platform.
     
     Windows Git Bash has issues with paths, this function helps fix them.
+    
+    Args:
+        path (str): The path to normalize.
+    Returns:
+        str: The normalized path with appropriate separators.
     """
     # Convert to Path object for cross-platform handling
     path_obj = Path(path)
@@ -31,6 +36,49 @@ def normalize_path(path):
 
 # Find required data and config files
 dependency_args = []
+
+# Add configuration files: logging_config.ini and alembic.ini
+logging_config_path = "logging_config.ini"
+if os.path.exists(logging_config_path):
+    normalized_path = normalize_path(logging_config_path)
+    dependency_args.append(f"--include-data-file={normalized_path}=logging_config.ini")
+    logging.info(f"Found logging_config.ini: {normalized_path}")
+else:
+    logging.warning(f"logging_config.ini not found at {logging_config_path}")
+
+alembic_ini_path = "alembic.ini"
+if os.path.exists(alembic_ini_path):
+    normalized_path = normalize_path(alembic_ini_path)
+    dependency_args.append(f"--include-data-file={normalized_path}=alembic.ini")
+    logging.info(f"Found alembic.ini: {normalized_path}")
+else:
+    logging.warning(f"alembic.ini not found at {alembic_ini_path}")
+
+# Add alembic directory
+alembic_dir_path = "alembic"
+if os.path.exists(alembic_dir_path) and os.path.isdir(alembic_dir_path):
+    normalized_path = normalize_path(alembic_dir_path)
+    
+    # Include the entire alembic directory structure with all files
+    dependency_args.append(f"--include-data-dir={normalized_path}=alembic")
+    logging.info(f"Found alembic directory: {normalized_path}")
+    
+    # Specifically include Python files in the versions subdirectory to preserve structure
+    versions_dir = os.path.join(alembic_dir_path, "versions")
+    if os.path.exists(versions_dir) and os.path.isdir(versions_dir):
+        normalized_versions_path = normalize_path(versions_dir)
+        dependency_args.append(f"--include-data-dir={normalized_versions_path}=alembic/versions")
+        logging.info(f"Found alembic versions directory: {normalized_versions_path}")
+
+        # Make sure Python files in versions directory are included
+        dependency_args.append(f"--include-data-files={normalized_versions_path}/*.py=alembic/versions/")
+        logging.info(f"Including Python files in versions directory: {normalized_versions_path}/*.py")
+    
+    # Include any Python files in the root alembic directory
+    dependency_args.append(f"--include-data-files={normalized_path}/*.py=alembic/")
+    logging.info(f"Including Python files in alembic root directory: {normalized_path}/*.py")
+else:
+    logging.warning(f"alembic directory not found at {alembic_dir_path}")
 
 # Check for Playwright driver script - using same approach as autobyteus_rpa_llm_server
 try:

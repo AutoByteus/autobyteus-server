@@ -33,6 +33,14 @@ def create_required_files(destination_dir, version):
         for filename, content in required_files.items():
             file_path = os.path.join(destination_dir, filename)
             
+            # Instead of creating default files, copy existing files if available
+            if filename in ['logging_config.ini', 'alembic.ini']:
+                source_file = filename
+                if os.path.exists(source_file):
+                    logger.info(f"Copying existing {filename} to destination...")
+                    shutil.copy2(source_file, file_path)
+                    continue
+            
             # Check if file already exists
             if os.path.exists(file_path):
                 logger.info(f"{filename} already exists in the destination directory.")

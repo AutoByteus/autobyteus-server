@@ -41,6 +41,12 @@ class ServerSettingsService:
             description="Host address for external services to access the server (e.g., Docker containers)"
         )
         
+        # VNC Server URL setting
+        self._settings_info["AUTOBYTEUS_VNC_SERVER_URL"] = ServerSettingDescription(
+            key="AUTOBYTEUS_VNC_SERVER_URL",
+            description="URL of the AUTOBYTEUS VNC server (e.g., ws://localhost:6080)"
+        )
+        
         # Add more settings here in the future
         
         logger.info(f"Initialized server settings service with {len(self._settings_info)} settings")

@@ -7,10 +7,35 @@ VERSION="1.0.0"
 
 # Process command line arguments
 DRY_RUN=false
+CUSTOM_TEMPDIR="{CACHE_DIR}/autobyteus"  # Default to platform-specific cache directory with a subdirectory
+
+# Show help information
+show_help() {
+  echo "Usage: $0 [options]"
+  echo "Options:"
+  echo "  -d, --dry-run             Show the Nuitka command without executing it"
+  echo "  --tempdir=<path>          Specify a custom directory for extracted files"
+  echo "                            (default: '{CACHE_DIR}/autobyteus', e.g., ~/.cache/autobyteus on Linux)"
+  echo "  -h, --help                Show this help message"
+  echo
+  echo "Examples:"
+  echo "  $0 --tempdir={TEMP}/{PID}  Use system temp with unique process ID"
+  echo "  $0 --tempdir={CACHE_DIR}/custom_path  Use cache dir with custom subdirectory"
+}
+
+# Parse command line arguments
 for arg in "$@"; do
   case $arg in
+    -h|--help)
+    show_help
+    exit 0
+    ;;
     -d|--dry-run)
     DRY_RUN=true
+    shift
+    ;;
+    --tempdir=*)
+    CUSTOM_TEMPDIR="${arg#*=}"
     shift
     ;;
   esac
@@ -40,9 +65,7 @@ normalize_path() {
   
   if [ "$IS_WINDOWS" = true ]; then
     # For Windows, convert path separators and ensure proper format for Python/Nuitka
-    # First, convert to Windows path format with backslashes
     path=$(echo "$path" | sed 's/\//\\/g')
-    # Then ensure proper quoting
     echo "\"$path\""
   else
     # For Linux/macOS, return as is but with quotes for safety
@@ -181,8 +204,11 @@ fi
 # Add Windows-specific options when running on Windows
 if [ "$IS_WINDOWS" = true ]; then
   echo "Adding Windows-specific build options..."
-  # Windows doesn't need special flags like macOS, but we might add them in the future
 fi
+
+# Add custom tempdir specification if provided
+echo "Using extraction directory: $CUSTOM_TEMPDIR"
+NUITKA_COMMAND="$NUITKA_COMMAND --onefile-tempdir-spec=\"$CUSTOM_TEMPDIR\""
 
 # Add the remaining options
 NUITKA_COMMAND="$NUITKA_COMMAND \
@@ -231,6 +257,20 @@ else
   fi
   
   echo "Build complete! The executable has been built."
+  
+  echo "Extraction directory set to: $CUSTOM_TEMPDIR"
+  if [[ "$CUSTOM_TEMPDIR" == "{CACHE_DIR}/autobyteus" ]]; then
+    echo "The application will extract to the platform-specific cache directory with 'autobyteus' subdirectory:"
+    echo "  - Windows: %LOCALAPPDATA%\\autobyteus (e.g., C:\\Users\\<Username>\\AppData\\Local\\autobyteus)"
+    echo "  - Linux: ~/.cache/autobyteus"
+    echo "  - macOS: ~/Library/Caches/autobyteus"
+  elif [[ "$CUSTOM_TEMPDIR" == *"{TEMP}"* ]]; then
+    echo "The application will extract to the system temporary directory (location varies by OS)."
+    if [[ "$CUSTOM_TEMPDIR" == *"{PID}"* ]]; then
+      echo "Files will be cleaned up automatically when the application exits."
+    fi
+  fi
+  
   echo "Note: The executable contains Playwright dependencies, mistral_common data, and anthropic tokenizer."
   echo "Make sure to have the following files in the same directory where you run the executable:"
   echo "  - .env (environment configuration)"
