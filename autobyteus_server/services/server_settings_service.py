@@ -61,6 +61,8 @@ class ServerSettingsService:
         config = app_config_provider.config
         
         result = []
+        
+        # Add all settings that have been registered (including custom ones)
         for key, setting_info in self._settings_info.items():
             value = config.get(key, "")
             
@@ -93,14 +95,18 @@ class ServerSettingsService:
         Returns:
             Tuple[bool, str]: A tuple of (success, message).
         """
-        # Check if the setting is allowed
-        if key not in self._settings_info:
-            return False, f"Setting '{key}' is not allowed to be updated."
-        
         try:
             # Get the current config and update the value
             config = app_config_provider.config
             config.set(key, value)
+            
+            # If this is a new setting, add it to our registry for future reference
+            if key not in self._settings_info:
+                self._settings_info[key] = ServerSettingDescription(
+                    key=key,
+                    description="Custom user-defined setting"
+                )
+                logger.info(f"Added new custom server setting: {key}")
             
             logger.info(f"Server setting '{key}' updated to '{value}'")
             return True, f"Server setting '{key}' has been updated successfully."
@@ -118,7 +124,8 @@ class ServerSettingsService:
         Returns:
             bool: True if the key is valid, False otherwise.
         """
-        return key in self._settings_info
+        # Accept any key for custom settings
+        return True
 
 
 # Singleton instance for use throughout the application
