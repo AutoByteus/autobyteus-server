@@ -32,14 +32,11 @@ class AppConfig:
         This performs minimal initialization to establish the app_root_dir and data_dir.
         Call initialize() to complete the initialization.
         """
-        # Cache for Nuitka detection
-        self._is_nuitka = None
-        
         # Detect platform
         self._is_windows = platform.system() == 'Windows'
         print(f"Platform detection: Windows={self._is_windows}")
         
-        # Initialize the app root directory
+        # Initialize the app root directory using the non-packaged logic
         self.app_root_dir = self._get_app_root_dir()
         print(f"App root directory: {self.app_root_dir}")
         
@@ -110,13 +107,8 @@ class AppConfig:
         # Mark as initialized
         self._initialized = True
         
-        # Final summary logging placed at the end of initialization
+        # Logging summary without mode-specific information
         logger.info("=" * 60)
-        # Determine mode based on packaged environment flag
-        if self.is_packaged_environment():
-            logger.info("RUNNING IN PACKAGED MODE")
-        else:
-            logger.info("RUNNING IN DEVELOPMENT MODE")
         logger.info(f"APP ROOT DIRECTORY: {self.get_app_root_dir()}")
         logger.info(f"APP DATA DIRECTORY: {self.get_app_data_dir()}")
         logger.info(f"DB DIRECTORY: {self.get_db_dir()}")
@@ -151,13 +143,9 @@ class AppConfig:
 
     def _get_app_root_dir(self) -> Path:
         """Get the application root directory."""
-        if self.is_packaged_environment():
-            executable_path = Path(os.path.abspath(sys.argv[0])).resolve()
-            return executable_path.parent
-        
         current_file = Path(__file__).resolve()
         return current_file.parent.parent.parent
-        
+
     def _init_sqlite_path(self):
         """Initialize SQLite database path if using SQLite."""
         db_path = self._get_sqlite_path()
@@ -210,26 +198,6 @@ class AppConfig:
         os.environ.setdefault('LOG_LEVEL', 'INFO')
         print("Environment variables loaded successfully")
 
-    def is_nuitka_build(self) -> bool:
-        """
-        Detect if the application is running from a Nuitka build.
-        
-        Returns:
-            bool: True if running from a Nuitka build, False otherwise.
-        """
-        if self._is_nuitka is not None:
-            return self._is_nuitka
-        
-        executable_lower = sys.executable.lower()
-        for pattern in ['onefile_', 'onefil']:
-            if pattern in executable_lower:
-                self._is_nuitka = True
-                print(f"Detected Nuitka build from pattern '{pattern}' in executable: {sys.executable}")
-                return True
-        
-        self._is_nuitka = False
-        return False
-
     # Public API methods
 
     def get_app_root_dir(self) -> Path:
@@ -260,32 +228,6 @@ class AppConfig:
         download_dir = self.data_dir / 'download'
         download_dir.mkdir(exist_ok=True)
         return download_dir
-
-    def is_packaged_environment(self) -> bool:
-        """Check if running in a packaged environment."""
-        return self.is_nuitka_build()
-
-    def validate_packaged_environment(self):
-        """
-        Validate that all required files and directories exist in packaged mode.
-        Exits the application if validation fails.
-        """
-        app_root_dir = self.get_app_root_dir()
-        required_files = ['.env', 'logging_config.ini', 'alembic.ini']
-        required_dirs = ['download', 'alembic']
-        app_data_dir = self.get_app_data_dir()
-        missing_files = [str(app_data_dir / f) for f in required_files if not (app_data_dir / f).exists()]
-        missing_dirs = [str(app_root_dir / d) for d in required_dirs if not (app_root_dir / d).is_dir()]
-        for d in ['logs', 'db']:
-            if not (app_data_dir / d).is_dir():
-                missing_dirs.append(str(app_data_dir / d))
-        if missing_files or missing_dirs:
-            logger.error("Missing required files or directories:")
-            if missing_files:
-                logger.error(f"Files: {', '.join(missing_files)}")
-            if missing_dirs:
-                logger.error(f"Directories: {', '.join(missing_dirs)}")
-            sys.exit(1)
 
     def load_environment(self) -> bool:
         """

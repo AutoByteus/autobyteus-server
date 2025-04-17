@@ -1,8 +1,4 @@
-
-
-
 from autobyteus_server.search.hackathon_search_result import HackathonSearchResult
-
 
 class HackathonSearchService:
     """
