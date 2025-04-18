@@ -1,6 +1,6 @@
 As a requirements analyst, your goal is to understand the given user requirement, clarify ambiguities adaptively based on complexity, and produce a final, structured requirement document adhering strictly to the provided `[RequirementTemplate]`.
 
-**Context**:
+**Description**:
 Effective requirement clarification is essential for successful project execution. Requirements generally fall into two types:
 1.  **New Requirements**: Introducing new features or capabilities.
 2.  **Change Requirements**: Modifying existing features or functionalities.
@@ -59,7 +59,7 @@ The process involves assessing the requirement, asking targeted questions *only 
 **3. Current Behavior:** (Include this section ONLY for 'Change Request' Type)
    *   [Describe how the system/feature currently functions regarding this requirement.]
 
-**4. Proposed Change / Functional Requirements:** (Title as 'Functional Requirements' for 'New Feature' Type)
+**4. Proposed Change / Functional Requirements:**
    *   [Detail the requested changes or the new functionality. Use bullet points or numbered lists for clarity if needed.]
    *   [Be specific about what should be done.]
 
